@@ -203,12 +203,8 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
   if (infoCardPuck) {
       const { position, radius, team } = infoCardPuck;
 
-      // --- DYNAMIC Vertical Positioning ---
-      // The panel appears above pucks in the bottom half and below pucks in the top half.
-      // This keeps the panel away from the user's finger and the edges of the screen.
       const renderDirection = position.y > BOARD_HEIGHT / 2 ? 'up' : 'down';
 
-      // --- Horizontal Positioning (clamped to board edges) ---
       const halfWidth = INFO_PANEL_WIDTH / 2;
       let panelLeft = position.x - halfWidth;
       panelLeft = Math.max(BOARD_PADDING, panelLeft);
@@ -216,18 +212,17 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
       const panelCenterX = panelLeft + halfWidth;
       const pointerHorizontalOffset = position.x - panelCenterX;
 
-      // --- Style Assembly ---
       let top;
       let baseTransform = '';
       let transformOrigin;
 
       if (renderDirection === 'up') {
           top = position.y - radius - INFO_PANEL_PUCK_OFFSET;
-          baseTransform = 'translateY(-100%)'; // Aligns bottom of panel with `top` value
+          baseTransform = 'translateY(-100%)';
           transformOrigin = 'center bottom';
       } else { // 'down'
           top = position.y + radius + INFO_PANEL_PUCK_OFFSET;
-          baseTransform = 'translateY(0)'; // Aligns top of panel with `top` value
+          baseTransform = 'translateY(0)';
           transformOrigin = 'center top';
       }
 
@@ -245,8 +240,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           display: 'block',
       };
       
-      // This prop tells the InfoPanel component which way to draw its pointer.
-      // The rotation is handled by the container style above.
       infoPanelProps = { renderDirection, pointerHorizontalOffset };
   }
 
@@ -258,7 +251,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
   const isAimingSpecialShot = gameState.shotPreview?.specialShotStatus === 'ROYAL' || gameState.shotPreview?.specialShotStatus === 'ULTIMATE';
   
   const focusPucks = React.useMemo(() => {
-    // When aiming, we want to highlight all pucks of the current team.
     if (!isAiming) {
         return [];
     }

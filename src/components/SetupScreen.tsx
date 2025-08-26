@@ -12,6 +12,7 @@ interface SetupScreenProps {
     onSetupComplete: (config: TeamConfig) => void;
     playSound: (sound: string, options?: { volume?: number }) => void;
     gameMode: 'pvp' | 'pve';
+    onHelpClick: () => void;
 }
 
 const PuckInPool: React.FC<{ puckType: PuckType; onClick: (puckType: PuckType) => void; onMouseEnter: (e: React.MouseEvent, puckType: PuckType) => void; onMouseLeave: () => void; isSelected: boolean; }> = ({ puckType, onClick, onMouseEnter, onMouseLeave, isSelected }) => (
@@ -28,7 +29,7 @@ const PuckInPool: React.FC<{ puckType: PuckType; onClick: (puckType: PuckType) =
     </div>
 );
 
-const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSound, gameMode }) => {
+const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSound, gameMode, onHelpClick }) => {
     const [roster, setRoster] = useState<(PuckType | null)[]>(Array(7).fill(null));
     const [selectedPlan, setSelectedPlan] = useState<StrategicPlan>(STRATEGIC_PLANS[team][0]);
     const [infoPanel, setInfoPanel] = useState<{ puckType: PuckType; target: HTMLElement } | null>(null);
@@ -95,8 +96,15 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
 
     return (
         <div className={`setup-screen-container ${isReversed ? 'reversed' : ''}`} style={{'--team-color': teamColor, '--team-color-rgb': teamColorRGB} as React.CSSProperties}>
+            <button onClick={onHelpClick} className="setup-help-button" aria-label="Ayuda">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
             <style>{`
-                .setup-screen-container { display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--color-background-paper); animation: menu-fade-in 0.5s ease; }
+                .setup-screen-container { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--color-background-paper); animation: menu-fade-in 0.5s ease; }
                 .setup-screen-container.reversed { flex-direction: column-reverse; }
                 
                 .setup-header { text-align: center; flex-shrink: 0; padding: clamp(0.5rem, 2vh, 1rem) 0; }
@@ -152,6 +160,38 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 .action-button.confirm { background: var(--color-accent-green); }
                 .action-button.clear { background: var(--color-primary-red); font-size: 0.9rem; flex-grow: 0; padding: 0.7rem 0.9rem; }
                 .action-button:disabled { background: var(--color-wood-light); color: var(--color-text-dark); opacity: 0.6; cursor: not-allowed; box-shadow: 0 6px 0 0 #00000022; }
+
+                .setup-help-button {
+                    position: absolute;
+                    top: clamp(0.5rem, 2vh, 1rem);
+                    right: clamp(0.5rem, 2vh, 1rem);
+                    z-index: 10;
+                    width: 44px;
+                    height: 44px;
+                    background: var(--color-wood-dark);
+                    border: 3px solid var(--color-shadow-main);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s ease-out;
+                }
+                .setup-help-button svg {
+                    width: 24px;
+                    height: 24px;
+                    color: var(--color-text-dark);
+                }
+                .setup-help-button:hover {
+                    transform: scale(1.1);
+                    background: var(--color-accent-yellow);
+                }
+                .setup-help-button:hover svg {
+                    color: var(--color-shadow-main);
+                }
+                .setup-screen-container.reversed .setup-help-button {
+                    transform: rotate(180deg);
+                }
 
                  @media (max-width: 900px), (max-height: 600px) {
                     .setup-content { display: flex; flex-direction: column; }

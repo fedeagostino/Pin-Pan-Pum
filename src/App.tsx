@@ -286,9 +286,9 @@ function App() {
           case 'menu':
               return <MainMenu onPlay={handleStartPvP} onPlayAI={handleStartPvE} />;
           case 'setupRed':
-              return <SetupScreen team="RED" onSetupComplete={handleRedSetupComplete} playSound={playSound} gameMode={gameMode} />;
+              return <SetupScreen team="RED" onSetupComplete={handleRedSetupComplete} playSound={playSound} gameMode={gameMode} onHelpClick={() => setHelpModalTeam('RED')} />;
           case 'setupBlue':
-              return <SetupScreen team="BLUE" onSetupComplete={handleBlueSetupComplete} playSound={playSound} gameMode={gameMode} />;
+              return <SetupScreen team="BLUE" onSetupComplete={handleBlueSetupComplete} playSound={playSound} gameMode={gameMode} onHelpClick={() => setHelpModalTeam('BLUE')} />;
           case 'playing':
               return (
                 <>

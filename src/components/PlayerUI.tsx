@@ -147,8 +147,8 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                     align-items: center; justify-content: center; 
                     transition: all 0.2s ease; flex-shrink: 0;
                 }
-                .help-button:hover { transform: scale(1.1); }
-                .help-button svg { width: 18px; height: 18px; }
+                .help-button:hover { transform: scale(1.1); background: var(--color-accent-yellow); color: var(--color-shadow-main);}
+                .help-button svg { width: 22px; height: 22px; }
 
                 @media (max-width: 640px) {
                     .player-ui-container { height: clamp(56px, 8vh, 60px); }
@@ -179,7 +179,11 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
 
                 <div className="help-button-pod">
                     <button className="help-button" onClick={onHelpClick} aria-label="Ayuda e Información">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
                     </button>
                 </div>
             </div>

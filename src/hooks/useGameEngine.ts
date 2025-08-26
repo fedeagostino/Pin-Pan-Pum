@@ -1021,10 +1021,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       }
 
       if (newImaginaryLine && newImaginaryLine.isConfirmed) {
-        // --- MOBILE OPTIMIZATION ---
-        // Instead of checking every moving puck against every line, we ONLY check the puck
-        // that was actually shot. This is the primary mechanic for charging pucks and drastically
-        // reduces the number of expensive intersection checks per frame, improving performance on mobile.
         const shotPuckId = newImaginaryLine.shotPuckId;
         const puckPrev = prev.pucks.find(p => p.id === shotPuckId);
         const puckNew = newPucks.find(p => p.id === shotPuckId);
@@ -1042,6 +1038,10 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                         lineGrid.get(key)!.forEach(index => candidateLineIndices.add(index));
                     }
                 });
+            } else {
+                // FALLBACK: If the spatial grid fails for any reason, check all lines.
+                // This fixes a critical bug where intersections were sometimes missed.
+                newImaginaryLine.lines.forEach((_, index) => candidateLineIndices.add(index));
             }
 
             candidateLineIndices.forEach(index => {
