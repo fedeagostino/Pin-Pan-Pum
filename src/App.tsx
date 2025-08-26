@@ -286,17 +286,17 @@ function App() {
           case 'menu':
               return <MainMenu onPlay={handleStartPvP} onPlayAI={handleStartPvE} />;
           case 'setupRed':
-              return <SetupScreen team="RED" onSetupComplete={handleRedSetupComplete} playSound={playSound} />;
+              return <SetupScreen team="RED" onSetupComplete={handleRedSetupComplete} playSound={playSound} gameMode={gameMode} />;
           case 'setupBlue':
-              return <SetupScreen team="BLUE" onSetupComplete={handleBlueSetupComplete} playSound={playSound} />;
+              return <SetupScreen team="BLUE" onSetupComplete={handleBlueSetupComplete} playSound={playSound} gameMode={gameMode} />;
           case 'playing':
               return (
                 <>
-                  <PlayerUI team="BLUE" gameState={gameState} onHelpClick={() => setHelpModalTeam('BLUE')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={scoreShouldPop} />
+                  <PlayerUI team="BLUE" gameState={gameState} onHelpClick={() => setHelpModalTeam('BLUE')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={scoreShouldPop} gameMode={gameMode} />
                   <main className="main-content-area">
                     <GameCommentary text={leftCommentary.text} team={leftCommentary.team} position="left" componentKey={leftCommentary.key} />
                     <div className="game-board-wrapper">
-                      <GameBoard ref={svgRef} gameState={gameState} onMouseDown={handleMouseDown} onBoardMouseDown={handleBoardMouseDown} />
+                      <GameBoard ref={svgRef} gameState={gameState} onMouseDown={handleMouseDown} onBoardMouseDown={handleBoardMouseDown} gameMode={gameMode} />
                       {gameState.goalScoredInfo && <GoalTransition info={gameState.goalScoredInfo} />}
                       {turnChangeInfo && <TurnChangeIndicator key={turnChangeInfo.key} team={turnChangeInfo.team} previousTeam={turnChangeInfo.previousTeam} reason={turnChangeInfo.reason} />}
                       <GameMessageDisplay message={gameState.gameMessage} />
@@ -304,7 +304,7 @@ function App() {
                     </div>
                     <GameCommentary text={rightCommentary.text} team={rightCommentary.team} position="right" componentKey={rightCommentary.key} />
                   </main>
-                  <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={scoreShouldPop} />
+                  <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={scoreShouldPop} gameMode={gameMode} />
                 </>
               );
           default:
@@ -438,7 +438,7 @@ function App() {
       {renderContent()}
 
       {gameState.winner && <WinnerModal winner={gameState.winner} score={gameState.score} onBackToMenu={backToMenu} playSound={playSound} />}
-      {helpModalTeam && <HelpModal isOpen={!!helpModalTeam} onClose={() => setHelpModalTeam(null)} playSound={playSound} team={helpModalTeam}/>}
+      {helpModalTeam && <HelpModal isOpen={!!helpModalTeam} onClose={() => setHelpModalTeam(null)} playSound={playSound} team={helpModalTeam} gameMode={gameMode}/>}
     </div>
   );
 }

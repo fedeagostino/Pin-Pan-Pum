@@ -134,7 +134,7 @@ const SinergiasTab: React.FC = () => (
 );
 
 
-const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (sound: string) => void; team: Team | null; }> = ({ isOpen, onClose, playSound, team }) => {
+const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (sound: string) => void; team: Team | null; gameMode: 'pvp' | 'pve'; }> = ({ isOpen, onClose, playSound, team, gameMode }) => {
     const [activeTab, setActiveTab] = useState<HelpTab>('objetivo');
 
     if (!isOpen) return null;
@@ -142,7 +142,7 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
     const handleClose = () => { playSound('UI_CLICK_2'); onClose(); };
     const handleTabClick = (tab: HelpTab) => { playSound('UI_CLICK_1'); setActiveTab(tab); };
 
-    const containerStyle: React.CSSProperties = team === 'BLUE' ? { transform: 'rotate(180deg)' } : {};
+    const containerStyle: React.CSSProperties = (team === 'BLUE' && gameMode === 'pvp') ? { transform: 'rotate(180deg)' } : {};
     const TABS: { id: HelpTab, label: string, icon: React.FC }[] = [
         { id: 'objetivo', label: 'Objetivo', icon: TabIconObjetivo },
         { id: 'controles', label: 'Controles', icon: TabIconControles },

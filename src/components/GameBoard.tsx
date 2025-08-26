@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GameState, Vector, Puck, PuckType, SynergyType, SpecialShotStatus } from '../types';
 import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG } from '../constants';
@@ -9,6 +8,7 @@ interface GameBoardProps {
   gameState: GameState;
   onMouseDown: (puckId: number, pos: Vector) => void;
   onBoardMouseDown: () => void;
+  gameMode: 'pvp' | 'pve';
 }
 
 // Helper functions for vector math, scoped to this component
@@ -45,7 +45,7 @@ const getDurabilityColor = (percentage: number): string => {
     return `rgb(${r}, ${g}, ${b})`;
 };
 
-const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, onMouseDown, onBoardMouseDown }, ref) => {
+const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, onMouseDown, onBoardMouseDown, gameMode }, ref) => {
   const getSVGCoordinatesFromEvent = (e: React.MouseEvent | React.TouchEvent): Vector => {
     const svg = ref && typeof ref !== 'function' && ref.current 
       ? ref.current 
@@ -231,8 +231,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           transformOrigin = 'center top';
       }
 
-      // The BLUE team's UI is always rotated 180 degrees for head-to-head play.
-      const rotation = team === 'BLUE' ? ' rotate(180deg)' : '';
+      const rotation = (team === 'BLUE' && gameMode === 'pvp') ? ' rotate(180deg)' : '';
 
       infoPanelContainerStyle = {
           position: 'absolute',
