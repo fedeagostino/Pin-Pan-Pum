@@ -1,6 +1,6 @@
 {
-  "name": "Copy of PIN PAN PUM - juego ampliado",
-  "description": "mas modos de juegos",
+  "name": "PIN PAN PUM - PWA Edition",
+  "description": "Juego de estrategia y habilidad con fichas futuristas, ahora instalable como una App (PWA) para jugar sin conexión.",
   "requestFramePermissions": [],
   "prompt": ""
 }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Team, TurnLossReason } from '../types';
 import { TEAM_COLORS } from '../constants';
@@ -64,7 +63,7 @@ const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, reason 
             font-family: var(--font-family-main);
             font-size: 1.5rem;
             font-weight: 400;
-            color: var(--color-background-paper);
+            color: var(--color-bg-paper);
             text-shadow: 2px 2px 0px var(--color-shadow-main);
             text-transform: uppercase;
             margin-top: 0.25rem;

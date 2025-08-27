@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { Team, PuckType, TeamConfig, Puck } from '../types';
 import { TEAM_COLORS, SELECTABLE_PUCKS, BOARD_WIDTH, BOARD_HEIGHT, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, PUCK_RADIUS, PUCK_TYPE_PROPERTIES, PAWN_DURABILITY } from '../constants';
@@ -264,7 +263,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 <div className="footer-buttons">
                     <button className="action-button clear" onClick={handleClearRoster}>Limpiar</button>
                     <button className="action-button confirm" disabled={!isSetupComplete} onClick={handleSubmit}>
-                        {isSetupComplete ? '¡CONFIRMAR EQUIPO!' : `Selecciona ${7 - selectedPuckCount} fichas`}
+                        {isSetupComplete ? '¡CONFIRMAR EQUIPO!' : `Selecciona ${7 - selectedPuckCount} más`}
                     </button>
                 </div>
             </footer>

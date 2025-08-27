@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerUI from './components/PlayerUI';
@@ -320,7 +319,7 @@ function App() {
       onTouchStart={handleScreenInteraction}
     >
         <style>{`
-          .app-container { display: flex; flex-direction: column; width: 100vw; height: 100dvh; overflow: hidden; position: relative; background-color: var(--color-background-paper); }
+          .app-container { display: flex; flex-direction: column; width: 100vw; height: 100dvh; overflow: hidden; position: relative; background-color: var(--color-bg-paper); }
           .main-content-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 0.5rem; position: relative; min-height: 0; }
           .game-board-wrapper { height: 100%; max-width: 100%; aspect-ratio: 800 / 1200; position: relative; }
           
@@ -338,21 +337,6 @@ function App() {
             .screen-shake {
                 animation: screen-shake-anim 0.2s linear;
             }
-
-            .modal-overlay {
-                position: fixed;
-                inset: 0;
-                background-color: rgba(0, 0, 0, 0.7);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-                backdrop-filter: blur(8px);
-                -webkit-backdrop-filter: blur(8px);
-                animation: modal-fade-in 0.3s ease;
-            }
-            @keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes modal-content-pop-in { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
 
             .winner-modal-layout {
                 animation: modal-content-pop-in 0.4s cubic-bezier(0.25, 1, 0.5, 1);

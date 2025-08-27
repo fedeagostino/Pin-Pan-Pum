@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Puck, Team, Vector, GameState, ImaginaryLineState, PuckType, Particle, ImaginaryLine, SynergyType, TemporaryEffect, PreviewState, PuckTrajectory, SpecialShotStatus, TurnLossReason, TeamConfig } from '../types';
 import {
@@ -1566,7 +1565,31 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                       }
                   } else if (synergyType === 'DEMOLITION_CHARGE') {
                       synergyPuck.synergyEffectTriggered = true;
-                       newPucks.forEach(p => { if (p.team !== synergyPuck!.team && getVectorMagnitudeSq(subtractVectors(p.position, synergyPuck!.position)) < DEMOLITION_CHARGE_RADIUS * DEMOLITION_CHARGE_RADIUS) { const d = getVectorMagnitude(subtractVectors(p.position, synergyPuck!.position)); if (d === 0) return; const f = {x: (p.position.x - synergyPuck!.position.x)/d * DEMOLITION_CHARGE_FORCE, y: (p.position.y - synergyPuck!.position.y)/d * DEMOLITION_CHARGE_FORCE}; p.velocity = {x: p.velocity.x + f.x/p.mass, y: p.velocity.y + f.y/p.mass}; }});
+                       newPucks.forEach(p => { 
+                          if (p.team !== synergyPuck!.team && getVectorMagnitudeSq(subtractVectors(p.position, synergyPuck!.position)) < DEMOLITION_CHARGE_RADIUS * DEMOLITION_CHARGE_RADIUS) { 
+                              const d = getVectorMagnitude(subtractVectors(p.position, synergyPuck!.position)); 
+                              if (d === 0) return; 
+                              const f = {
+                                  x: (p.position.x - synergyPuck!.position.x)/d * DEMOLITION_CHARGE_FORCE, 
+                                  y: (p.position.y - synergyPuck!.position.y)/d * DEMOLITION_CHARGE_FORCE
+                              }; 
+                              p.velocity = {
+                                  x: p.velocity.x + f.x/p.mass, 
+                                  y: p.velocity.y + f.y/p.mass
+                              }; 
+                          }
+                      });
+                      const config = PARTICLE_CONFIG.EMP_BURST;
+                      spawnParticle(newParticles, {
+                          position: { ...synergyPuck.position },
+                          velocity: { x: 0, y: 0 },
+                          radius: 1,
+                          color: SYNERGY_EFFECTS.DEMOLITION_CHARGE.color,
+                          opacity: 1,
+                          life: config.life * 1.5, 
+                          decay: config.decay,
+                          renderType: 'emp_burst',
+                      });
                   } else if (synergyType === 'BLACK_HOLE') {
                       synergyPuck.synergyEffectTriggered = true;
                       newTemporaryEffects.push({type: 'BLACK_HOLE_EFFECT', duration: BLACK_HOLE_DURATION, position: {...impactPoint}});

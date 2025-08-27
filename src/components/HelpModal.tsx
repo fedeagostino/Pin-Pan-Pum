@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PuckType, SynergyType, Team } from '../types';
 import { PUCK_TYPE_INFO, SYNERGY_DESCRIPTIONS, SYNERGY_COMBOS, SCORE_TO_WIN, PUCK_TYPE_PROPERTIES, PUCK_GOAL_POINTS } from '../constants';
@@ -294,7 +295,7 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
                 .help-modal-mobile-nav { display: none; margin-bottom: 1.5rem; }
                 .help-modal-mobile-nav select {
                     width: 100%;
-                    background: var(--color-wood-dark);
+                    background: var(--color-bg-dark);
                     color: var(--color-text-dark);
                     border: 1px solid rgba(255,255,255,0.2);
                     padding: 0.75rem;

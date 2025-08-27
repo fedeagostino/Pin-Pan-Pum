@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Puck, SpecialShotStatus } from '../types';
 import { PUCK_TYPE_INFO, PUCK_TYPE_PROPERTIES, TEAM_COLORS, PAWN_DURABILITY, PUCK_GOAL_POINTS, UI_COLORS } from '../constants';

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Puck } from '../types';
 import { TEAM_COLORS, UI_COLORS, PUCK_SVG_DATA, PUCK_TYPE_PROPERTIES } from '../constants';

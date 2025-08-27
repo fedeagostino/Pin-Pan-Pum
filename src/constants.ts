@@ -1,4 +1,3 @@
-
 import { PuckType, SpecialShotStatus, SynergyType, Team } from './types';
 
 export const BOARD_WIDTH = 800;
