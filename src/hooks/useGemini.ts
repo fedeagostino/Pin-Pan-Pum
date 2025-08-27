@@ -1,30 +1,35 @@
 import { GoogleGenAI, GenerateContentResponse, Content } from "@google/genai";
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PuckType } from "../types";
 import { PUCK_TYPE_INFO } from "../constants";
 
 const useGemini = () => {
     const [ai, setAi] = useState<GoogleGenAI | null>(null);
 
-    // Initialize lazily on first use
-    const initialize = useCallback(() => {
-        if (!ai) {
-             try {
-                // This relies on `process.env.API_KEY` being set in the environment.
-                const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
-                setAi(genAI);
-                return genAI;
-             } catch (e) {
-                 console.error("Failed to initialize GoogleGenAI. Ensure API_KEY is set.", e);
-                 return null;
-             }
-        }
-        return ai;
-    }, [ai]);
+    useEffect(() => {
+        const initialize = async () => {
+            // Check if the electronAPI is exposed on the window object
+            if (window.electronAPI) {
+                try {
+                    const apiKey = await window.electronAPI.getApiKey();
+                    if (apiKey) {
+                        const genAI = new GoogleGenAI({ apiKey });
+                        setAi(genAI);
+                    } else {
+                        console.error("API Key not provided from main process.");
+                    }
+                } catch (e) {
+                    console.error("Failed to initialize GoogleGenAI via Electron.", e);
+                }
+            } else {
+                console.warn("Running in a browser environment. Electron API for Gemini is not available.");
+            }
+        };
+        initialize();
+    }, []);
 
     const generateCommentaryStream = useCallback(async (eventDescription: string) => {
-        const genAI = initialize();
-        if (!genAI) {
+        if (!ai) {
             console.error("Gemini AI not initialized.");
             return null;
         }
@@ -37,7 +42,7 @@ const useGemini = () => {
                 parts: [{ text: eventDescription }],
             }];
 
-            const responseStream = await genAI.models.generateContentStream({
+            const responseStream = await ai.models.generateContentStream({
                 model: "gemini-2.5-flash",
                 contents: contents,
                 config: {
@@ -52,11 +57,10 @@ const useGemini = () => {
             return null;
         }
 
-    }, [initialize]);
+    }, [ai]);
 
     const generateTeamDNA = useCallback(async (puckTypes: PuckType[]): Promise<{ title: string, description: string } | null> => {
-        const genAI = initialize();
-        if (!genAI || puckTypes.length === 0) {
+        if (!ai || puckTypes.length === 0) {
             return null;
         }
 
@@ -80,7 +84,7 @@ Analyze the synergy and overall strategy based on the provided puck types. Do no
                 parts: [{ text: prompt }]
             }];
 
-            const response = await genAI.models.generateContent({
+            const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents,
                 config: {
@@ -107,7 +111,7 @@ Analyze the synergy and overall strategy based on the provided puck types. Do no
                 description: "Una selección equilibrada lista para cualquier desafío."
             };
         }
-    }, [initialize]);
+    }, [ai]);
 
 
     return { generateCommentaryStream, generateTeamDNA };

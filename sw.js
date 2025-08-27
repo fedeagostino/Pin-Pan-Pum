@@ -1,5 +1,5 @@
 const CACHE_NAME = 'pin-pan-pum-cache-v1';
-const GITHUB_ASSETS_BASE = 'https://media.githubusercontent.com/media/Kitt-Games/PIN-PAN-PUM-Assets/main/Audio';
+const GITHUB_ASSETS_BASE = 'https://raw.githubusercontent.com/Kitt-Games/PIN-PAN-PUM-Assets/main/Audio';
 
 const soundUrls = [
   `${GITHUB_ASSETS_BASE}/Impact/impact-fx-3.wav`,

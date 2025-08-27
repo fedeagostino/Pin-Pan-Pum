@@ -12,8 +12,8 @@ export type SoundKey =
   | 'HEARTBEAT' | 'ROYAL_POWER_UNLOCKED' | 'ROYAL_SHOT'
   | 'ULTIMATE_POWER_UNLOCKED' | 'ULTIMATE_SHOT';
 
-// Using media.githubusercontent.com for direct file access to Git LFS files.
-const GITHUB_ASSETS_BASE = 'https://media.githubusercontent.com/media/Kitt-Games/PIN-PAN-PUM-Assets/main/Audio';
+// Using raw.githubusercontent.com for direct file access to Git LFS files.
+const GITHUB_ASSETS_BASE = 'https://raw.githubusercontent.com/Kitt-Games/PIN-PAN-PUM-Assets/main/Audio';
 
 export const SOUNDS: Record<SoundKey, { src: string; volume: number }> = {
   // Puck Physics
