@@ -352,25 +352,25 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           <feDropShadow dx="0" dy="5" stdDeviation="3" floodColor="#000000" floodOpacity="0.5" />
         </filter>
         <filter id="puck-glow-blue">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="${TEAM_COLORS.BLUE}" floodOpacity="0.7" />
+            <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="${TEAM_COLORS.BLUE}" floodOpacity="0.7" />
         </filter>
          <filter id="puck-glow-red">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="${TEAM_COLORS.RED}" floodOpacity="0.7" />
+            <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="${TEAM_COLORS.RED}" floodOpacity="0.7" />
         </filter>
         <filter id="puck-glow-blue-active">
-            <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="${TEAM_COLORS.BLUE}" floodOpacity="1" />
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="${TEAM_COLORS.BLUE}" floodOpacity="1" />
         </filter>
          <filter id="puck-glow-red-active">
-            <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="${TEAM_COLORS.RED}" floodOpacity="1" />
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="${TEAM_COLORS.RED}" floodOpacity="1" />
         </filter>
          <filter id="puck-glow-charged">
             <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#fde047" floodOpacity="1" />
         </filter>
         <filter id="puck-glow-royal-ready">
-            <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="${UI_COLORS.GOLD}" floodOpacity="1" />
+            <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="${UI_COLORS.GOLD}" floodOpacity="1" />
         </filter>
         <filter id="puck-glow-ultimate-ready">
-            <feDropShadow dx="0" dy="0" stdDeviation="4" floodOpacity="1">
+            <feDropShadow dx="0" dy="0" stdDeviation="5" floodOpacity="1">
                 <animate attributeName="flood-color" values="#ff00de;#00f6ff;#ff00de" dur="2s" repeatCount="indefinite" />
             </feDropShadow>
         </filter>
@@ -417,7 +417,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
       </defs>
 
       {/* Opaque board background */}
-      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill={UI_COLORS.BG_DARK} />
+      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="var(--color-bg-dark)" />
       {/* Board Background Texture */}
       <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="url(#grid)" opacity="0.5" />
 

@@ -5,7 +5,7 @@ import { STRATEGIC_PLANS, StrategicPlan } from '../formations';
 import PuckShape from './PuckShape';
 import InfoPanel from './InfoPanel';
 import PuckTypeIcon from './PuckTypeIcon';
-import useGemini from '../hooks/useGemini';
+import TeamDNADisplay from './TeamDNADisplay';
 
 interface SetupScreenProps {
     team: Team;
@@ -25,7 +25,6 @@ const PuckInPool: React.FC<{ puckType: PuckType; onClick: (puckType: PuckType) =
         <div className="puck-icon-wrapper">
             <PuckTypeIcon puckType={puckType} />
         </div>
-        <span className="pool-puck-name">{puckType}</span>
     </div>
 );
 
@@ -36,7 +35,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
     const [lastChangedSlot, setLastChangedSlot] = useState<number | null>(null);
 
     const teamColor = TEAM_COLORS[team];
-    const teamColorRGB = team === 'RED' ? '229, 57, 53' : '30, 136, 229';
+    const teamColorRGB = team === 'RED' ? '255, 7, 58' : '0, 246, 255';
     const isReversed = team === 'BLUE' && gameMode === 'pvp';
     
     const nextAvailableSlotIndex = useMemo(() => roster.findIndex(p => p === null), [roster]);
@@ -104,18 +103,18 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 </svg>
             </button>
             <style>{`
-                .setup-screen-container { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--color-background-paper); animation: menu-fade-in 0.5s ease; }
+                .setup-screen-container { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--color-bg-paper); animation: menu-fade-in 0.5s ease; }
                 .setup-screen-container.reversed { flex-direction: column-reverse; }
                 
                 .setup-header { text-align: center; flex-shrink: 0; padding: clamp(0.5rem, 2vh, 1rem) 0; }
-                .setup-title { font-family: var(--font-family-main); font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--team-color); -webkit-text-stroke: 2px var(--color-shadow-main); text-shadow: 2px 2px var(--color-background-paper); }
+                .setup-title { font-family: var(--font-family-main); font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--team-color); -webkit-text-stroke: 2px var(--color-shadow-main); text-shadow: 2px 2px var(--color-bg-dark); }
                 
                 .setup-content { flex-grow: 1; display: grid; grid-template-columns: 2fr 1fr; gap: clamp(0.5rem, 2vh, 1rem); padding: 0 clamp(0.5rem, 2vh, 1rem) clamp(0.5rem, 2vh, 1rem); overflow: hidden; }
                 .setup-screen-container.reversed .setup-content { transform: rotate(180deg); }
 
-                .left-panel { background: var(--color-wood-dark); border-radius: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.4); border: 4px solid var(--color-shadow-main); }
+                .left-panel { background: var(--color-bg-dark); border-radius: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.4); border: 4px solid var(--color-shadow-main); }
                 
-                .formation-display { width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 8px; background-color: var(--color-wood-medium); }
+                .formation-display { width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 8px; background-color: var(--color-bg-medium); background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h80v80H0z' fill='none'/%3E%3Cpath d='M20 20h40v40H20z' fill='none' stroke='%2300f6ff' stroke-width='0.5' opacity='0.05'/%3E%3C/svg%3E") }
                 .formation-slot { position: absolute; transform: translate(-50%, -50%); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
                 .slot-puck { animation: puck-pop-in 0.3s ease-out forwards; width: 100%; height: 100%; cursor: pointer; transition: transform 0.2s ease; }
                 .slot-puck:hover { transform: scale(1.1); }
@@ -135,22 +134,21 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 }
                 
                 .right-panel { display: flex; flex-direction: column; gap: 1rem; overflow: hidden; }
-                .formations-wrapper, .puck-pool-wrapper { background: var(--color-wood-light); border-radius: 12px; padding: clamp(0.25rem, 1vh, 0.5rem); }
+                .formations-wrapper, .puck-pool-wrapper { background: var(--color-bg-light); border-radius: 12px; padding: clamp(0.25rem, 1vh, 0.5rem); }
                 
                 .selection-title { font-family: var(--font-family-main); font-size: clamp(0.8rem, 2.5vw, 1rem); color: var(--color-text-dark); margin-bottom: 0.25rem; text-align: center; }
                 .formation-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.25rem; }
-                .formation-button { display: flex; flex-direction: column; align-items: center; gap: 1px; width: clamp(45px, 6vw, 55px); background: var(--color-background-paper); border: 3px solid var(--color-wood-dark); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; padding: 2px; color: var(--color-wood-dark); }
+                .formation-button { display: flex; flex-direction: column; align-items: center; gap: 1px; width: clamp(45px, 6vw, 55px); background: var(--color-bg-paper); border: 3px solid var(--color-bg-dark); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; padding: 2px; color: var(--color-text-light); }
                 .formation-button.selected { border-color: var(--team-color); background: #fffde7; box-shadow: 0 0 10px var(--team-color); }
                 .formation-button svg { width: 100%; height: 25px; }
                 .formation-name { font-size: 0.55rem; font-weight: 600; }
 
                 .puck-pool-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-                .puck-pool { flex-grow: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.5rem; overflow-y: auto; padding-right: 5px; }
+                .puck-pool { flex-grow: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem; overflow-y: auto; padding: 0.5rem; }
                 
-                .pool-puck { cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding-top: 8px; }
-                .puck-icon-wrapper { width: 80px; height: 80px; transition: all 0.2s ease-out; }
-                .pool-puck:hover:not(.disabled) .puck-icon-wrapper { transform: scale(1.15); }
-                .pool-puck-name { font-size: 1rem; font-weight: 700; color: var(--color-text-dark); text-transform: capitalize; }
+                .pool-puck { cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+                .puck-icon-wrapper { width: 64px; height: 64px; transition: all 0.2s ease-out; }
+                .pool-puck:hover:not(.disabled) .puck-icon-wrapper { transform: scale(1.15); filter: drop-shadow(0 0 8px #fff); }
                 .pool-puck.disabled { opacity: 0.3; cursor: not-allowed; }
                 
                 .setup-footer { flex-shrink: 0; display: flex; padding: clamp(0.5rem, 2vh, 1rem); }
@@ -159,7 +157,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 .action-button:not(:disabled):hover { transform: translateY(-4px); box-shadow: 0 12px 0 0 var(--color-shadow-main); }
                 .action-button.confirm { background: var(--color-accent-green); }
                 .action-button.clear { background: var(--color-primary-red); font-size: 0.9rem; flex-grow: 0; padding: 0.7rem 0.9rem; }
-                .action-button:disabled { background: var(--color-wood-light); color: var(--color-text-dark); opacity: 0.6; cursor: not-allowed; box-shadow: 0 6px 0 0 #00000022; }
+                .action-button:disabled { background: var(--color-bg-light); color: var(--color-text-dark); opacity: 0.6; cursor: not-allowed; box-shadow: 0 6px 0 0 #00000022; }
 
                 .setup-help-button {
                     position: absolute;
@@ -168,7 +166,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                     z-index: 10;
                     width: 44px;
                     height: 44px;
-                    background: var(--color-wood-dark);
+                    background: var(--color-bg-dark);
                     border: 3px solid var(--color-shadow-main);
                     border-radius: 50%;
                     display: flex;
@@ -255,7 +253,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                         </div>
                     </div>
                      <div className="puck-pool-wrapper">
-                        <h4 className="selection-title">Fichas Disponibles</h4>
+                        <h4 className="selection-title">Fichas Disponibles ({7 - selectedPuckCount} restantes)</h4>
                         <div className="puck-pool">
                             {SELECTABLE_PUCKS.map(puckType => (
                                 <PuckInPool
@@ -268,6 +266,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                                 />
                             ))}
                         </div>
+                        <TeamDNADisplay puckTypes={roster.filter((p): p is PuckType => p !== null)} />
                     </div>
                 </div>
             </main>
@@ -276,7 +275,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 <div className="footer-buttons">
                     <button className="action-button clear" onClick={handleClearRoster}>Limpiar</button>
                     <button className="action-button confirm" disabled={!isSetupComplete} onClick={handleSubmit}>
-                        {isSetupComplete ? '¡CONFIRMAR EQUIPO!' : `Selecciona ${7 - selectedPuckCount} fichas`}
+                        {isSetupComplete ? '¡CONFIRMAR EQUIPO!' : `Selecciona ${7 - selectedPuckCount} más`}
                     </button>
                 </div>
             </footer>

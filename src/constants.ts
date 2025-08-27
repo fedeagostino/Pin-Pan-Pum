@@ -47,17 +47,17 @@ export const PREVIEW_SHOT_POWER = 4;
 export const PREVIEW_SIMULATION_FRAMES = 45;
 
 export const TEAM_COLORS: Record<Team, string> = {
-  BLUE: '#1E88E5',
-  RED: '#E53935',
+  BLUE: '#00f6ff',
+  RED: '#ff073a',
 };
 
 export const UI_COLORS = {
-  BACKGROUND_PAPER: '#010409',
+  BG_PAPER: '#010409',
   BG_DARK: '#0d1117',
   BG_MEDIUM: '#161b22',
   BG_LIGHT: '#21262d',
   TEXT_DARK: '#f0f6fc',
-  TEXT_LIGHT: '#0d1117',
+  TEXT_LIGHT: '#c9d1d9',
   ACCENT_GREEN: '#39d353',
   ACCENT_YELLOW: '#f1e05a',
   ACCENT_PURPLE: '#c879ff',

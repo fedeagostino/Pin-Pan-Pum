@@ -13,24 +13,23 @@
     --font-family-main: 'Luckiest Guy', cursive;
     --font-family-body: 'Exo 2', sans-serif;
     
-    /* Retro-Futuristic Neon Palette */
-    --color-primary-red: #E53935;
-    --color-primary-blue: #1E88E5;
+    /* Vibrant Neon Palette */
+    --color-primary-red: #ff073a;
+    --color-primary-blue: #00f6ff;
     
-    --color-red-neon: '#ff073a';
-    --color-blue-neon: '#00f6ff';
-
     --color-accent-yellow: #f1e05a;
     --color-accent-green: #39d353;
     --color-accent-purple: #c879ff;
+    --color-accent-cyan: #22d3ee;
 
-    /* These variables keep their names but are mapped to the new dark theme for compatibility */
-    --color-background-paper: #010409;
-    --color-wood-dark: #0d1117;
-    --color-wood-medium: #161b22;
-    --color-wood-light: #21262d;
+    /* Thematic Dark Background Colors */
+    --color-bg-dark: #0d1117;
+    --color-bg-medium: #161b22;
+    --color-bg-light: #21262d;
+    --color-bg-paper: #010409;
+
     --color-text-dark: #f0f6fc;
-    --color-text-light: #0d1117;
+    --color-text-light: #c9d1d9;
 
     --color-shadow-main: #000000;
     --color-shadow-main-rgb: 0, 0, 0;
@@ -54,7 +53,10 @@
   }
 
   body {
-    background-color: var(--color-background-paper);
+    background-color: var(--color-bg-paper);
+    background-image: 
+        radial-gradient(circle at 25% 25%, rgba(0, 246, 255, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 75% 75%, rgba(255, 7, 58, 0.1) 0%, transparent 40%);
     color: var(--color-text-dark);
     font-family: var(--font-family-body);
     margin: 0;
@@ -62,7 +64,6 @@
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
   }
   
   * {
@@ -82,8 +83,8 @@
     position: fixed;
     inset: 0;
     background: rgba(var(--color-shadow-main-rgb), 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;

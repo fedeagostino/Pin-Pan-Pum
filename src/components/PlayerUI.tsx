@@ -80,7 +80,7 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                 .player-ui-container.reversed .ui-content-wrapper { flex-direction: row-reverse; }
                 
                 .score-pod {
-                    background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main);
+                    background: var(--color-bg-dark); border: 3px solid var(--color-shadow-main);
                     box-shadow: 0 4px 0 0 var(--color-shadow-main);
                     border-radius: 12px 0 0 12px;
                     display: flex; align-items: center; justify-content: center;
@@ -104,7 +104,7 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                 .player-ui-container.reversed .center-hub { flex-direction: row-reverse; }
 
                 .special-shot-pod {
-                    background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main);
+                    background: var(--color-bg-dark); border: 3px solid var(--color-shadow-main);
                     box-shadow: 0 4px 0 0 var(--color-shadow-main);
                     padding: 0 1rem; display: flex; align-items: center;
                     border-radius: 8px; transition: all 0.3s ease;
@@ -114,8 +114,8 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                 .special-shot-pod.ultimate { animation: special-ready-pulse 2s infinite ease-in-out, ultimate-color-cycle 3s linear infinite; }
                 .special-shot-pod.royal .crown-icon, .special-shot-pod.ultimate .crown-icon { color: var(--glow-color); filter: drop-shadow(0 0 5px var(--glow-color)); }
                 
-                .pulsar-pod { display: flex; align-items: stretch; background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main); box-shadow: 0 4px 0 0 var(--color-shadow-main); border-radius: 8px; flex-grow: 1; padding: 4px; gap: 4px; }
-                .pulsar-bar-background { flex-grow: 1; height: 100%; background: var(--color-wood-medium); border-radius: 5px; position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); }
+                .pulsar-pod { display: flex; align-items: stretch; background: var(--color-bg-dark); border: 3px solid var(--color-shadow-main); box-shadow: 0 4px 0 0 var(--color-shadow-main); border-radius: 8px; flex-grow: 1; padding: 4px; gap: 4px; }
+                .pulsar-bar-background { flex-grow: 1; height: 100%; background: var(--color-bg-medium); border-radius: 5px; position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); }
                 .pulsar-bar-background.full .pulsar-bar-fill { animation: pulsar-full-glow 1.5s infinite ease-in-out; }
                 .pulsar-bar-fill { height: 100%; background-color: var(--team-color); border-radius: 5px; transition: width 0.3s ease; }
                 .pulsar-bar-text { position: absolute; inset: 0; text-align: center; font-size: 1rem; font-weight: 400; font-family: var(--font-family-main); color: white; text-shadow: 1px 1px 2px black; line-height: 2.2; z-index: 2; }
@@ -125,16 +125,16 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                     display: flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0 1rem; 
                     font-size: 1rem; border-radius: 5px; cursor: pointer; color: white;
                     border: 2px solid var(--color-shadow-main);
-                    background: var(--color-wood-light); color: var(--color-text-dark);
+                    background: var(--color-bg-light); color: var(--color-text-dark);
                     transition: all 0.2s ease-out; opacity: 0.6;
                 }
                 .pulsar-activate-button:disabled:not(.armed) { cursor: not-allowed; }
                 .pulsar-activate-button:not(:disabled) { opacity: 1; background: var(--color-accent-green); color: white; }
                 .pulsar-activate-button:not(:disabled):hover { transform: scale(1.05); }
-                .pulsar-activate-button.armed { opacity: 1; background: var(--color-team-color); }
+                .pulsar-activate-button.armed { opacity: 1; background: var(--team-color); }
 
                 .help-button-pod {
-                     background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main);
+                     background: var(--color-bg-dark); border: 3px solid var(--color-shadow-main);
                     box-shadow: 0 4px 0 0 var(--color-shadow-main);
                     border-radius: 0 12px 12px 0;
                     display: flex; align-items: center; justify-content: center;
@@ -142,7 +142,7 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                 }
                 .player-ui-container.reversed .help-button-pod { border-radius: 12px 0 0 12px; }
                 .help-button { 
-                    background: var(--color-wood-light); border: 2px solid var(--color-shadow-main); 
+                    background: var(--color-bg-light); border: 2px solid var(--color-shadow-main); 
                     color: var(--color-text-dark); width: 36px; height: 36px; 
                     border-radius: 50%; cursor: pointer; display: flex; 
                     align-items: center; justify-content: center; 

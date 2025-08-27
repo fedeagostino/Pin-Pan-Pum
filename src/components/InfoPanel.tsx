@@ -48,9 +48,9 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
             .puck-info-card {
                 position: relative;
                 width: 320px;
-                background-color: var(--color-wood-dark);
+                background-color: var(--color-bg-dark);
                 background-image: url("data:image/svg+xml,%3csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cfilter id='n'%3e%3cfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3e%3c/filter%3e%3c/defs%3e%3crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3e%3c/svg%3e");
-                border: 3px solid var(--color-wood-light);
+                border: 3px solid var(--color-bg-light);
                 border-radius: 8px;
                 z-index: 20;
                 pointer-events: none;
@@ -71,7 +71,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
             .card-pointer {
                 position: absolute; bottom: -12px; left: calc(50% + var(--pointer-offset));
                 transform: translateX(-50%); width: 20px; height: 12px;
-                background-color: var(--color-wood-light);
+                background-color: var(--color-bg-light);
                 clip-path: polygon(0 0, 100% 0, 50% 100%);
             }
             .puck-info-card.ultimate-border .card-pointer {
@@ -88,7 +88,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
             .puck-name { font-family: var(--font-family-main); font-size: 2rem; color: var(--color-text-dark); line-height: 1.1; }
             .puck-description { font-size: 0.9rem; color: #c9d1d9; line-height: 1.5; border-left: 3px solid var(--team-color); padding-left: 0.75rem; opacity: 0.9; }
             .puck-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-            .stat-item { background: var(--color-background-paper); padding: 0.5rem; border-radius: 6px; font-size: 0.9rem; border: 1px solid var(--color-wood-medium); }
+            .stat-item { background: var(--color-bg-paper); padding: 0.5rem; border-radius: 6px; font-size: 0.9rem; border: 1px solid var(--color-bg-medium); }
             .stat-item .label { color: #8b949e; font-size: 0.75rem; display: block; margin-bottom: 0.125rem; }
             .stat-item .value { color: var(--color-text-dark); font-weight: 700; }
             .status-badge { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); padding: 0.3rem 1rem; font-size: 0.8rem; font-weight: 800; border-radius: 20px; text-transform: uppercase; animation: badge-pop-in 0.3s 0.2s ease-out backwards; white-space: nowrap; border: 3px solid var(--color-shadow-main); box-shadow: 0 4px 0 var(--color-shadow-main); }
@@ -111,7 +111,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
                 <p className="puck-description">{info.description}</p>
                 <div className="puck-stats">
                     <div className="stat-item"><span className="label">Puntos de Gol</span><span className="value">{PUCK_GOAL_POINTS[puck.puckType]}</span></div>
-                    <div className="stat-item"><span className="label">Peso (Masa)</span><span className="value">{props.mass}</span></div>
+                    <div className="stat-item"><span className="label">Masa</span><span className="value">{props.mass}</span></div>
                     <div className="stat-item"><span className="label">Líneas para Cargar</span><span className="value">{props.linesToCrossForBonus}</span></div>
                     {puck.puckType === 'PAWN' && puck.durability !== undefined && (
                         <div className="stat-item"><span className="label">Durabilidad</span><span className="value">{puck.durability} / {PAWN_DURABILITY}</span></div>
