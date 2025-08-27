@@ -305,19 +305,19 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 }
                 .floating-text {
                     animation: rise-and-fade 1.5s ease-out forwards;
+                    font-family: var(--font-family-main);
                     font-size: 1.5rem;
-                    font-weight: 800;
                     paint-order: stroke;
-                    stroke: rgba(255, 255, 255, 0.2);
+                    stroke: #00000099;
                     stroke-width: 4px;
                     stroke-linecap: round;
                     stroke-linejoin: round;
                 }
                  .preview-text {
+                    font-family: var(--font-family-main);
                     font-size: 1.25rem;
-                    font-weight: 700;
                     paint-order: stroke;
-                    stroke: rgba(255, 255, 255, 0.2);
+                    stroke: #00000099;
                     stroke-width: 3px;
                     stroke-linecap: round;
                     stroke-linejoin: round;

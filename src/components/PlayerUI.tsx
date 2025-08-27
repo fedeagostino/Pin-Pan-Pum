@@ -35,6 +35,7 @@ const PulsarBar: React.FC<{ power: number; team: Team; onActivate: () => void; i
                 className={`pulsar-activate-button ${isArmed ? 'armed' : ''}`} 
                 onClick={onActivate} 
                 disabled={!isClickable}
+                aria-label={isArmed ? 'Pulsar Armado' : 'Activar Pulsar'}
             >
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 <span>{isArmed ? 'ARMADO' : 'PULSAR'}</span>
