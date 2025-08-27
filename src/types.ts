@@ -8,11 +8,11 @@ export type Team = 'RED' | 'BLUE';
 
 export type PuckType = 'STANDARD' | 'HEAVY' | 'FAST' | 'GHOST' | 'ANCHOR' | 'KING' | 'SWERVE' | 'BOUNCER' | 'DAMPENER' | 'PAWN' | 'GUARD' | 'INFILTRATOR' | 'WIZARD' | 'BASTION' | 'REAPER' | 'PHANTOM' | 'MENDER' | 'DISRUPTOR' | 'JUGGERNAUT' | 'SEER' | 'PULVERIZER' | 'ORBITER' | 'TRAPPER';
 
-export type SynergyType = 'POWER' | 'SPEED' | 'CONTROL' | 'GRAVITY_WELL' | 'TELEPORT_STRIKE' | 'REPULSOR_ARMOR';
+export type SynergyType = 'POWER' | 'SPEED' | 'CONTROL' | 'GRAVITY_WELL' | 'TELEPORT_STRIKE' | 'REPULSOR_ARMOR' | 'DEMOLITION_CHARGE' | 'BLACK_HOLE' | 'PHANTOM_ASSAULT' | 'PURGE_PULSE';
 
 export type SpecialShotStatus = 'NONE' | 'ROYAL' | 'ULTIMATE';
 
-export type TemporaryEffectType = 'PHASED' | 'EMP_BURST' | 'ROYAL_RAGE' | 'ULTIMATE_RAGE' | 'REPULSOR_ARMOR' | 'NEUTRALIZED';
+export type TemporaryEffectType = 'PHASED' | 'EMP_BURST' | 'ROYAL_RAGE' | 'ULTIMATE_RAGE' | 'REPULSOR_ARMOR' | 'NEUTRALIZED' | 'BLACK_HOLE_EFFECT';
 
 export type TemporaryEffect = {
   type: TemporaryEffectType;
@@ -25,6 +25,7 @@ export type TemporaryEffect = {
       swerveFactor?: number;
       puckType: PuckType;
   };
+  position?: Vector; // For area effects like Black Hole
 };
 
 export type Puck = {
@@ -162,6 +163,7 @@ export type GameState = {
   turnCount: number;
   orbCollection: { RED: number; BLUE: number; };
   overchargedTeam: Team | null;
+  temporaryEffects: TemporaryEffect[]; // For board-wide effects like black holes
 };
 
 // NEW: Types for team setup

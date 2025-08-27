@@ -184,24 +184,40 @@ export const SHOCKWAVE_COLORS: Record<number, string> = {
 
 // Synergy System
 export const SYNERGY_HOLD_DURATION = 1200; // 1.2 seconds
-export const SYNERGY_GHOST_PHASE_DURATION = 120; // 2 seconds at 60fps
+export const SYNERGY_GHOST_PHASE_DURATION = 140; // 2.3 seconds at 60fps
 export const GRAVITY_WELL_RADIUS = 200;
-export const GRAVITY_WELL_FORCE = 1.0;
+export const GRAVITY_WELL_FORCE = 1.2;
 export const TELEPORT_STRIKE_DISTANCE = 80;
 export const REPULSOR_ARMOR_RADIUS = 150;
 export const REPULSOR_ARMOR_FORCE = 0.6;
 export const REPULSOR_ARMOR_DURATION = 300; // 5 seconds at 60fps
+// New Synergy Constants
+export const DEMOLITION_CHARGE_RADIUS = 180;
+export const DEMOLITION_CHARGE_FORCE = 1.5;
+export const BLACK_HOLE_RADIUS = 220;
+export const BLACK_HOLE_FORCE = 1.8;
+export const BLACK_HOLE_DAMPENING = 0.95;
+export const BLACK_HOLE_DURATION = 360; // 6 seconds
+export const PHANTOM_ASSAULT_PHASE_DURATION = 90; // 1.5 seconds
+export const PHANTOM_ASSAULT_BOOST_FACTOR = 1.3; // 30% speed boost
+export const PURGE_PULSE_RADIUS = 160;
+
 
 export const SYNERGY_COMBOS: Record<string, SynergyType> = {
     'HEAVY-ANCHOR': 'POWER',
+    'GUARD-ANCHOR': 'POWER',
     'FAST-SWERVE': 'SPEED',
+    'INFILTRATOR-SWERVE': 'SPEED',
     'BOUNCER-DAMPENER': 'CONTROL',
     'HEAVY-DAMPENER': 'GRAVITY_WELL',
     'FAST-GHOST': 'TELEPORT_STRIKE',
-    'ANCHOR-BOUNCER': 'REPULSOR_ARMOR',
-    'GUARD-ANCHOR': 'POWER',
     'WIZARD-GHOST': 'TELEPORT_STRIKE',
-    'INFILTRATOR-SWERVE': 'SPEED',
+    'ANCHOR-BOUNCER': 'REPULSOR_ARMOR',
+    // New Synergies
+    'JUGGERNAUT-PULVERIZER': 'DEMOLITION_CHARGE',
+    'ORBITER-TRAPPER': 'BLACK_HOLE',
+    'PHANTOM-REAPER': 'PHANTOM_ASSAULT',
+    'DISRUPTOR-SEER': 'PURGE_PULSE',
 };
 
 export type PuckTypeProperties = {
@@ -213,58 +229,32 @@ export type PuckTypeProperties = {
     powerFactor?: number; // How much to multiply shot power by
 };
 
-export const SYNERGY_EFFECTS: Record<SynergyType, { color: string; ability?: 'EMP_ON_COLLISION' | 'GHOST_ON_LAUNCH' | 'GRAVITY_ON_COLLISION' | 'TELEPORT_ON_COLLISION' | 'REPULSOR_AURA'; statModifiers?: Partial<PuckTypeProperties> }> = {
-    POWER: {
-        color: '#f97316', // orange-500
-        ability: 'EMP_ON_COLLISION',
-    },
-    SPEED: {
-        color: '#ec4899', // pink-500
-        ability: 'GHOST_ON_LAUNCH',
-    },
-    CONTROL: {
-        color: '#a855f7', // purple-500
-        statModifiers: { elasticity: 1.0 },
-    },
-    GRAVITY_WELL: {
-        color: '#6366f1', // indigo-500
-        ability: 'GRAVITY_ON_COLLISION',
-    },
-    TELEPORT_STRIKE: {
-        color: '#22d3ee', // cyan-400
-        ability: 'TELEPORT_ON_COLLISION',
-    },
-    REPULSOR_ARMOR: {
-        color: '#fbbf24', // amber-400
-        ability: 'REPULSOR_AURA',
-    }
+export const SYNERGY_EFFECTS: Record<SynergyType, { color: string; ability?: 'EMP_ON_COLLISION' | 'GHOST_ON_LAUNCH' | 'GRAVITY_ON_COLLISION' | 'TELEPORT_ON_COLLISION' | 'REPULSOR_AURA' | 'DEMOLITION_ON_COLLISION' | 'BLACK_HOLE_ON_COLLISION' | 'PHASE_ON_LAUNCH_SPEED_ON_COLLISION' | 'PURGE_ON_COLLISION'; statModifiers?: Partial<PuckTypeProperties> }> = {
+    POWER: { color: '#f97316', ability: 'EMP_ON_COLLISION' },
+    SPEED: { color: '#ec4899', ability: 'GHOST_ON_LAUNCH' },
+    CONTROL: { color: '#a855f7', statModifiers: { elasticity: 1.0 } },
+    GRAVITY_WELL: { color: '#6366f1', ability: 'GRAVITY_ON_COLLISION' },
+    TELEPORT_STRIKE: { color: '#22d3ee', ability: 'TELEPORT_ON_COLLISION' },
+    REPULSOR_ARMOR: { color: '#fbbf24', ability: 'REPULSOR_AURA' },
+    // New Synergies
+    DEMOLITION_CHARGE: { color: '#ef4444', ability: 'DEMOLITION_ON_COLLISION' }, // red-500
+    BLACK_HOLE: { color: '#4f46e5', ability: 'BLACK_HOLE_ON_COLLISION' }, // indigo-600
+    PHANTOM_ASSAULT: { color: '#d946ef', ability: 'PHASE_ON_LAUNCH_SPEED_ON_COLLISION' }, // fuchsia-500
+    PURGE_PULSE: { color: '#14b8a6', ability: 'PURGE_ON_COLLISION' }, // teal-500
 };
 
 export const SYNERGY_DESCRIPTIONS: Record<SynergyType, { name: string, description: string }> = {
-    POWER: {
-        name: 'Sinergia de Potencia',
-        description: 'Al activarse, la ficha disparada emite una onda de choque EMP en cada colisión, empujando a los oponentes.',
-    },
-    SPEED: {
-        name: 'Sinergia de Velocidad',
-        description: 'La ficha se vuelve intangible durante los primeros segundos del disparo, permitiendo atravesar defensas.',
-    },
-    CONTROL: {
-        name: 'Sinergia de Control',
-        description: 'Otorga rebotes perfectos contra las paredes, sin perder energía en el impacto.',
-    },
-    GRAVITY_WELL: {
-        name: 'Sinergia de Gravedad (Pozo de Gravedad)',
-        description: 'Al colisionar, crea un pozo de gravedad que atrae a las fichas enemigas cercanas.',
-    },
-    TELEPORT_STRIKE: {
-        name: 'Sinergia de Teletransporte (Golpe Espectral)',
-        description: 'Tras la primera colisión, se teletransporta instantáneamente detrás del objetivo.',
-    },
-    REPULSOR_ARMOR: {
-        name: 'Sinergia de Repulsión (Armadura Repulsora)',
-        description: 'Emite un campo de fuerza continuo que repele a las fichas enemigas cercanas.',
-    }
+    POWER: { name: 'Sinergia de Potencia', description: 'Al colisionar por primera vez, la ficha emite una potente onda de choque EMP que empuja a los oponentes.' },
+    SPEED: { name: 'Sinergia de Velocidad', description: 'La ficha se vuelve intangible durante los primeros segundos del disparo, permitiendo atravesar defensas.' },
+    CONTROL: { name: 'Sinergia de Control', description: 'Otorga rebotes perfectos contra las paredes, sin perder energía en el impacto.' },
+    GRAVITY_WELL: { name: 'Sinergia de Gravedad', description: 'Al colisionar, crea un pozo de gravedad que atrae a las fichas enemigas cercanas.' },
+    TELEPORT_STRIKE: { name: 'Golpe Espectral', description: 'Tras la primera colisión, se teletransporta instantáneamente detrás del objetivo.' },
+    REPULSOR_ARMOR: { name: 'Armadura Repulsora', description: 'Emite un campo de fuerza continuo que repele a las fichas enemigas cercanas.' },
+    // New Synergies
+    DEMOLITION_CHARGE: { name: 'Carga de Demolición', description: 'En la primera colisión, desata una explosión masiva que repele con gran fuerza a todos los enemigos en un área amplia.' },
+    BLACK_HOLE: { name: 'Agujero Negro', description: 'Al impactar, crea un vórtice persistente que atrae y ralentiza drásticamente a los enemigos cercanos durante unos segundos.' },
+    PHANTOM_ASSAULT: { name: 'Asalto Espectral', description: 'La ficha se vuelve intangible al ser lanzada y, tras su primera colisión, recibe un gran impulso de velocidad.' },
+    PURGE_PULSE: { name: 'Pulso de Purga', description: 'En cada colisión, emite un pulso que elimina TODOS los efectos (sinergias, intangibilidad, etc.) de los enemigos cercanos.' },
 };
 
 // REBALANCED Puck Properties: King is more powerful, heavy pucks are more mobile, fast pucks are slightly slower.
