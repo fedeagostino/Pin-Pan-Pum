@@ -101,7 +101,7 @@ export type ImaginaryLineState = {
   crossedLineIndices: Set<number>;
   pawnPawnLinesCrossed: Set<number>;
   pawnSpecialLinesCrossed: Set<number>;
-  shotPuckId: number;
+  shotPuckId?: number;
   comboCount: number;
   highlightedLineIndex: number | null;
 } | null;
