@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerUI from './components/PlayerUI';
@@ -363,7 +364,7 @@ function App() {
             .winner-info-panel {
                 width: 90%;
                 max-width: 420px;
-                background-color: var(--color-background-paper);
+                background-color: var(--color-bg-paper);
                 border: 6px solid var(--color-shadow-main);
                 border-radius: 16px;
                 padding: 2rem;
@@ -386,7 +387,6 @@ function App() {
                 color: var(--color-text-dark);
                 line-height: 1;
                 margin: 0;
-                text-shadow: 3px 3px 0 var(--color-wood-light);
             }
             .winner-team {
                 font-family: var(--font-family-main);
@@ -397,7 +397,7 @@ function App() {
                 text-shadow: 0 0 15px var(--team-glow);
             }
             .final-score-box {
-                background-color: var(--color-wood-dark);
+                background-color: var(--color-bg-dark);
                 padding: 1rem;
                 border-radius: 8px;
                 font-size: clamp(2.5rem, 8vw, 3.5rem);

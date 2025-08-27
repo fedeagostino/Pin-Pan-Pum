@@ -14,6 +14,12 @@ export const CANCEL_SHOT_THRESHOLD = PUCK_RADIUS * 1.5;
 export const SCORE_TO_WIN = 3;
 export const PAWN_DURABILITY = 5;
 
+// Physics constants
+export const MIN_VELOCITY_TO_STOP = 0.1;
+export const MAX_VELOCITY_FOR_TURN_END = 0.4; // If fastest puck is slower than this, end turn.
+export const LAUNCH_POWER_MULTIPLIER = 12; // Power of the shot impulse
+export const MAX_VELOCITY = 40; // Prevents physics tunneling
+
 // New Goal Point System
 export const PUCK_GOAL_POINTS: Record<PuckType, number> = {
     KING: 3,
@@ -52,23 +58,17 @@ export const TEAM_COLORS: Record<Team, string> = {
 };
 
 export const UI_COLORS = {
-  BG_PAPER: '#010409',
+  BACKGROUND_PAPER: '#010409',
   BG_DARK: '#0d1117',
   BG_MEDIUM: '#161b22',
   BG_LIGHT: '#21262d',
   TEXT_DARK: '#f0f6fc',
-  TEXT_LIGHT: '#c9d1d9',
+  TEXT_LIGHT: '#0d1117',
   ACCENT_GREEN: '#39d353',
   ACCENT_YELLOW: '#f1e05a',
   ACCENT_PURPLE: '#c879ff',
   GOLD: '#f1e05a',
 };
-
-// Physics constants
-export const MIN_VELOCITY_TO_STOP = 0.1;
-export const MAX_VELOCITY_FOR_TURN_END = 0.4; // If fastest puck is slower than this, end turn.
-export const LAUNCH_POWER_MULTIPLIER = 12; // Power of the shot impulse
-export const MAX_VELOCITY = 30; // Prevents tunneling bug
 
 // Pulsar Power constants
 export const PULSAR_POWER_PER_LINE = 25;

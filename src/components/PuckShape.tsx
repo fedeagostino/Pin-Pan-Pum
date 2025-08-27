@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Puck } from '../types';
 import { TEAM_COLORS, UI_COLORS, PUCK_SVG_DATA, PUCK_TYPE_PROPERTIES } from '../constants';
@@ -70,16 +71,15 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
         </g>
     );
 }, (prevProps, nextProps) => {
-    // Custom comparison function for React.memo.
-    // Only re-render if essential visual properties change.
-    // Position and rotation are handled by transforms on the parent SVG group.
     const p1 = prevProps.puck;
     const p2 = nextProps.puck;
     return p1.id === p2.id &&
            p1.puckType === p2.puckType &&
            p1.team === p2.team &&
            p1.mass === p2.mass &&
-           p1.radius === p2.radius;
+           p1.radius === p2.radius &&
+           p1.isCharged === p2.isCharged &&
+           p1.activeSynergy?.type === p2.activeSynergy?.type;
 }));
 
 export default PuckShape;
