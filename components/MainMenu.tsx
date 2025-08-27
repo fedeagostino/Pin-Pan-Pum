@@ -51,7 +51,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                     font-family: 'Luckiest Guy', cursive;
                     padding: 1rem 2rem;
                     background: var(--color-accent-yellow);
-                    color: var(--color-text-dark);
+                    color: var(--color-bg-dark);
                     font-size: 1.5rem;
                     border: 4px solid var(--color-shadow-main);
                     border-radius: 12px;
@@ -59,6 +59,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                     text-transform: uppercase;
                     transition: all 0.1s ease-out;
                     box-shadow: 0 8px 0 0 var(--color-shadow-main);
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
                 }
 
                 .menu-button:not(:disabled):hover {
@@ -73,16 +74,16 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                 
                 .menu-button:disabled {
                     cursor: not-allowed;
-                    background: var(--color-wood-light);
-                    color: var(--color-wood-medium);
+                    background: var(--color-bg-light);
+                    color: var(--color-bg-medium);
                     opacity: 0.7;
                     box-shadow: 0 6px 0 0 #00000022;
                 }
-                .menu-button:disabled .coming-soon {
+                .menu-button .coming-soon {
                     font-family: var(--font-family-body);
                     font-size: 0.7rem;
                     font-weight: 600;
-                    color: var(--color-wood-medium);
+                    color: var(--color-bg-medium);
                     margin-left: 0.5rem;
                     display: inline-block;
                 }
@@ -93,16 +94,17 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                 </h1>
             </div>
             <nav className="menu-options">
-                <button className="menu-button" onClick={onPlay}>Jugar vs Jugador</button>
+                <button className="menu-button" onClick={onPlay}>Jugador vs Jugador</button>
                 <button className="menu-button" onClick={onPlayAI}>
-                    Jugar vs IA
+                    Jugador vs IA
                 </button>
                 <button className="menu-button" disabled>
-                    Torneo
+                    Jugar Online
                     <span className="coming-soon">(Próximamente)</span>
                 </button>
                 <button className="menu-button" disabled>
-                    Opciones
+                    3 Jugadores
+                    <span className="coming-soon">(Próximamente)</span>
                 </button>
             </nav>
         </div>

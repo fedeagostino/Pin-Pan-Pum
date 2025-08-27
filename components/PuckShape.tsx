@@ -32,9 +32,10 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
     const teamColor = TEAM_COLORS[team];
     const fillColor = getFillColorForPuck(puck);
     const svgData = PUCK_SVG_DATA[puckType];
+    const uniqueId = `grad-${puck.id}-${puck.team}`;
 
     const pathProps = {
-        fill: fillColor,
+        fill: `url(#${uniqueId})`,
         stroke: "rgba(0,0,0,0.6)",
         strokeWidth: 2,
         vectorEffect: "non-scaling-stroke",
@@ -59,20 +60,25 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
 
     return (
         <g>
+           <defs>
+                <radialGradient id={uniqueId} cx="0.3" cy="0.3" r="0.7">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+                    <stop offset="100%" stopColor={fillColor} />
+                </radialGradient>
+            </defs>
            <ShapeContent />
         </g>
     );
 }, (prevProps, nextProps) => {
-    // Custom comparison function for React.memo.
-    // Only re-render if essential visual properties change.
-    // Position and rotation are handled by transforms on the parent SVG group.
     const p1 = prevProps.puck;
     const p2 = nextProps.puck;
     return p1.id === p2.id &&
            p1.puckType === p2.puckType &&
            p1.team === p2.team &&
            p1.mass === p2.mass &&
-           p1.radius === p2.radius;
+           p1.radius === p2.radius &&
+           p1.isCharged === p2.isCharged &&
+           p1.activeSynergy?.type === p2.activeSynergy?.type;
 }));
 
 export default PuckShape;

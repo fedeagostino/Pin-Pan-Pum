@@ -13,6 +13,7 @@ const REASON_TEXT: Record<TurnLossReason, { title: string; subtitle: string }> =
   UNCHARGED_GOAL: { title: 'TURNO PERDIDO', subtitle: 'FICHA NO CARGADA' },
   PHASED_GOAL: { title: 'TURNO PERDIDO', subtitle: 'GOL INTANGIBLE' },
   SPECIAL_NO_GOAL: { title: 'TURNO PERDIDO', subtitle: 'TIRO ESPECIAL SIN GOL' },
+  NO_PUCKS_LEFT: { title: 'TURNO PERDIDO', subtitle: 'SIN FICHAS RESTANTES' },
 };
 
 const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, reason }) => {

@@ -46,8 +46,8 @@ export const PREVIEW_SHOT_POWER = 4;
 export const PREVIEW_SIMULATION_FRAMES = 45;
 
 export const TEAM_COLORS: Record<Team, string> = {
-  BLUE: '#1E88E5',
-  RED: '#E53935',
+  BLUE: '#00f6ff',
+  RED: '#ff073a',
 };
 
 export const UI_COLORS = {
