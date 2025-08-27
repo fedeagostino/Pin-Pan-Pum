@@ -118,7 +118,7 @@ export type PreviewState = {
   linesToCrossForBonus: number;
 } | null;
 
-export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL';
+export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_PUCKS_LEFT';
 
 export type GameState = {
   pucks: Puck[];

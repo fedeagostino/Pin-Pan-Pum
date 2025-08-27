@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Puck, Team, Vector, GameState, ImaginaryLineState, PuckType, Particle, ImaginaryLine, SynergyType, TemporaryEffect, PreviewState, PuckTrajectory, SpecialShotStatus, TurnLossReason, TeamConfig } from '../types';
 import {
@@ -70,6 +71,7 @@ import {
   PULVERIZER_BURST_FORCE,
   PHANTOM_TELEPORT_TRIGGER_DISTANCE,
   PHANTOM_TELEPORT_DISTANCE,
+  MAX_VELOCITY,
 } from '../constants';
 import { STRATEGIC_PLANS } from '../formations';
 
@@ -858,42 +860,62 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
              puck.distanceTraveledThisShot += travelDistance;
           }
 
-
           puck.position.x += puck.velocity.x;
           puck.position.y += puck.velocity.y;
-          puck.velocity.x *= puck.friction;
-          puck.velocity.y *= puck.friction;
           
-           if (puck.puckType === 'PHANTOM' && puck.distanceTraveledThisShot && puck.distanceTraveledThisShot > PHANTOM_TELEPORT_TRIGGER_DISTANCE && puck.collisionsThisShot === 0) {
+          if (puck.puckType === 'PHANTOM' && puck.distanceTraveledThisShot && puck.distanceTraveledThisShot > PHANTOM_TELEPORT_TRIGGER_DISTANCE && puck.collisionsThisShot === 0) {
                 const velMag = getVectorMagnitude(puck.velocity);
                 if (velMag > 0) {
                     const teleportVec = { x: (puck.velocity.x / velMag) * PHANTOM_TELEPORT_DISTANCE, y: (puck.velocity.y / velMag) * PHANTOM_TELEPORT_DISTANCE };
-                    
-                    const outConfig = PARTICLE_CONFIG.TELEPORT_OUT;
-                    for (let k = 0; k < outConfig.count; k++) {
-                        const angle = Math.random() * 2 * Math.PI;
-                        const speed = outConfig.minSpeed + Math.random() * (outConfig.maxSpeed - outConfig.minSpeed);
-                        spawnParticle(newParticles, { position: { ...puck.position }, velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }, radius: 2, color: TEAM_COLORS[puck.team], opacity: 1, life: outConfig.life, decay: outConfig.decay });
-                    }
-                    
-                    puck.position.x += teleportVec.x;
-                    puck.position.y += teleportVec.y;
-                    puck.distanceTraveledThisShot = -1; // Prevent re-triggering
+                    const destination = { x: puck.position.x + teleportVec.x, y: puck.position.y + teleportVec.y };
 
-                    const inConfig = PARTICLE_CONFIG.TELEPORT_IN;
-                    for (let k = 0; k < inConfig.count; k++) {
-                        const angle = Math.random() * 2 * Math.PI;
-                        const speed = inConfig.minSpeed + Math.random() * (inConfig.maxSpeed - inConfig.minSpeed);
-                        spawnParticle(newParticles, { position: { ...puck.position }, velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }, radius: 2, color: TEAM_COLORS[puck.team], opacity: 1, life: inConfig.life, decay: inConfig.decay });
+                    // --- PHANTOM BUG FIX ---
+                    const isDestinationBlocked = newPucks.some(other => {
+                        if (other.id === puck.id) return false;
+                        const distSq = getVectorMagnitudeSq(subtractVectors(destination, other.position));
+                        const radiiSum = puck.radius + other.radius;
+                        return distSq < radiiSum * radiiSum;
+                    });
+
+                    if (!isDestinationBlocked) {
+                        const outConfig = PARTICLE_CONFIG.TELEPORT_OUT;
+                        for (let k = 0; k < outConfig.count; k++) {
+                            const angle = Math.random() * 2 * Math.PI;
+                            const speed = outConfig.minSpeed + Math.random() * (outConfig.maxSpeed - outConfig.minSpeed);
+                            spawnParticle(newParticles, { position: { ...puck.position }, velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }, radius: 2, color: TEAM_COLORS[puck.team], opacity: 1, life: outConfig.life, decay: outConfig.decay });
+                        }
+                        
+                        puck.position = destination;
+                        puck.distanceTraveledThisShot = -1; // Prevent re-triggering
+
+                        const inConfig = PARTICLE_CONFIG.TELEPORT_IN;
+                        for (let k = 0; k < inConfig.count; k++) {
+                            const angle = Math.random() * 2 * Math.PI;
+                            const speed = inConfig.minSpeed + Math.random() * (inConfig.maxSpeed - inConfig.minSpeed);
+                            spawnParticle(newParticles, { position: { ...puck.position }, velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }, radius: 2, color: TEAM_COLORS[puck.team], opacity: 1, life: inConfig.life, decay: inConfig.decay });
+                        }
+                    } else {
+                        // Destination is blocked, cancel teleport for this shot
+                        puck.distanceTraveledThisShot = -1;
                     }
                 }
             }
-
-
+          
+          puck.velocity.x *= puck.friction;
+          puck.velocity.y *= puck.friction;
+          
           vSq = getVectorMagnitudeSq(puck.velocity); // Recalculate after friction
 
+          // --- TUNNELING BUG FIX ---
+          const velocityMagnitude = Math.sqrt(vSq);
+          if (velocityMagnitude > MAX_VELOCITY) {
+              const scale = MAX_VELOCITY / velocityMagnitude;
+              puck.velocity.x *= scale;
+              puck.velocity.y *= scale;
+              vSq = MAX_VELOCITY * MAX_VELOCITY;
+          }
+
           if (puck.swerveFactor && vSq > (0.1 * 0.1)) {
-            const velocityMagnitude = Math.sqrt(vSq);
             const perpVector = { x: -puck.velocity.y / velocityMagnitude, y: puck.velocity.x / velocityMagnitude };
             const swerveForce = { x: perpVector.x * puck.swerveFactor, y: perpVector.y * puck.swerveFactor };
             puck.velocity.x += swerveForce.x;
@@ -906,7 +928,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             if (vSq > fastestPuckSpeedSq) {
               fastestPuckSpeedSq = vSq;
             }
-            // OPTIMIZATION: Removed trail particles for performance
             const isRoyalRage = puck.temporaryEffects.some(e => e.type === 'ROYAL_RAGE');
             const isUltimateRage = puck.temporaryEffects.some(e => e.type === 'ULTIMATE_RAGE');
 
@@ -1042,7 +1063,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
 
             candidateLineIndices.forEach(index => {
                 if (!newImaginaryLine.crossedLineIndices.has(index)) {
-                    // --- DYNAMIC LINE CROSSING FIX ---
                     const originalLineInfo = newImaginaryLine.lines[index];
                     const sourcePuck1 = newPucks.find(p => p.id === originalLineInfo.sourcePuckIds[0]);
                     const sourcePuck2 = newPucks.find(p => p.id === originalLineInfo.sourcePuckIds[1]);
@@ -1896,8 +1916,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             }
         }
 
-        const finalTurnLossReason = turnLossReason || (wasSpecialShotWithoutGoal ? 'SPECIAL_NO_GOAL' : null);
-        const forceTurnChange = !!finalTurnLossReason || isSoftLocked;
+        const finalTurnLossReason = turnLossReason || (wasSpecialShotWithoutGoal ? 'SPECIAL_NO_GOAL' : null) || (isSoftLocked ? 'NO_PUCKS_LEFT' : null);
+        const forceTurnChange = !!finalTurnLossReason;
 
         if (bonusTurnEarned && !forceTurnChange) {
             playSound('BONUS_TURN');
@@ -1921,8 +1941,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                 delete p.activeSynergy;
                 delete p.synergyEffectTriggered;
             }
-            // Bug fix: Clear all temporary effects at the end of a simulation step,
-            // except for persistent ones like REPULSOR_ARMOR or NEUTRALIZED.
             p.temporaryEffects = p.temporaryEffects.filter(effect => 
                 effect.type === 'REPULSOR_ARMOR' || effect.type === 'NEUTRALIZED'
             );
@@ -2318,7 +2336,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
 
     setGameState(prev => {
       if (!prev.canShoot || prev.winner) return prev;
-      if (prev.currentTurn === aiTeam) return prev; // AI cannot interact with the board.
+      if (prev.currentTurn === aiTeam) return prev;
       
       const puck = prev.pucks.find(p => p.id === puckId);
       if (!puck || puck.team !== prev.currentTurn || prev.pucksShotThisTurn.includes(puckId)) {
@@ -2383,27 +2401,11 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         const puck = prev.pucks.find(p => p.id === prev.selectedPuckId);
         if (!puck) return { ...prev, infoCardPuckId: null };
 
-        // --- DYNAMIC LINE UPDATE LOGIC ---
-        const anyPucksMoving = prev.pucks.some(p => getVectorMagnitudeSq(p.velocity) > 0.01);
         let newImaginaryLineState = prev.imaginaryLine ? { ...prev.imaginaryLine } : null;
-
-        if (anyPucksMoving && newImaginaryLineState) {
+        if (newImaginaryLineState && prev.isSimulating) { // Update lines in real-time during bonus turns
             const newLines = calculatePotentialLines(puck.id, prev.pucks);
             newImaginaryLineState.lines = newLines;
-            
-            // Rebuild the grid for the gameLoop to use the updated line positions
-            lineGridRef.current = new Map<string, number[]>();
-            newLines.forEach((line, index) => {
-                const cells = getCellsForSegment(line.start, line.end);
-                cells.forEach(key => {
-                    if (!lineGridRef.current!.has(key)) {
-                        lineGridRef.current!.set(key, []);
-                    }
-                    lineGridRef.current!.get(key)!.push(index);
-                });
-            });
         }
-        // --- END DYNAMIC LINE UPDATE ---
 
         const startPos = prev.shotPreview.start;
         const shotVector = subtractVectors(startPos, currentPos);
@@ -2623,42 +2625,67 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         const myPucks = gameState.pucks.filter(p => p.team === myTeam);
         const shootablePucks = myPucks.filter(p => !gameState.pucksShotThisTurn.includes(p.id));
         const opponentPucks = gameState.pucks.filter(p => p.team === opponentTeam);
+        const allPucks = gameState.pucks;
         
         if (shootablePucks.length === 0) return;
 
-        let bestShot: { puck: Puck; target: Vector; score: number } | null = null;
+        let bestShot: { puck: Puck; target: Vector; score: number, type: string } | null = null;
         
-        const threateningPucks = opponentPucks
-            .filter(p => p.isCharged && Math.abs(p.position.y - myGoalY) < BOARD_HEIGHT * 0.6)
-            .sort((a, b) => Math.abs(a.position.y - myGoalY) - Math.abs(b.position.y - myGoalY));
-
+        // 1. Evaluate Defensive Shots
+        const threateningPucks = opponentPucks.filter(p => p.isCharged && Math.abs(p.position.y - myGoalY) < BOARD_HEIGHT * 0.7);
         if (threateningPucks.length > 0) {
-            const primaryThreat = threateningPucks[0];
-            let bestInterceptor: { puck: Puck; distance: number } | null = null;
-            for (const puck of shootablePucks) {
-                const distance = getVectorMagnitude(subtractVectors(puck.position, primaryThreat.position));
-                if (!bestInterceptor || distance < bestInterceptor.distance) { bestInterceptor = { puck, distance }; }
-            }
+            const primaryThreat = threateningPucks.sort((a,b) => Math.abs(a.position.y - myGoalY) - Math.abs(b.position.y - myGoalY))[0];
+            let bestInterceptor: Puck | null = null;
+            let minDistance = Infinity;
+            shootablePucks.forEach(p => {
+                const dist = getVectorMagnitude(subtractVectors(p.position, primaryThreat.position));
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    bestInterceptor = p;
+                }
+            });
             if (bestInterceptor) {
-                 bestShot = { puck: bestInterceptor.puck, target: primaryThreat.position, score: 1000 };
+                bestShot = { puck: bestInterceptor, target: primaryThreat.position, score: 500, type: 'DEFENSE' };
             }
         }
         
-        if (!bestShot) {
-            for (const puck of shootablePucks) {
-                const target = { x: BOARD_WIDTH / 2 + (Math.random() - 0.5) * GOAL_WIDTH * 0.5, y: opponentGoalY };
-                let score = 100;
-                if (puck.isCharged) score += 200;
-                if (puck.puckType === 'KING') score += 50;
-                score -= Math.abs(puck.position.y - opponentGoalY) * 0.1;
-                if (!bestShot || score > bestShot.score) { bestShot = { puck, target, score }; }
+        // 2. Evaluate Charging Shots
+        shootablePucks.forEach(puck => {
+            if (puck.isCharged) return;
+            const lines = calculatePotentialLines(puck.id, allPucks);
+            if (lines.length > 0) {
+                const bestLine = lines[0]; // Simple: aim for the first available line
+                const lineCenter = {x: (bestLine.start.x + bestLine.end.x)/2, y: (bestLine.start.y + bestLine.end.y)/2};
+                let score = 200;
+                if (puck.puckType === 'KING') score += 200; // Prioritize charging the king
+                if (puck.puckType === 'PAWN') score -= 50; // Deprioritize pawns
+                if (!bestShot || score > bestShot.score) {
+                    bestShot = { puck, target: lineCenter, score, type: 'CHARGE' };
+                }
             }
-        }
+        });
 
-        if (!bestShot) return;
+        // 3. Evaluate Offensive Shots
+        shootablePucks.forEach(puck => {
+             if (puck.isCharged) {
+                const target = { x: BOARD_WIDTH / 2 + (Math.random() - 0.5) * GOAL_WIDTH * 0.8, y: opponentGoalY };
+                let score = 300;
+                score += PUCK_GOAL_POINTS[puck.puckType] * 50;
+                if (!bestShot || score > bestShot.score) {
+                    bestShot = { puck, target, score, type: 'ATTACK' };
+                }
+             }
+        });
+
+        // 4. Default shot if no other option is good
+        if (!bestShot) {
+            const puck = shootablePucks[Math.floor(Math.random() * shootablePucks.length)];
+            const target = { x: BOARD_WIDTH / 2, y: opponentGoalY };
+            bestShot = { puck, target, score: 10, type: 'DEFAULT' };
+        }
 
         const { puck: shotPuck, target } = bestShot;
-        const powerFactor = 0.7 + Math.random() * 0.3;
+        const powerFactor = 0.6 + Math.random() * 0.4;
         const shotDirection = subtractVectors(target, shotPuck.position);
         const dist = getVectorMagnitude(shotDirection);
         if (dist === 0) return;

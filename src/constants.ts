@@ -68,6 +68,7 @@ export const UI_COLORS = {
 export const MIN_VELOCITY_TO_STOP = 0.1;
 export const MAX_VELOCITY_FOR_TURN_END = 0.4; // If fastest puck is slower than this, end turn.
 export const LAUNCH_POWER_MULTIPLIER = 12; // Power of the shot impulse
+export const MAX_VELOCITY = 30; // Prevents tunneling bug
 
 // Pulsar Power constants
 export const PULSAR_POWER_PER_LINE = 25;
