@@ -3,9 +3,10 @@ import React from 'react';
 interface MainMenuProps {
     onPlay: () => void;
     onPlayAI: () => void;
+    onOpenOptions: () => void;
 }
 
-const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
+const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI, onOpenOptions }) => {
     return (
         <div className="main-menu-container">
             <style>{`
@@ -18,6 +19,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                     height: 100%;
                     animation: menu-fade-in 0.8s ease-out;
                     padding: 1rem;
+                    position: relative;
                 }
                 @keyframes menu-fade-in {
                     from { opacity: 0; transform: scale(0.95); }
@@ -87,6 +89,14 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                     margin-left: 0.5rem;
                     display: inline-block;
                 }
+                .version-info {
+                    position: absolute;
+                    bottom: 1rem;
+                    font-family: var(--font-family-body);
+                    font-size: 0.8rem;
+                    color: var(--color-text-light);
+                    opacity: 0.4;
+                }
             `}</style>
             <div className="game-title-container">
                 <h1 className="game-title">
@@ -99,13 +109,14 @@ const MainMenu: React.FC<MainMenuProps> = ({ onPlay, onPlayAI }) => {
                     Jugar vs IA
                 </button>
                 <button className="menu-button" disabled>
-                    Torneo
+                    Jugar Online
                     <span className="coming-soon">(Próximamente)</span>
                 </button>
-                <button className="menu-button" disabled>
+                <button className="menu-button" onClick={onOpenOptions}>
                     Opciones
                 </button>
             </nav>
+            <div className="version-info">v1.0002</div>
         </div>
     );
 };

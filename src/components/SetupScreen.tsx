@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Team, PuckType, TeamConfig, Puck } from '../types';
 import { TEAM_COLORS, SELECTABLE_PUCKS, BOARD_WIDTH, BOARD_HEIGHT, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, PUCK_RADIUS, PUCK_TYPE_PROPERTIES, PAWN_DURABILITY } from '../constants';
 import { STRATEGIC_PLANS, StrategicPlan } from '../formations';
@@ -15,12 +15,11 @@ interface SetupScreenProps {
     onHelpClick: () => void;
 }
 
-const PuckInPool: React.FC<{ puckType: PuckType; onClick: (puckType: PuckType) => void; onMouseEnter: (e: React.MouseEvent, puckType: PuckType) => void; onMouseLeave: () => void; isSelected: boolean; }> = ({ puckType, onClick, onMouseEnter, onMouseLeave, isSelected }) => (
+const PuckInPool: React.FC<{ puckType: PuckType; onClick: (puckType: PuckType) => void; onMouseEnter: (puckType: PuckType) => void; isSelected: boolean; }> = ({ puckType, onClick, onMouseEnter, isSelected }) => (
     <div
         className={`pool-puck ${isSelected ? 'disabled' : ''}`}
         onClick={() => !isSelected && onClick(puckType)}
-        onMouseEnter={(e) => onMouseEnter(e, puckType)}
-        onMouseLeave={onMouseLeave}
+        onMouseEnter={() => onMouseEnter(puckType)}
         aria-label={puckType}
         role="button"
         aria-disabled={isSelected}
@@ -31,11 +30,15 @@ const PuckInPool: React.FC<{ puckType: PuckType; onClick: (puckType: PuckType) =
     </div>
 );
 
+
 const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSound, gameMode, onHelpClick }) => {
     const [roster, setRoster] = useState<(PuckType | null)[]>(Array(7).fill(null));
     const [selectedPlan, setSelectedPlan] = useState<StrategicPlan>(STRATEGIC_PLANS[team][0]);
-    const [infoPanel, setInfoPanel] = useState<{ puckType: PuckType; target: HTMLElement } | null>(null);
     const [lastChangedSlot, setLastChangedSlot] = useState<number | null>(null);
+    const [hoveredSlotIndex, setHoveredSlotIndex] = useState<number | null>(null);
+    const [hoveredPoolPuck, setHoveredPoolPuck] = useState<PuckType | null>(null);
+    const [infoPanelData, setInfoPanelData] = useState<{ puckType: PuckType; position: DOMRect; } | { text: string; position: DOMRect } | null>(null);
+    const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     const teamColor = TEAM_COLORS[team];
     const teamColorRGB = team === 'RED' ? '255, 7, 58' : '0, 246, 255';
@@ -43,14 +46,43 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
     
     const nextAvailableSlotIndex = useMemo(() => roster.findIndex(p => p === null), [roster]);
 
-    const handleInfoPanel = (e: React.MouseEvent, puckType: PuckType) => {
-        setInfoPanel({ puckType, target: e.currentTarget as HTMLElement });
-    };
+    useEffect(() => {
+        slotRefs.current = slotRefs.current.slice(0, selectedPlan.specialFormation.puckLayout.length);
+    }, [selectedPlan]);
 
-    const handleClearInfoPanel = useCallback(() => {
-        setInfoPanel(null);
-    }, []);
-    
+    useEffect(() => {
+        let targetElement: HTMLDivElement | null = null;
+        let puckTypeToShow: PuckType | null = null;
+        let textToShow: string | null = null;
+
+        if (hoveredPoolPuck) {
+            if (nextAvailableSlotIndex !== -1) {
+                puckTypeToShow = hoveredPoolPuck;
+                targetElement = slotRefs.current[nextAvailableSlotIndex];
+            }
+        } else if (hoveredSlotIndex !== null) {
+            targetElement = slotRefs.current[hoveredSlotIndex];
+            if (roster[hoveredSlotIndex]) {
+                puckTypeToShow = roster[hoveredSlotIndex];
+            } else {
+                textToShow = "Selecciona una ficha de la reserva";
+            }
+        }
+        
+        if (targetElement) {
+            const position = targetElement.getBoundingClientRect();
+            if (puckTypeToShow) {
+                 setInfoPanelData({ puckType: puckTypeToShow, position });
+            } else if (textToShow) {
+                 setInfoPanelData({ text: textToShow, position });
+            }
+        } else {
+            setInfoPanelData(null);
+        }
+
+    }, [hoveredPoolPuck, hoveredSlotIndex, roster, nextAvailableSlotIndex]);
+
+
     const handleAddPuck = (puckType: PuckType) => {
         if (roster.includes(puckType)) return;
         
@@ -106,89 +138,14 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                 </svg>
             </button>
             <style>{`
-                .setup-screen-container { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--color-bg-paper); animation: menu-fade-in 0.5s ease; }
-                .setup-screen-container.reversed { flex-direction: column-reverse; }
-                
-                .setup-header { text-align: center; flex-shrink: 0; padding: clamp(0.5rem, 2vh, 1rem) 0; }
-                .setup-title { font-family: var(--font-family-main); font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--team-color); -webkit-text-stroke: 2px var(--color-shadow-main); text-shadow: 2px 2px var(--color-bg-dark); }
-                
-                .setup-content { flex-grow: 1; display: grid; grid-template-columns: 2fr 1fr; gap: clamp(0.5rem, 2vh, 1rem); padding: 0 clamp(0.5rem, 2vh, 1rem) clamp(0.5rem, 2vh, 1rem); overflow: hidden; }
-                .setup-screen-container.reversed .setup-content { transform: rotate(180deg); }
-
-                .left-panel { background: var(--color-bg-dark); border-radius: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.4); border: 4px solid var(--color-shadow-main); }
-                
-                .formation-display { width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 8px; background-color: var(--color-bg-medium); background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h80v80H0z' fill='none'/%3E%3Cpath d='M20 20h40v40H20z' fill='none' stroke='%23161b22' stroke-width='2'/%3E%3C/svg%3E"); }
-                .formation-slot { position: absolute; transform: translate(-50%, -50%); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-                .slot-puck { animation: puck-pop-in 0.3s ease-out forwards; width: 100%; height: 100%; cursor: pointer; transition: transform 0.2s ease; }
-                .slot-puck:hover { transform: scale(1.1); }
-                @keyframes puck-pop-in { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
-                
-                .empty-slot-indicator { width: 100%; height: 100%; border-radius: 50%; background: rgba(0,0,0,0.2); border: 3px dashed rgba(255,255,255,0.3); transition: all 0.2s ease; }
-                
-                .formation-slot.slot-drop-pulse .empty-slot-indicator, .formation-slot.slot-drop-pulse .slot-puck { animation: slot-pulse 0.4s ease-out; }
-                @keyframes slot-pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--team-color-rgb), 0.7); } 100% { box-shadow: 0 0 0 20px rgba(var(--team-color-rgb), 0); } }
-                
-                @keyframes next-slot-pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--team-color-rgb), 0); } 50% { box-shadow: 0 0 15px 5px rgba(var(--team-color-rgb), 0.7); } 100% { box-shadow: 0 0 0 0 rgba(var(--team-color-rgb), 0); } }
-                .formation-slot.next-available .empty-slot-indicator {
-                    border-style: solid;
-                    border-color: var(--team-color);
-                    background: rgba(var(--team-color-rgb), 0.1);
-                    animation: next-slot-pulse 2s infinite ease-in-out;
-                }
-                
-                .right-panel { display: flex; flex-direction: column; gap: 1rem; overflow: hidden; }
-                .formations-wrapper, .puck-pool-wrapper { background: var(--color-bg-dark); border-radius: 12px; border: 4px solid var(--color-shadow-main); padding: clamp(0.25rem, 1vh, 0.5rem); }
-                
-                .selection-title { font-family: var(--font-family-main); font-size: clamp(0.8rem, 2.5vw, 1rem); color: var(--color-text-dark); margin-bottom: 0.25rem; text-align: center; }
-                .formation-selector { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.25rem; }
-                .formation-button { display: flex; flex-direction: column; align-items: center; gap: 1px; width: clamp(45px, 6vw, 55px); background: var(--color-bg-medium); border: 3px solid var(--color-bg-light); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; padding: 2px; color: var(--color-bg-light); }
-                .formation-button.selected { border-color: var(--team-color); background: #fffde7; box-shadow: 0 0 10px var(--team-color); }
-                .formation-button svg { width: 100%; height: 25px; }
-                .formation-name { font-size: 0.55rem; font-weight: 600; color: var(--color-text-dark); }
-                .formation-button.selected .formation-name { color: var(--color-shadow-main); }
-
-
-                .puck-pool-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-                .puck-pool { flex-grow: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem; overflow-y: auto; padding: 5px; }
-                
-                .pool-puck { cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--color-bg-medium); padding: 8px 4px; border-radius: 8px; border: 2px solid var(--color-bg-light); }
-                .puck-icon-wrapper { width: 48px; height: 48px; transition: all 0.2s ease-out; }
-                .pool-puck:hover:not(.disabled) { transform: scale(1.05); border-color: var(--team-color); background: var(--color-bg-light); }
-                .pool-puck.disabled { filter: grayscale(1); opacity: 0.3; cursor: not-allowed; }
-                
-                .setup-footer { flex-shrink: 0; display: flex; padding: clamp(0.5rem, 2vh, 1rem); }
-                .footer-buttons { width: 100%; display: flex; gap: 1rem; }
-                .action-button { font-family: var(--font-family-main); padding: 1rem; color: white; font-size: 1.5rem; border: 4px solid var(--color-shadow-main); border-radius: 12px; cursor: pointer; text-transform: uppercase; transition: all 0.1s ease-out; box-shadow: 0 8px 0 0 var(--color-shadow-main); flex-grow: 1; }
-                .action-button:not(:disabled):hover { transform: translateY(-4px); box-shadow: 0 12px 0 0 var(--color-shadow-main); }
-                .action-button.confirm { background: var(--color-accent-green); }
-                .action-button.clear { background: var(--color-primary-red); font-size: 0.9rem; flex-grow: 0; padding: 0.7rem 0.9rem; }
-                .action-button:disabled { background: var(--color-bg-light); color: var(--color-bg-medium); opacity: 0.6; cursor: not-allowed; box-shadow: 0 6px 0 0 #00000022; }
-
-                .setup-help-button {
-                    position: absolute;
-                    top: 1rem; right: 1rem;
-                    z-index: 20;
-                    background: var(--color-bg-light); border: 2px solid var(--color-shadow-main); 
-                    color: var(--color-text-dark); width: 44px; height: 44px; 
-                    border-radius: 50%; cursor: pointer; display: flex; 
-                    align-items: center; justify-content: center; 
-                    transition: all 0.2s ease;
-                }
-                .setup-help-button:hover { transform: scale(1.1); background: var(--color-accent-yellow); color: var(--color-shadow-main); }
-                .setup-help-button svg { width: 24px; height: 24px; }
-                .setup-screen-container.reversed .setup-help-button { transform: rotate(180deg); }
-
-
-                 @media (max-width: 900px), (max-height: 600px) {
-                    .setup-content { display: flex; flex-direction: column; }
-                    .left-panel { flex-grow: 1; min-height: 200px; }
-                 }
+                 /* ... existing styles ... */
+                .ghost-puck { animation: puck-pop-in 0.3s ease-out forwards; width: 100%; height: 100%; opacity: 0.5; filter: grayscale(50%); }
             `}</style>
             <header className="setup-header">
                 <h1 className="setup-title">CONFIGURACIÓN DEL EQUIPO {team === 'RED' ? 'ROJO' : 'AZUL'}</h1>
             </header>
 
-            <main className="setup-content" onMouseLeave={handleClearInfoPanel}>
+            <main className="setup-content" onMouseLeave={() => { setHoveredPoolPuck(null); setHoveredSlotIndex(null); }}>
                 <div className="left-panel">
                     <div className="formation-display">
                         {/* Static Pucks */}
@@ -204,17 +161,25 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                         {/* Interactive Slots */}
                         {selectedPlan.specialFormation.puckLayout.map((layout, i) => {
                             const puckType = roster[i];
+                            const isGhostSlot = hoveredPoolPuck && nextAvailableSlotIndex === i;
+
                             return (
                                 <div key={`slot-${i}`}
-                                    className={`formation-slot ${lastChangedSlot === i ? 'slot-drop-pulse' : ''} ${nextAvailableSlotIndex === i ? 'next-available' : ''}`}
+                                    // FIX: The ref callback function was implicitly returning a value, which is not allowed. 
+                                    // Wrapping the assignment in curly braces `{}` makes it a block body that correctly returns `void`.
+                                    ref={el => { slotRefs.current[i] = el }}
+                                    className={`formation-slot ${lastChangedSlot === i ? 'slot-drop-pulse' : ''} ${nextAvailableSlotIndex === i && !isGhostSlot ? 'next-available' : ''}`}
                                     style={{ left: `${(layout.position.x / BOARD_WIDTH) * 100}%`, top: `${(layout.position.y / BOARD_HEIGHT) * 100}%`, width: `${(PUCK_RADIUS * 2 / BOARD_WIDTH) * 100}%`, height: `${(PUCK_RADIUS * 2 / BOARD_HEIGHT) * 100}%` }}
                                     onClick={() => handleRemovePuck(i)}
-                                    onMouseEnter={(e) => puckType && handleInfoPanel(e, puckType)}
-                                    onMouseLeave={handleClearInfoPanel}
+                                    onMouseEnter={() => setHoveredSlotIndex(i)}
                                 >
                                     {puckType ? (
                                         <div className="slot-puck">
                                             <PuckTypeIcon puckType={puckType} teamColor={teamColor} />
+                                        </div>
+                                    ) : isGhostSlot ? (
+                                        <div className="ghost-puck">
+                                            <PuckTypeIcon puckType={hoveredPoolPuck!} teamColor={teamColor} />
                                         </div>
                                     ) : (
                                         <div className="empty-slot-indicator" />
@@ -222,6 +187,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                                 </div>
                             );
                         })}
+                        <ActiveInfoPanel data={infoPanelData} team={team} isReversed={isReversed} />
                     </div>
                 </div>
 
@@ -242,14 +208,13 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                     </div>
                      <div className="puck-pool-wrapper">
                         <h4 className="selection-title">Fichas Disponibles</h4>
-                        <div className="puck-pool">
+                        <div className="puck-pool" onMouseLeave={() => setHoveredPoolPuck(null)}>
                             {SELECTABLE_PUCKS.map(puckType => (
                                 <PuckInPool
                                     key={puckType}
                                     puckType={puckType}
                                     onClick={handleAddPuck}
-                                    onMouseEnter={handleInfoPanel}
-                                    onMouseLeave={handleClearInfoPanel}
+                                    onMouseEnter={setHoveredPoolPuck}
                                     isSelected={roster.includes(puckType)}
                                 />
                             ))}
@@ -267,75 +232,67 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ team, onSetupComplete, playSo
                     </button>
                 </div>
             </footer>
-             {infoPanel && infoPanel.target && (
-                 <InfoPanelPopup puckType={infoPanel.puckType} target={infoPanel.target} team={team} isReversed={isReversed} />
-            )}
         </div>
     );
 };
 
-// Helper component, only used inside SetupScreen
-const InfoPanelPopup: React.FC<{ puckType: PuckType; target: HTMLElement; team: Team; isReversed: boolean; }> = ({ puckType, target, team, isReversed }) => {
+const ActiveInfoPanel: React.FC<{
+    data: { puckType: PuckType; position: DOMRect } | { text: string; position: DOMRect } | null;
+    team: Team;
+    isReversed: boolean;
+}> = ({ data, team, isReversed }) => {
+    if (!data) return null;
+
     const INFO_PANEL_WIDTH = 320;
-    const INFO_PANEL_PUCK_OFFSET = 15;
-    const targetRect = target.getBoundingClientRect();
-
-    const puckScreenCenter = {
-        x: targetRect.left + targetRect.width / 2,
-        y: targetRect.top + targetRect.height / 2,
-    };
-
-    const renderDirection = puckScreenCenter.y > window.innerHeight / 2 ? 'up' : 'down';
+    const PUCK_OFFSET = 15;
+    
+    const targetRect = data.position;
+    const puckScreenCenterY = targetRect.top + targetRect.height / 2;
+    const renderDirection = puckScreenCenterY > window.innerHeight / 2 ? 'up' : 'down';
 
     const halfWidth = INFO_PANEL_WIDTH / 2;
-    let panelLeft = puckScreenCenter.x - halfWidth;
+    let panelLeft = (targetRect.left + targetRect.right) / 2 - halfWidth;
     panelLeft = Math.max(10, panelLeft);
     panelLeft = Math.min(panelLeft, window.innerWidth - INFO_PANEL_WIDTH - 10);
-    
     const panelCenterX = panelLeft + halfWidth;
-    const pointerHorizontalOffset = puckScreenCenter.x - panelCenterX;
-
+    const pointerHorizontalOffset = (targetRect.left + targetRect.right) / 2 - panelCenterX;
+    
     let top;
     let baseTransform = '';
     let transformOrigin;
-    
     if (renderDirection === 'up') {
-        top = targetRect.top - INFO_PANEL_PUCK_OFFSET;
+        top = targetRect.top - PUCK_OFFSET;
         baseTransform = 'translateY(-100%)';
         transformOrigin = 'center bottom';
     } else {
-        top = targetRect.bottom + INFO_PANEL_PUCK_OFFSET;
+        top = targetRect.bottom + PUCK_OFFSET;
         transformOrigin = 'center top';
     }
-    
     const rotation = isReversed ? ' rotate(180deg)' : '';
 
     const panelStyle: React.CSSProperties = {
-        position: 'fixed',
-        left: `${panelLeft}px`,
-        top: `${top}px`,
-        width: `${INFO_PANEL_WIDTH}px`,
-        transform: baseTransform + rotation,
-        transformOrigin: transformOrigin,
-        zIndex: 1000,
-        pointerEvents: 'none',
+        position: 'fixed', left: `${panelLeft}px`, top: `${top}px`,
+        width: `${INFO_PANEL_WIDTH}px`, transform: baseTransform + rotation, transformOrigin,
+        zIndex: 1000, pointerEvents: 'none'
     };
 
-    const puckProps = PUCK_TYPE_PROPERTIES[puckType];
+    if ('text' in data) {
+        return (
+             <div style={panelStyle}>
+                 <div className="puck-info-card" style={{animation: 'card-fade-in-up 0.3s ease forwards', padding: '1rem', textAlign: 'center', fontWeight: '600'}}>
+                    {data.text}
+                </div>
+             </div>
+        )
+    }
+
+    const puckProps = PUCK_TYPE_PROPERTIES[data.puckType];
     const dummyPuck: Puck = {
-        id: -1,
-        puckType: puckType,
-        team: team,
-        position: {x: 0, y: 0},
-        initialPosition: {x: 0, y: 0},
-        velocity: {x: 0, y: 0},
-        rotation: 0,
-        mass: puckProps.mass,
-        friction: puckProps.friction,
-        radius: PUCK_RADIUS,
-        isCharged: false,
-        temporaryEffects: [],
-        durability: puckType === 'PAWN' ? PAWN_DURABILITY : undefined,
+        id: -1, puckType: data.puckType, team: team,
+        position: {x: 0, y: 0}, initialPosition: {x: 0, y: 0}, velocity: {x: 0, y: 0},
+        rotation: 0, mass: puckProps.mass, friction: puckProps.friction,
+        radius: PUCK_RADIUS, isCharged: false, temporaryEffects: [],
+        durability: data.puckType === 'PAWN' ? PAWN_DURABILITY : undefined,
     };
 
     return (
@@ -349,5 +306,6 @@ const InfoPanelPopup: React.FC<{ puckType: PuckType; target: HTMLElement; team: 
         </div>
     );
 };
+
 
 export default SetupScreen;

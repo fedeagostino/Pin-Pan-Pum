@@ -15,6 +15,9 @@ import GameCommentary from './components/GameCommentary';
 import MainMenu from './components/MainMenu';
 import SetupScreen from './components/SetupScreen';
 import { STRATEGIC_PLANS } from './formations';
+import { PALETTES, ColorPalette } from './palettes';
+import OptionsModal from './components/OptionsModal';
+
 
 type GameStep = 'menu' | 'setupRed' | 'setupBlue' | 'playing';
 type GameMode = 'pvp' | 'pve';
@@ -89,6 +92,7 @@ function App() {
   const [teamConfigs, setTeamConfigs] = useState<{ red: TeamConfig | null; blue: TeamConfig | null }>({ red: null, blue: null });
 
   const [helpModalTeam, setHelpModalTeam] = useState<Team | null>(null);
+  const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
   const [turnChangeInfo, setTurnChangeInfo] = useState<{ team: Team; previousTeam: Team | null; key: number; reason: TurnLossReason | null } | null>(null);
   const prevTurnRef = useRef<Team | null>(null);
   const [isGoalShaking, setIsGoalShaking] = useState(false);
@@ -99,6 +103,20 @@ function App() {
   const nextCommentarySide = useRef<'left' | 'right'>('left');
   const prevGameStateRef = useRef(gameState);
   const commentaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [currentPalette, setCurrentPalette] = useState(() => {
+    return localStorage.getItem('pin-pan-pum-palette') || 'VIBRANT_NEON';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pin-pan-pum-palette', currentPalette);
+    const palette = PALETTES[currentPalette]?.colors;
+    if (palette) {
+      for (const key in palette) {
+        document.documentElement.style.setProperty(key, palette[key as keyof ColorPalette]);
+      }
+    }
+  }, [currentPalette]);
 
   const handleStartPvP = () => {
     playSound('UI_CLICK_1');
@@ -284,7 +302,7 @@ function App() {
   const renderContent = () => {
       switch (gameStep) {
           case 'menu':
-              return <MainMenu onPlay={handleStartPvP} onPlayAI={handleStartPvE} />;
+              return <MainMenu onPlay={handleStartPvP} onPlayAI={handleStartPvE} onOpenOptions={() => setIsOptionsModalOpen(true)} />;
           case 'setupRed':
               return <SetupScreen team="RED" onSetupComplete={handleRedSetupComplete} playSound={playSound} gameMode={gameMode} onHelpClick={() => setHelpModalTeam('RED')} />;
           case 'setupBlue':
@@ -308,7 +326,7 @@ function App() {
                 </>
               );
           default:
-              return <MainMenu onPlay={handleStartPvP} onPlayAI={handleStartPvE} />;
+              return <MainMenu onPlay={handleStartPvP} onPlayAI={handleStartPvE} onOpenOptions={() => setIsOptionsModalOpen(true)} />;
       }
   }
 
@@ -423,6 +441,7 @@ function App() {
 
       {gameState.winner && <WinnerModal winner={gameState.winner} score={gameState.score} onBackToMenu={backToMenu} playSound={playSound} />}
       {helpModalTeam && <HelpModal isOpen={!!helpModalTeam} onClose={() => setHelpModalTeam(null)} playSound={playSound} team={helpModalTeam} gameMode={gameMode}/>}
+      {isOptionsModalOpen && <OptionsModal isOpen={isOptionsModalOpen} onClose={() => setIsOptionsModalOpen(false)} onPaletteChange={setCurrentPalette} currentPaletteKey={currentPalette} playSound={playSound} />}
     </div>
   );
 }
