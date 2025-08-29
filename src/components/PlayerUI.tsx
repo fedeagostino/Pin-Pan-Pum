@@ -143,13 +143,13 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                 .player-ui-container.reversed .help-button-pod { border-radius: 12px 0 0 12px; }
                 .help-button { 
                     background: var(--color-bg-light); border: 2px solid var(--color-shadow-main); 
-                    color: var(--color-text-dark); width: 36px; height: 36px; 
+                    color: var(--color-text-dark); width: 44px; height: 44px; 
                     border-radius: 50%; cursor: pointer; display: flex; 
                     align-items: center; justify-content: center; 
                     transition: all 0.2s ease; flex-shrink: 0;
                 }
                 .help-button:hover { transform: scale(1.1); background: var(--color-accent-yellow); color: var(--color-shadow-main);}
-                .help-button svg { width: 22px; height: 22px; }
+                .help-button svg { width: 24px; height: 24px; }
 
                 @media (max-width: 640px) {
                     .player-ui-container { height: clamp(56px, 8vh, 60px); }

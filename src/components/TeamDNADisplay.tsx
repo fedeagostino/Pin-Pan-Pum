@@ -59,6 +59,7 @@ const TeamDNADisplay: React.FC<TeamDNADisplayProps> = ({ puckTypes }) => {
                     gap: 0.5rem;
                     min-height: 80px; /* To prevent layout shift */
                     text-align: center;
+                    justify-content: center;
                 }
                 .dna-content {
                      animation: dna-fade-in 0.5s ease;
@@ -88,12 +89,14 @@ const TeamDNADisplay: React.FC<TeamDNADisplayProps> = ({ puckTypes }) => {
                     align-items: center;
                     height: 100%;
                     width: 100%;
+                    flex-grow: 1;
                 }
                 .loading-dna span {
                     color: var(--color-accent-cyan);
                     font-style: italic;
                     animation: blink-text 1.5s infinite;
                     opacity: 0.7;
+                    font-size: 0.9rem;
                 }
                 @keyframes blink-text {
                     50% { opacity: 0.5; }

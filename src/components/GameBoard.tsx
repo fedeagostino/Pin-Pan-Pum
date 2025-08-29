@@ -257,6 +257,8 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
     return gameState.pucks.filter(p => p.team === gameState.currentTurn);
   }, [isAiming, gameState.pucks, gameState.currentTurn]);
 
+  const isIdle = !gameState.isSimulating && gameState.selectedPuckId === null;
+
   return (
     <svg
       ref={ref}
@@ -840,32 +842,33 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
       {/* Imaginary Lines */}
       <g className="imaginary-lines">
-          {gameState.imaginaryLine && !gameState.imaginaryLine.isConfirmed && gameState.imaginaryLine.lines.map((line, index) => {
+          {gameState.imaginaryLine && gameState.imaginaryLine.lines.map((line, index) => {
               const isHighlighted = index === gameState.imaginaryLine.highlightedLineIndex;
               const hasSynergy = !!line.synergyType;
               
               const shotPuck = gameState.pucks.find(p => p.id === gameState.imaginaryLine?.shotPuckId);
 
-              let isPawnStyleLine = false;
-              if (shotPuck?.puckType === 'PAWN') {
-                  isPawnStyleLine = true;
-              } else if (shotPuck?.puckType === 'KING') {
-                  const sourcePuck1 = gameState.pucks.find(p => p.id === line.sourcePuckIds[0]);
-                  const sourcePuck2 = gameState.pucks.find(p => p.id === line.sourcePuckIds[1]);
-                  if (sourcePuck1?.puckType === 'PAWN' && sourcePuck2?.puckType === 'PAWN') {
-                      isPawnStyleLine = true;
+              // Logic to determine if a line is relevant for the selected puck
+              let isRelevant = true;
+              if (shotPuck) {
+                  const lineSourcePucks = [
+                      gameState.pucks.find(p => p.id === line.sourcePuckIds[0]),
+                      gameState.pucks.find(p => p.id === line.sourcePuckIds[1])
+                  ];
+                  
+                  if (shotPuck.puckType === 'PAWN') {
+                      const isPawnLine = lineSourcePucks.some(p => p?.puckType === 'PAWN');
+                      const isSpecialLine = lineSourcePucks.some(p => p && p.puckType !== 'PAWN');
+                      isRelevant = isPawnLine && isSpecialLine;
+                  } else {
+                     isRelevant = lineSourcePucks.every(p => p && p.puckType !== 'PAWN');
                   }
               }
 
-              const baseStrokeWidth = isAiming ? (isPawnStyleLine ? 1.5 : 3) : (isPawnStyleLine ? 1 : 2);
-              const highlightedStrokeWidth = isAiming ? (isPawnStyleLine ? 3 : 5) : (isPawnStyleLine ? 2.5 : 4);
-              
-              const strokeWidth = isHighlighted ? highlightedStrokeWidth : baseStrokeWidth;
+              const strokeOpacity = isIdle ? (hasSynergy ? 0.2 : 0.15) : isRelevant ? (isAiming ? 0.45 : 0.3) : 0.1;
               const strokeColor = isHighlighted
-                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType].color : 'white')
-                  : (isAiming ? (isPawnStyleLine ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.45)') : (isPawnStyleLine ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.3)'));
-
-              const strokeDasharray = isHighlighted ? "8 8" : (isPawnStyleLine ? "2 8" : "4 6");
+                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType!].color : 'white')
+                  : 'white';
 
               return (
                   <line
@@ -873,10 +876,11 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                       x1={line.start.x} y1={line.start.y}
                       x2={line.end.x} y2={line.end.y}
                       stroke={strokeColor}
-                      strokeWidth={strokeWidth}
-                      strokeDasharray={strokeDasharray}
+                      strokeWidth={isHighlighted ? 5 : 3}
+                      strokeOpacity={isHighlighted ? 1 : strokeOpacity}
+                      strokeDasharray={isHighlighted ? "8 8" : (hasSynergy ? "6 6" : "2 8")}
                       className={isHighlighted ? "line-flow" : ""}
-                      style={{ transition: 'stroke 0.2s ease, stroke-width 0.2s ease', pointerEvents: 'none' }}
+                      style={{ transition: 'stroke 0.2s ease, stroke-width 0.2s ease, stroke-opacity 0.2s ease', pointerEvents: 'none' }}
                   />
               );
           })}

@@ -1,35 +1,26 @@
-import { GoogleGenAI, GenerateContentResponse, Content } from "@google/genai";
-import { useState, useCallback, useEffect } from 'react';
+import { GoogleGenAI, GenerateContentResponse, Content, Type } from "@google/genai";
+import { useCallback } from 'react';
 import { PuckType } from "../types";
 import { PUCK_TYPE_INFO } from "../constants";
 
+let ai: GoogleGenAI | null = null;
+
+const initialize = () => {
+    if (!ai) {
+        try {
+            // This relies on `process.env.API_KEY` being set in the environment.
+            ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        } catch (e) {
+            console.error("Failed to initialize GoogleGenAI. Ensure API_KEY is set.", e);
+        }
+    }
+    return ai;
+};
+
 const useGemini = () => {
-    const [ai, setAi] = useState<GoogleGenAI | null>(null);
-
-    useEffect(() => {
-        const initialize = async () => {
-            // Check if the electronAPI is exposed on the window object
-            if (window.electronAPI) {
-                try {
-                    const apiKey = await window.electronAPI.getApiKey();
-                    if (apiKey) {
-                        const genAI = new GoogleGenAI({ apiKey });
-                        setAi(genAI);
-                    } else {
-                        console.error("API Key not provided from main process.");
-                    }
-                } catch (e) {
-                    console.error("Failed to initialize GoogleGenAI via Electron.", e);
-                }
-            } else {
-                console.warn("Running in a browser environment. Electron API for Gemini is not available.");
-            }
-        };
-        initialize();
-    }, []);
-
     const generateCommentaryStream = useCallback(async (eventDescription: string) => {
-        if (!ai) {
+        const genAI = initialize();
+        if (!genAI) {
             console.error("Gemini AI not initialized.");
             return null;
         }
@@ -42,7 +33,7 @@ const useGemini = () => {
                 parts: [{ text: eventDescription }],
             }];
 
-            const responseStream = await ai.models.generateContentStream({
+            const responseStream = await genAI.models.generateContentStream({
                 model: "gemini-2.5-flash",
                 contents: contents,
                 config: {
@@ -57,10 +48,11 @@ const useGemini = () => {
             return null;
         }
 
-    }, [ai]);
+    }, []);
 
     const generateTeamDNA = useCallback(async (puckTypes: PuckType[]): Promise<{ title: string, description: string } | null> => {
-        if (!ai || puckTypes.length === 0) {
+        const genAI = initialize();
+        if (!genAI || puckTypes.length === 0) {
             return null;
         }
 
@@ -69,27 +61,31 @@ const useGemini = () => {
         const systemInstruction = `
 You are a strategic analyst for the game Pulsar Puck Arena.
 Your task is to analyze a team composition and provide a very brief, thematic "Team DNA" analysis in Spanish.
-The response must be in JSON format with two keys: "title" and "description".
+The response must be in JSON format.
 
-- "title": A catchy, thematic name for the team strategy (e.g., "Fortaleza Imparable", "Asalto Relámpago"). Maximum 3 words.
-- "description": A very short description of the team's main strength. (e.g., "Una defensa férrea que agota al rival y contraataca con una fuerza demoledora."). Maximum 20 words.
+- The "title" should be a catchy, thematic name for the team strategy (e.g., "Fortaleza Imparable", "Asalto Relámpago"). Maximum 3 words.
+- The "description" should be a very short description of the team's main strength. (e.g., "Una defensa férrea que agota al rival y contraataca con una fuerza demoledora."). Maximum 20 words.
 
 Analyze the synergy and overall strategy based on the provided puck types. Do not list the pucks. Just give the strategic summary.
 `;
 
         try {
             const prompt = `Analyze this team composition: ${puckList}`;
-            const contents: Content[] = [{
-                role: 'user',
-                parts: [{ text: prompt }]
-            }];
-
-            const response = await ai.models.generateContent({
+            
+            const response = await genAI.models.generateContent({
                 model: 'gemini-2.5-flash',
-                contents,
+                contents: prompt,
                 config: {
                     systemInstruction,
                     responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            description: { type: Type.STRING }
+                        },
+                        required: ["title", "description"],
+                    }
                 }
             });
             
@@ -111,7 +107,7 @@ Analyze the synergy and overall strategy based on the provided puck types. Do no
                 description: "Una selección equilibrada lista para cualquier desafío."
             };
         }
-    }, [ai]);
+    }, []);
 
 
     return { generateCommentaryStream, generateTeamDNA };

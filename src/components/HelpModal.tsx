@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PuckType, SynergyType, Team } from '../types';
 import { PUCK_TYPE_INFO, SYNERGY_DESCRIPTIONS, SYNERGY_COMBOS, SCORE_TO_WIN, PUCK_TYPE_PROPERTIES, PUCK_GOAL_POINTS } from '../constants';
@@ -167,8 +166,8 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
         <div className="modal-overlay" onMouseDown={handleClose}>
             <style>{`
                 :root {
-                  --help-red: #E53935;
-                  --help-blue: #1E88E5;
+                  --help-red: #ff073a;
+                  --help-blue: #00f6ff;
                   --help-green: #39d353;
                   --help-yellow: #f1e05a;
                   --help-purple: #c879ff;
@@ -210,7 +209,7 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
                     inset: 0;
                     border-radius: 16px;
                     padding: 1px;
-                    background: linear-gradient(45deg, rgba(30,136,229,0.4), rgba(229,57,53,0.4));
+                    background: linear-gradient(45deg, rgba(0, 246, 255, 0.4), rgba(255, 7, 58, 0.4));
                     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
                     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
                     -webkit-mask-composite: xor;
