@@ -324,11 +324,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                     stroke-width: 3px;
                     stroke-linecap: round;
                     stroke-linejoin: round;
-                    animation: preview-text-fade-in 0.3s ease-out forwards;
-                }
-                @keyframes preview-text-fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
+                    animation: rise-and-fade 2.5s ease-out forwards;
+                    animation-delay: 1.5s;
+                    opacity: 0;
                 }
                 
                 @keyframes goal-glow-positive-anim {
@@ -458,61 +456,28 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
       <circle cx={BOARD_WIDTH/2} cy={BOARD_HEIGHT/2} r="5" fill="rgba(255,255,255,0.2)" />
       
        {/* Preview Trajectories */}
-       <g className="preview-trajectories" style={{ opacity: gameState.shotPreview?.isCancelZone ? 0 : 1, transition: 'opacity 0.2s' }}>
-          {gameState.previewState?.trajectories.map(traj => {
-              const isLead = traj.puckId === gameState.previewState?.leadPuckId;
-              const leadPuck = isLead ? gameState.pucks.find(p => p.id === traj.puckId) : null;
-              const strokeColor = isLead 
-                  ? leadPuck?.team === 'BLUE' ? 'rgba(0, 246, 255, 0.7)' : 'rgba(255, 7, 58, 0.7)'
-                  : 'rgba(255,255,255,0.3)';
-
-              return (
-                  <path
-                      key={traj.puckId}
-                      d={`M ${traj.path.map(p => `${p.x} ${p.y}`).join(' L ')}`}
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth={isLead ? 3 : 1.5}
-                      strokeDasharray={isLead ? "6 6" : "2 6"}
-                      strokeLinecap="round"
-                  />
-              );
-          })}
-          
-          {gameState.previewState && (() => {
-              const leadTraj = gameState.previewState.trajectories.find(t => t.puckId === gameState.previewState?.leadPuckId);
-              if (!leadTraj || leadTraj.path.length === 0) return null;
-              const leadPuck = gameState.pucks.find(p => p.id === gameState.previewState?.leadPuckId);
-              if (!leadPuck) return null;
-              const endPos = leadTraj.path[leadTraj.path.length - 1];
-              
-              return (
-                  <g transform={`translate(${endPos.x}, ${endPos.y}) rotate(${leadPuck.rotation})`} opacity="0.6" style={{ pointerEvents: 'none' }}>
-                      <PuckShape puck={leadPuck} />
-                  </g>
-              );
-          })()}
-
-          {gameState.previewState && (() => {
-              const leadPuck = gameState.pucks.find(p => p.id === gameState.previewState?.leadPuckId);
-              if (!leadPuck) return null;
-              const isBlueTeam = leadPuck.team === 'BLUE';
-              const yPos = isBlueTeam ? BOARD_HEIGHT - 30 : 30;
-              const rotation = isBlueTeam ? `rotate(180 ${BOARD_WIDTH / 2} ${yPos})` : '';
-
-              return (
-                  <text
-                      x={BOARD_WIDTH / 2}
-                      y={yPos}
-                      fill="rgba(255,255,255,0.9)"
-                      textAnchor="middle"
-                      className="preview-text"
-                      transform={rotation}
-                  >
-                      {gameState.previewState.chargeRequirementText}
-                  </text>
-              )
-          })()}
+       <g className="preview-trajectories">
+          {gameState.previewState?.trajectories.map(traj => (
+            <path
+              key={traj.puckId}
+              d={`M ${traj.path.map(p => `${p.x} ${p.y}`).join(' L ')}`}
+              fill="none"
+              stroke="rgba(255,255,255,0.5)"
+              strokeWidth="2"
+              strokeDasharray="4 4"
+            />
+          ))}
+          {gameState.previewState && (
+            <text
+              x={BOARD_WIDTH / 2}
+              y={BOARD_HEIGHT / 2 - 120}
+              fill="rgba(255,255,255,0.8)"
+              textAnchor="middle"
+              className="preview-text"
+            >
+              Cruza {gameState.previewState.linesToCrossForBonus} líneas para cargar
+            </text>
+          )}
         </g>
       
       {/* Shot Preview */}
@@ -849,7 +814,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
       {/* Imaginary Lines */}
       <g className="imaginary-lines">
-          {gameState.imaginaryLine && !gameState.imaginaryLine.isConfirmed && gameState.imaginaryLine.lines.map((line, index) => {
+          {gameState.imaginaryLine && gameState.imaginaryLine.lines.map((line, index) => {
               const isHighlighted = index === gameState.imaginaryLine.highlightedLineIndex;
               
               const shotPuck = gameState.pucks.find(p => p.id === gameState.imaginaryLine?.shotPuckId);
@@ -875,6 +840,8 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
               const strokeDasharray = isHighlighted ? "8 8" : (isPawnStyleLine ? "2 8" : "4 6");
 
+              const opacity = gameState.imaginaryLine!.isConfirmed ? 0.3 : 1;
+
               return (
                   <line
                       key={index}
@@ -884,7 +851,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                       strokeWidth={strokeWidth}
                       strokeDasharray={strokeDasharray}
                       className={isHighlighted ? "line-flow" : ""}
-                      style={{ transition: 'stroke 0.2s ease, stroke-width 0.2s ease', pointerEvents: 'none' }}
+                      style={{ transition: 'stroke 0.2s ease, stroke-width 0.2s ease', pointerEvents: 'none', opacity }}
                   />
               );
           })}
