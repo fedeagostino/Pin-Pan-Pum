@@ -72,8 +72,11 @@ const getLineIntersection = (a: Vector, b: Vector, c: Vector, d: Vector): Vector
     const s2_x = d.x - c.x;
     const s2_y = d.y - c.y;
 
-    const s = (-s1_y * (a.x - c.x) + s1_x * (a.y - c.y)) / (-s2_x * s1_y + s1_x * s2_y);
-    const t = ( s2_x * (a.y - c.y) - s2_y * (a.x - c.x)) / (-s2_x * s1_y + s1_x * s2_y);
+    const denominator = -s2_x * s1_y + s1_x * s2_y;
+    if (denominator === 0) return null; // Collinear or parallel
+
+    const s = (-s1_y * (a.x - c.x) + s1_x * (a.y - c.y)) / denominator;
+    const t = ( s2_x * (a.y - c.y) - s2_y * (a.x - c.x)) / denominator;
 
     if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
         return { x: a.x + (t * s1_x), y: a.y + (t * s1_y) };
@@ -421,21 +424,13 @@ type UseGameEngineProps = {
 
 /**
  * Checks for a winner based on the score.
- * The standard win condition is reaching SCORE_TO_WIN.
- * However, if both players reach SCORE_TO_WIN - 1 (e.g., 2-2),
- * a "win by two" (deuce) rule is activated.
- * @param score The current score object { RED: number, BLUE: number }
- * @returns The winning team ('RED' | 'BLUE') or null if there is no winner yet.
  */
 const checkWinner = (score: { RED: number; BLUE: number }): Team | null => {
   const blueScore = score.BLUE;
   const redScore = score.RED;
-  // The score at which "deuce" mode can start. e.g., if SCORE_TO_WIN is 3, this is 2.
   const winThreshold = SCORE_TO_WIN - 1;
 
-  // Check if scores are high enough to be in "deuce" mode.
   if (blueScore >= winThreshold && redScore >= winThreshold) {
-    // "Win by two" rule is active. A player must be ahead by 2 points to win.
     if (blueScore >= redScore + 2) {
       return 'BLUE';
     }
@@ -443,7 +438,6 @@ const checkWinner = (score: { RED: number; BLUE: number }): Team | null => {
       return 'RED';
     }
   } else {
-    // Standard "first to SCORE_TO_WIN" rule.
     if (blueScore >= SCORE_TO_WIN) {
       return 'BLUE';
     }
@@ -451,8 +445,7 @@ const checkWinner = (score: { RED: number; BLUE: number }): Team | null => {
       return 'RED';
     }
   }
-  
-  return null; // No winner yet.
+  return null;
 };
 
 const checkSpecialShotStatus = (team: Team, allPucks: Puck[]): SpecialShotStatus => {
@@ -460,20 +453,14 @@ const checkSpecialShotStatus = (team: Team, allPucks: Puck[]): SpecialShotStatus
     const specialPucks = teamPucks.filter(p => SPECIAL_PUCKS_FOR_ROYAL_SHOT.includes(p.puckType));
     const pawns = teamPucks.filter(p => p.puckType === 'PAWN');
 
-    // To have any special shot, there must be special pucks and they must all be charged.
     if (specialPucks.length === 0 || !specialPucks.every(p => p.isCharged)) {
         return 'NONE';
     }
-
-    // At this point, all special pucks are charged.
-    // Now check the pawn status for the ULTIMATE shot.
     const allPawnsCharged = pawns.length > 0 && pawns.every(p => p.isCharged);
 
     if (allPawnsCharged) {
         return 'ULTIMATE';
     }
-
-    // If not ULTIMATE but specials are charged, it's ROYAL.
     return 'ROYAL';
 };
 
@@ -492,7 +479,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
   const gameMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lineGridRef = useRef<Map<string, number[]> | null>(null);
   
-  // FIX: Removed 'synergy' type as the feature is deprecated.
   const setGameMessageWithTimeout = useCallback((text: string, type: 'royal' | 'ultimate' | 'powerup', duration: number = 3000) => {
       if (gameMessageTimeoutRef.current) {
           clearTimeout(gameMessageTimeoutRef.current);
@@ -511,7 +497,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
   }, []);
 
   useEffect(() => {
-    // Cleanup on unmount
     return () => {
         clearInfoCardTimer();
         if (gameMessageTimeoutRef.current) clearTimeout(gameMessageTimeoutRef.current);
@@ -541,7 +526,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
   const gameLoop = useCallback(() => {
     setGameState(prev => {
       if (prev.isSimulating && animationFrameId.current === null) {
-          // This ensures the loop only restarts if it was explicitly stopped, preventing re-entry issues.
+          // This ensures the loop only restarts if it was explicitly stopped.
       } else if (!prev.isSimulating) {
         if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         animationFrameId.current = null;
@@ -570,7 +555,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       let turnLossReason: TurnLossReason | null = null;
       const puckIdsToDestroy = new Set<number>();
 
-      // --- Particle Spawning Helper (for use within this state update) ---
+      // --- Particle Spawning Helper ---
       const spawnParticle = (particlesArray: Particle[], props: Omit<Particle, 'id' | 'lifeSpan'> & { life: number }) => {
           const p = particlePool.current.pop();
           const finalProps = { ...props, lifeSpan: props.life };
@@ -608,7 +593,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       if (prev.currentTurn === prev.overchargedTeam) {
         const overchargedPucks = newPucks.filter(p => p.team === prev.overchargedTeam);
         overchargedPucks.forEach(puck => {
-            // Apply repulsor push to nearby enemies
             newPucks.forEach(otherPuck => {
                 if (otherPuck.team !== puck.team) {
                     const distVec = subtractVectors(otherPuck.position, puck.position);
@@ -622,7 +606,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     }
                 }
             });
-            // Particle effect for overcharge aura
             if (Math.random() < 0.1) {
                 const config = PARTICLE_CONFIG.OVERCHARGE_AURA;
                 spawnParticle(newParticles, {
@@ -642,7 +625,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       newPucks.forEach(puck => {
           puck.temporaryEffects = puck.temporaryEffects.filter(effect => {
               if (effect.type === 'EMP_BURST') {
-                  // Apply EMP push to nearby enemies
                   newPucks.forEach(otherPuck => {
                       if (otherPuck.team !== puck.team) {
                           const distVec = subtractVectors(otherPuck.position, puck.position);
@@ -655,7 +637,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                           }
                       }
                   });
-                   // Create EMP particle effect
                   const config = PARTICLE_CONFIG.EMP_BURST;
                   spawnParticle(newParticles, {
                       position: { ...puck.position },
@@ -667,15 +648,14 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                       decay: config.decay,
                       renderType: 'emp_burst',
                   });
-                  return false; // one-time effect
+                  return false;
               }
-
               effect.duration--;
               return effect.duration > 0;
           });
       });
 
-      // --- Update Particles (Recycle with Pooling) ---
+      // --- Update Particles ---
       const activeParticles: Particle[] = [];
       for (const p of newParticles) {
           p.life -= 1;
@@ -687,7 +667,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
               p.velocity.y *= 0.98;
               activeParticles.push(p);
           } else {
-              particlePool.current.push(p); // Return to pool
+              particlePool.current.push(p);
           }
       }
       newParticles = activeParticles;
@@ -713,7 +693,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
           puck.velocity.x *= puck.friction;
           puck.velocity.y *= puck.friction;
           
-          vSq = getVectorMagnitudeSq(puck.velocity); // Recalculate after friction
+          vSq = getVectorMagnitudeSq(puck.velocity);
           
           if (vSq < MIN_VELOCITY_TO_STOP * MIN_VELOCITY_TO_STOP) {
             puck.velocity = { x: 0, y: 0 };
@@ -721,7 +701,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             if (vSq > fastestPuckSpeedSq) {
               fastestPuckSpeedSq = vSq;
             }
-            // Add sliding particles
             if (vSq > (1.5 * 1.5) && Math.random() < 0.007) {
                 const config = PARTICLE_CONFIG.SLIDING;
                 spawnParticle(newParticles, {
@@ -735,7 +714,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                 });
             }
 
-            // Add Royal/Ultimate Rage aura particles
             const isRoyalRage = puck.temporaryEffects.some(e => e.type === 'ROYAL_RAGE');
             const isUltimateRage = puck.temporaryEffects.some(e => e.type === 'ULTIMATE_RAGE');
 
@@ -762,24 +740,19 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                      renderType: 'royal_aura',
                  });
             }
-             // --- Special Puck Trails ---
             const velocityMagnitude = Math.sqrt(vSq);
-            if (velocityMagnitude > 0.8) {
-                switch (puck.puckType) {
-                    case 'KING':
-                        if (Math.random() < 0.04) {
-                            const config = PARTICLE_CONFIG.KING_TRAIL;
-                            const angle = Math.random() * 2 * Math.PI;
-                            spawnParticle(newParticles, {
-                                position: { x: puck.position.x, y: puck.position.y },
-                                velocity: { x: Math.cos(angle) * config.speed, y: Math.sin(angle) * config.speed },
-                                radius: config.radius,
-                                color: UI_COLORS.GOLD,
-                                opacity: 0.8,
-                                life: config.life, decay: config.decay,
-                            });
-                        }
-                        break;
+            if (velocityMagnitude > 0.8 && puck.puckType === 'KING') {
+                if (Math.random() < 0.04) {
+                    const config = PARTICLE_CONFIG.KING_TRAIL;
+                    const angle = Math.random() * 2 * Math.PI;
+                    spawnParticle(newParticles, {
+                        position: { x: puck.position.x, y: puck.position.y },
+                        velocity: { x: Math.cos(angle) * config.speed, y: Math.sin(angle) * config.speed },
+                        radius: config.radius,
+                        color: UI_COLORS.GOLD,
+                        opacity: 0.8,
+                        life: config.life, decay: config.decay,
+                    });
                 }
             }
           }
@@ -802,12 +775,10 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     orbIdsToDestroy.add(orb.id);
                     newOrbHitsThisShot++;
     
-                    // 1. Grant Power with Chain Reaction Bonus
                     const comboMultiplier = 1 + (newOrbHitsThisShot - 1) * 0.5;
                     let powerGained = Math.round(PULSAR_ORB_HIT_SCORE * comboMultiplier);
                     newPulsarPower[puck.team] = Math.min(MAX_PULSAR_POWER, newPulsarPower[puck.team] + powerGained);
                     
-                    // 2. Create Floating Text
                     newFloatingTexts.push({
                         id: floatingTextIdCounter.current++,
                         text: `+${powerGained}`,
@@ -833,7 +804,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                         });
                     }
         
-                    // 3. Create Particle Burst
                     const config = PARTICLE_CONFIG.PULSAR_ORB_HIT;
                     for (let k = 0; k < config.count; k++) {
                         const angle = Math.random() * 2 * Math.PI;
@@ -849,16 +819,14 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                         });
                     }
         
-                    // 4. Handle orb collection and overcharge
                     newOrbCollection[puck.team]++;
                     if (newOrbCollection[puck.team] >= ORBS_FOR_OVERCHARGE) {
                         newOverchargedTeam = puck.team;
-                        newOrbCollection[puck.team] = 0; // Reset count
+                        newOrbCollection[puck.team] = 0;
                         playSound('ROYAL_POWER_UNLOCKED');
                         setGameMessageWithTimeout('¡SOBRECARGA!', 'powerup', 3000);
                     }
         
-                    // 5. Apply a small pushback to the puck
                     const dist = Math.sqrt(distSq);
                     if (dist > 0) {
                         const pushForce = 0.8;
@@ -891,7 +859,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             const movementSegmentStart = puckPrev.position;
             const movementSegmentEnd = puckNew!.position;
             
-            // --- NEW OPTIMIZATION: Use spatial grid to find candidate lines ---
             const candidateLineIndices = new Set<number>();
             const movementCells = getCellsForSegment(movementSegmentStart, movementSegmentEnd);
             const lineGrid = lineGridRef.current;
@@ -902,7 +869,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     }
                 });
             }
-            // --- END NEW OPTIMIZATION ---
 
             candidateLineIndices.forEach(index => {
                 if (!newImaginaryLine.crossedLineIndices.has(index)) {
@@ -911,7 +877,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     if (intersectionPoint) {
                         newImaginaryLine.crossedLineIndices.add(index);
                         
-                        // --- NEW: Categorize line type for pawn charging ---
                         if (puckNew.puckType === 'PAWN' && puckNew.id === newImaginaryLine.shotPuckId) {
                             const sourcePuck1 = newPucks.find(p => p.id === line.sourcePuckIds[0]);
                             const sourcePuck2 = newPucks.find(p => p.id === line.sourcePuckIds[1]);
@@ -929,18 +894,15 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                             }
                         }
 
-                        // --- Apply Puck-Specific Abilities on cross ---
                         if (puckNew.puckType === 'GUARDIAN') {
                             puckNew.temporaryEffects.push({ type: 'EMP_BURST', duration: 1 });
                         }
 
-                        // --- Main shot puck bonuses ---
                         if (puckNew.id === newImaginaryLine.shotPuckId) {
                             newImaginaryLine.comboCount++;
                             let powerGained = PULSAR_POWER_PER_LINE;
                             let isPerfect = false;
 
-                            // Perfect Crossing Bonus
                             const lineLengthSq = getVectorMagnitudeSq(subtractVectors(line.end, line.start));
                             const lineCenter = { x: (line.start.x + line.end.x) / 2, y: (line.start.y + line.end.y) / 2 };
                             const distToCenterSq = getVectorMagnitudeSq(subtractVectors(intersectionPoint, lineCenter));
@@ -956,10 +918,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                             const finalPowerGained = Math.round(powerGained * comboBonus);
                             newPulsarPower[prev.currentTurn] = Math.min(MAX_PULSAR_POWER, newPulsarPower[prev.currentTurn] + finalPowerGained);
                             
-                             // Create Pulsar charge particles flowing to the goal
                             const chargeConfig = PARTICLE_CONFIG.PULSAR_CHARGE;
                             const team = prev.currentTurn;
-                            // BLUE team bar is at the top, RED team bar is at the bottom
                             const targetY = team === 'BLUE' ? -PULSAR_BAR_HEIGHT : BOARD_HEIGHT + PULSAR_BAR_HEIGHT;
                             const numParticles = Math.min(5, Math.floor(finalPowerGained / 4));
                             for (let k = 0; k < numParticles; k++) {
@@ -980,12 +940,11 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                                 });
                             }
 
-                            // Create floating text
                             let powerText = `+${finalPowerGained}`;
-                            let textColor = '#a3e635'; // lime-400
+                            let textColor = '#a3e635';
                             if (isPerfect) {
                                 powerText += ` ¡Perfecto!`;
-                                textColor = '#fde047'; // yellow-300
+                                textColor = '#fde047';
                             }
                     
                             newFloatingTexts.push({
@@ -1012,7 +971,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                                 });
                             }
 
-                            // Create shockwave particle
                             const config = PARTICLE_CONFIG.LINE_SHOCKWAVE;
                             spawnParticle(newParticles, {
                                   position: { ...intersectionPoint },
@@ -1025,7 +983,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                                   renderType: 'shockwave',
                                   isPerfect: isPerfect,
                             });
-                             // Check for bonus turn and puck charging
+                            
                             let canBeCharged = false;
                             if (puckNew.puckType === 'PAWN') {
                                 if (newImaginaryLine.pawnPawnLinesCrossed.size >= 1 && newImaginaryLine.pawnSpecialLinesCrossed.size >= 1) {
@@ -1040,10 +998,9 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                             }
                             
                             if (canBeCharged) {
-                                // Charge the puck if it's not already
                                 if (!puckNew.isCharged) {
                                     puckNew.isCharged = true;
-                                    playSound('BONUS_TURN'); // Play sound on charge for immediate feedback
+                                    playSound('BONUS_TURN');
                                     newFloatingTexts.push({
                                         id: floatingTextIdCounter.current++,
                                         text: '¡CARGADO!',
@@ -1055,10 +1012,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                                         velocity: { x: 0, y: FLOATING_TEXT_CONFIG.RISE_SPEED * 0.9 },
                                     });
                                     
-                                    // Grant the ability to shoot again IMMEDIATELY for newly charging a puck.
                                     newCanShoot = true;
 
-                                    // --- Check for Special Shot Unlock ---
                                     const pucksForCheck = [...newPucks];
                                     const justChargedPuckIndex = pucksForCheck.findIndex(p => p.id === puckNew.id);
                                     if (justChargedPuckIndex !== -1) {
@@ -1113,10 +1068,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       }
 
       // --- Handle collisions ---
-      // Create a map for quick puck lookups by ID
       const puckMap = new Map(newPucks.map(p => [p.id, p]));
       
-      // OPTIMIZATION: Populate spatial grid with all pucks for collision detection
       const grid = new Map<string, number[]>();
       newPucks.forEach(puck => {
           const minCol = Math.floor((puck.position.x - puck.radius) / GRID_CELL_SIZE);
@@ -1143,14 +1096,12 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         let wallImpact = false;
         let impactVelocity = 0;
 
-        // Left wall
         if (puck.position.x - puck.radius < 0) {
             puck.position.x = puck.radius;
             impactVelocity = Math.abs(puck.velocity.x);
             puck.velocity.x *= -(puck.elasticity ?? 1);
             wallImpact = true;
         }
-        // Right wall
         else if (puck.position.x + puck.radius > BOARD_WIDTH) {
             puck.position.x = BOARD_WIDTH - puck.radius;
             impactVelocity = Math.abs(puck.velocity.x);
@@ -1158,7 +1109,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             wallImpact = true;
         }
 
-        // Top/Bottom walls (outside goal areas)
         if (puck.position.y - puck.radius < 0) {
             if (!inGoalZoneX) {
                 puck.position.y = puck.radius;
@@ -1195,7 +1145,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             }
         }
 
-        // Puck-puck collisions
         const minCol = Math.floor((puck.position.x - puck.radius) / GRID_CELL_SIZE);
         const maxCol = Math.floor((puck.position.x + puck.radius) / GRID_CELL_SIZE);
         const minRow = Math.floor((puck.position.y - puck.radius) / GRID_CELL_SIZE);
@@ -1212,19 +1161,12 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         }
 
         potentialColliderIds.forEach(otherPuckId => {
-            // Ensure each pair is checked only once (puck.id < otherPuckId)
-            if (otherPuckId <= puck.id) {
-                return;
-            }
+            if (otherPuckId <= puck.id) return;
             const otherPuck = puckMap.get(otherPuckId);
             if (!otherPuck) return;
 
-            // --- Start of original collision logic ---
-            if (puckIdsToDestroy.has(puck.id) || puckIdsToDestroy.has(otherPuck.id)) {
-              return;
-            }
+            if (puckIdsToDestroy.has(puck.id) || puckIdsToDestroy.has(otherPuck.id)) return;
   
-            // --- Check for Royal/Ultimate Rage Destruction ---
             let kingPuck: Puck | undefined;
             let targetPuck: Puck | undefined;
             let rageEffect: TemporaryEffect | undefined;
@@ -1275,8 +1217,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     decay: 0.033,
                     renderType: 'ring'
                 });
-  
-                return; // Skip normal collision physics
+                return;
               }
             }
   
@@ -1285,12 +1226,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             const collisionDistance = puck.radius + otherPuck.radius;
   
             if (distance < collisionDistance) {
-              const impactPoint = {
-                  x: puck.position.x + (distVec.x / 2),
-                  y: puck.position.y + (distVec.y / 2),
-              };
-  
-              // Standard collision physics response
               const overlap = (collisionDistance - distance) / 2;
               const overlapVec = { x: (distVec.x / distance) * overlap, y: (distVec.y / distance) * overlap };
               puck.position.x -= overlapVec.x; puck.position.y -= overlapVec.y;
@@ -1314,7 +1249,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
               const impactForce = Math.abs(newDpNorm1 - dpNorm1) * m1 + Math.abs(newDpNorm2 - dpNorm2) * m2;
               playSound('COLLISION', { volume: Math.min(1, 0.1 + impactForce / 20), throttleMs: 50 });
   
-              // Durability loss on significant impacts.
               if (impactForce > 2.5) {
                 if ((puck.puckType === 'PAWN' || puck.puckType === 'GUARDIAN') && puck.durability !== undefined) {
                     puck.durability--;
@@ -1324,7 +1258,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                 }
               }
   
-              // Create collision particles
               const config = PARTICLE_CONFIG.COLLISION;
               const particleCount = Math.min(5, Math.floor(impactForce * 0.5));
   
@@ -1332,7 +1265,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                   const angle = Math.atan2(distVec.y, distVec.x) + (Math.random() - 0.5) * Math.PI;
                   const speed = 1 + Math.random() * (impactForce / 4);
                   spawnParticle(newParticles, {
-                      position: { ...impactPoint },
+                      position: { x: puck.position.x + distVec.x/2, y: puck.position.y + distVec.y/2 },
                       velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
                       radius: config.minRadius + Math.random() * (config.maxRadius - config.minRadius),
                       color: Math.random() > 0.5 ? TEAM_COLORS[puck.team] : TEAM_COLORS[otherPuck.team],
@@ -1342,10 +1275,9 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                   });
               }
             }
-            // --- End of original collision logic ---
         });
         
-        // --- GOAL LOGIC (REFACTORED) ---
+        // --- GOAL LOGIC ---
         if (!roundWinner && !turnLossReason) {
             const isEnteringTopGoal = puck.position.y - puck.radius <= GOAL_Y_BLUE_SCORES && inGoalZoneX;
             const isEnteringBottomGoal = puck.position.y + puck.radius >= GOAL_Y_RED_SCORES && inGoalZoneX;
@@ -1425,8 +1357,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     }
                     
                     const explosionCenter = { ...puck.position };
-                    
-                    // 1. Shockwave
                     const shockwaveConfig = PARTICLE_CONFIG.GOAL_SHOCKWAVE;
                     spawnParticle(newParticles, {
                       position: explosionCenter,
@@ -1439,7 +1369,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                       renderType: 'shockwave',
                     });
 
-                    // 2. Shards
                     const shardConfig = PARTICLE_CONFIG.GOAL_SHARD;
                     for (let k = 0; k < shardConfig.count; k++) {
                         const angle = Math.random() * 2 * Math.PI;
@@ -1456,7 +1385,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                         });
                     }
 
-                    // 3. Debris particles
                     for (let k = 0; k < goalConfig.count; k++) {
                         const angle = Math.random() * 2 * Math.PI;
                         const speed = goalConfig.minSpeed + Math.random() * (goalConfig.maxSpeed - goalConfig.minSpeed);
@@ -1499,7 +1427,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       });
 
       if (puckIdsToDestroy.size > 0) {
-        // If a selected puck or info-card puck is being destroyed, deselect it.
         if (newSelectedPuckId !== null && puckIdsToDestroy.has(newSelectedPuckId)) {
           newSelectedPuckId = null;
         }
@@ -1508,13 +1435,11 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         }
         
         newPucks = newPucks.filter(p => !puckIdsToDestroy.has(p.id));
-        // After destroying pucks, re-check the special shot status for both teams
         newSpecialShotStatus.BLUE = checkSpecialShotStatus('BLUE', newPucks);
         newSpecialShotStatus.RED = checkSpecialShotStatus('RED', newPucks);
       }
 
       // Tension-based camera logic
-      /* ... existing camera logic ... */
       const targetViewBoxStr = VIEWBOX_STRING;
       const currentVb = prev.viewBox.split(' ').map(Number);
       const targetVb = targetViewBoxStr.split(' ').map(Number);
@@ -1531,18 +1456,21 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         
         // --- GOAL SCORED SEQUENCE ---
         if (roundWinner && scoringPuck) {
-            // Stop all pucks immediately
             newPucks.forEach(p => { p.velocity = {x: 0, y: 0}; });
             const pointsScored = PUCK_GOAL_POINTS[scoringPuck.puckType] || 0;
+            const newScore = { ...prev.score };
+            newScore[roundWinner] += pointsScored;
+
+            const finalWinner = checkWinner(newScore);
 
             return {
                 ...prev,
                 pucks: newPucks,
-                particles: newParticles, // keep goal particles
+                particles: newParticles, 
                 floatingTexts: newFloatingTexts,
                 orbitingParticles: newOrbitingParticles,
                 specialShotStatus: newSpecialShotStatus,
-                isSimulating: false, // Stop the game loop, but show the result
+                isSimulating: false, 
                 canShoot: false,
                 viewBox: VIEWBOX_STRING,
                 imaginaryLine: null,
@@ -1551,17 +1479,19 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                 infoCardPuckId: null,
                 previewState: null,
                 isCameraInTensionMode: false,
-                lastShotWasSpecial: 'NONE', // Reset flag on goal
-                orbHitsThisShot: 0, // Reset on goal
-                goalScoredInfo: { // This is the trigger for the UI
+                lastShotWasSpecial: 'NONE', 
+                orbHitsThisShot: 0, 
+                goalScoredInfo: { 
                     scoringTeam: roundWinner,
                     pointsScored: pointsScored,
                     scoringPuckType: scoringPuck.puckType,
                 },
+                score: newScore,
+                winner: finalWinner,
                 gameMessage: null,
                 bonusTurnForTeam: null,
                 screenShake: 0,
-                turnLossReason: null, // No turn loss on a valid goal
+                turnLossReason: null, 
             };
         }
 
@@ -1569,11 +1499,9 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         const bonusTurnEarned = newCanShoot;
         const wasSpecialShotWithoutGoal = prev.lastShotWasSpecial !== 'NONE' && !roundWinner;
         
-        // BUG FIX: Check for soft-lock state on bonus turn
         let isSoftLocked = false;
         if (bonusTurnEarned) {
             const teamPucks = newPucks.filter(p => p.team === prev.currentTurn);
-            // prev.pucksShotThisTurn already includes the puck just shot
             const shootablePucks = teamPucks.filter(p => !prev.pucksShotThisTurn.includes(p.id));
             if (shootablePucks.length === 0) {
                 isSoftLocked = true;
@@ -1595,45 +1523,34 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         let finalOrbitingParticles = newOrbitingParticles;
         let turnChangeParticles: Particle[] = [];
 
-        // Reset effects at end of turn
         newPucks.forEach(p => {
-            p.velocity = { x: 0, y: 0 }; // Force stop all pucks
+            p.velocity = { x: 0, y: 0 }; 
             p.temporaryEffects = p.temporaryEffects.filter(effect => 
                 effect.type === 'REPULSOR_ARMOR'
             );
         });
         
-        // Turn actually changes
         if (nextTurn !== prev.currentTurn) {
             newTurnCount++;
-            
-            // Spawn new orb if needed
             if (newTurnCount > 0 && (newTurnCount % TURNS_PER_ORB_SPAWN === 0)) {
                 const ORB_RADIUS = 8;
                 const totalPerimeter = 2 * (BOARD_WIDTH + BOARD_HEIGHT);
-                // Calculate the 'width' of an orb in the 0-1 progress space
                 const orbDiameterOnPerimeter = (ORB_RADIUS * 2) / totalPerimeter;
 
                 let newProgress;
-                let attempts = 0; // Safety break to prevent infinite loops
-
-                // Find a random spot that doesn't overlap with existing orbs
+                let attempts = 0; 
                 do {
                     newProgress = Math.random();
                     attempts++;
-                    if (attempts > 100) { 
-                        console.warn("Could not find a non-overlapping spot for a new orb after 100 attempts.");
-                        break; 
-                    }
+                    if (attempts > 100) break; 
                 } while (finalOrbitingParticles.some(orb => {
-                    // Calculate shortest distance on a circular perimeter (0 to 1)
                     let distance = Math.abs(newProgress - (orb.progress || 0));
-                    if (distance > 0.5) distance = 1 - distance; // Handle wrap-around
-                    return distance < orbDiameterOnPerimeter * 1.5; // Use 1.5 multiplier for spacing
+                    if (distance > 0.5) distance = 1 - distance; 
+                    return distance < orbDiameterOnPerimeter * 1.5; 
                 }));
 
                 const newOrb: Particle = {
-                    id: -(finalOrbitingParticles.length + 1), // unique negative id
+                    id: -(finalOrbitingParticles.length + 1), 
                     position: { x: 0, y: 0 },
                     velocity: { x: 0, y: 0 },
                     radius: ORB_RADIUS,
@@ -1644,24 +1561,19 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     decay: 0,
                     renderType: 'orbiting',
                     progress: newProgress,
-                    // Alternate direction based on the number of orbs already present
                     speed: (finalOrbitingParticles.length % 2 === 0 ? 1 : -1) * (0.001 + Math.random() * 0.0002),
                 };
                 finalOrbitingParticles.push(newOrb);
             }
             
-            // Deactivate overcharge after the turn is used
             if (prev.overchargedTeam === prev.currentTurn) {
                 newOverchargedTeam = null;
             }
         
-            // If turn changes, all special shot statuses are reset unless a puck was just charged to trigger it
             const newBlueStatus = checkSpecialShotStatus('BLUE', newPucks);
             const newRedStatus = checkSpecialShotStatus('RED', newPucks);
-
             newSpecialShotStatus.BLUE = newBlueStatus;
             newSpecialShotStatus.RED = newRedStatus;
-
         
             finalOrbitingParticles.forEach(orb => {
                  orb.color = TEAM_COLORS[nextTurn];
@@ -1674,7 +1586,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                 ? { ...finalOrbitingParticles[0].position }
                 : { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT / 2 };
 
-            // Create particle burst at the effect position
             for (let k = 0; k < config.count; k++) {
                 const angle = Math.random() * 2 * Math.PI;
                 const speed = config.minSpeed + Math.random() * (config.maxSpeed - config.minSpeed);
@@ -1688,7 +1599,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                     decay: config.decay,
                 });
             }
-            // Also create a ring effect for emphasis
             spawnParticle(turnChangeParticles, {
                 position: turnChangeEffectPosition,
                 velocity: { x: 0, y: 0 },
@@ -1701,7 +1611,6 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             });
         }
 
-        // If user has already started aiming their next (bonus) shot, don't reset their UI state.
         const userHasStartedNextAction = newSelectedPuckId !== null;
 
         return {
@@ -1719,7 +1628,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
           currentTurn: nextTurn,
           pucksShotThisTurn: nextTurn !== prev.currentTurn ? [] : prev.pucksShotThisTurn,
           orbHitsThisShot: nextTurn !== prev.currentTurn ? 0 : newOrbHitsThisShot,
-          lastShotWasSpecial: 'NONE', // Reset flag after turn resolution
+          lastShotWasSpecial: 'NONE',
           turnLossReason: finalTurnLossReason,
           turnCount: newTurnCount,
           orbCollection: newOrbCollection,
@@ -1763,10 +1672,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
     });
   }, [playSound, setGameMessageWithTimeout]);
   
-  // Separate animation loop for ambient effects when the main simulation is paused
   const ambientLoop = useCallback(() => {
     setGameState(prev => {
-        // This loop should stop if the main simulation starts
         if (prev.isSimulating) {
             if (ambientAnimationFrameId.current) cancelAnimationFrame(ambientAnimationFrameId.current);
             ambientAnimationFrameId.current = null;
@@ -1774,130 +1681,36 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         }
         
         let newParticles = [...prev.particles];
-        let newOrbitingParticles = [...prev.orbitingParticles.map(p => ({...p}))];
-
-        const spawnParticle = (particlesArray: Particle[], props: Omit<Particle, 'id' | 'lifeSpan'> & { life: number }) => {
+        let newOrbitingParticles = [...prev.orbitingParticles];
+        
+        const spawnParticle = (props: Omit<Particle, 'id' | 'lifeSpan'> & { life: number }) => {
             const p = particlePool.current.pop();
             const finalProps = { ...props, lifeSpan: props.life };
             if (p) {
                 Object.assign(p, finalProps, { id: particleIdCounter.current++ });
-                particlesArray.push(p);
+                newParticles.push(p);
             } else {
-                particlesArray.push({
-                    ...finalProps,
-                    id: particleIdCounter.current++,
-                } as Particle);
+                newParticles.push({ ...finalProps, id: particleIdCounter.current++ } as Particle);
             }
         };
 
-        // Update orbiting particles
-        newOrbitingParticles.forEach(orb => {
-            if (orb.progress !== undefined && orb.speed !== undefined) {
-                orb.progress = (orb.progress + orb.speed) % 1;
-                const totalPerimeter = 2 * BOARD_WIDTH + 2 * BOARD_HEIGHT;
-                const p = orb.progress * totalPerimeter;
-    
-                if (p < BOARD_WIDTH) { // Top edge
-                    orb.position = { x: p, y: 0 };
-                } else if (p < BOARD_WIDTH + BOARD_HEIGHT) { // Right edge
-                    orb.position = { x: BOARD_WIDTH, y: p - BOARD_WIDTH };
-                } else if (p < 2 * BOARD_WIDTH + BOARD_HEIGHT) { // Bottom edge
-                    orb.position = { x: BOARD_WIDTH - (p - (BOARD_WIDTH + BOARD_HEIGHT)), y: BOARD_HEIGHT };
-                } else { // Left edge
-                    orb.position = { x: 0, y: BOARD_HEIGHT - (p - (2 * BOARD_WIDTH + BOARD_HEIGHT)) };
-                }
-            }
-        });
-        
-        // Add particle effects for Special Shot being ready
-        const addParticlesForTeam = (team: Team, status: SpecialShotStatus) => {
-            if (status !== 'NONE' && Math.random() > 0.96) {
-                const king = prev.pucks.find(p => p.puckType === 'KING' && p.team === team);
-                if (king) {
-                    const isUltimate = status === 'ULTIMATE';
-                    const config = isUltimate ? PARTICLE_CONFIG.ULTIMATE_POWER_READY : PARTICLE_CONFIG.ROYAL_POWER_READY;
-                    const angle = Math.random() * 2 * Math.PI;
-                    spawnParticle(newParticles, {
-                        position: { ...king.position },
-                        velocity: { x: Math.cos(angle) * config.speed, y: Math.sin(angle) * config.speed },
-                        radius: config.radius,
-                        color: isUltimate ? `hsl(${Date.now() / 10 % 360}, 100%, 70%)` : UI_COLORS.GOLD,
-                        opacity: 0.9,
-                        life: config.life,
-                        decay: config.decay,
-                    });
-                }
-            }
-        };
-
-        addParticlesForTeam('BLUE', prev.specialShotStatus.BLUE);
-        addParticlesForTeam('RED', prev.specialShotStatus.RED);
-
-        // Add Pulsar Armed Aura particles
-        if (prev.pulsarShotArmed && Math.random() < 0.04) {
-            const armedTeam = prev.pulsarShotArmed;
-            prev.pucks.forEach(puck => {
-                if (puck.team === armedTeam) {
-                    const config = PARTICLE_CONFIG.PULSAR_AURA;
-                    const angle = Math.random() * 2 * Math.PI;
-                    const radiusOffset = puck.radius + 3;
-                    const startPos = {
-                        x: puck.position.x + Math.cos(angle) * radiusOffset,
-                        y: puck.position.y + Math.sin(angle) * radiusOffset,
-                    };
-                    // Velocity perpendicular to the radius for orbit effect
-                    const vel = {
-                        x: -Math.sin(angle) * config.speed,
-                        y: Math.cos(angle) * config.speed,
-                    };
-
-                    spawnParticle(newParticles, {
-                        position: startPos,
-                        velocity: vel,
-                        radius: config.radius,
-                        color: TEAM_COLORS[armedTeam],
-                        opacity: 0.9,
-                        life: config.life,
-                        decay: config.decay,
-                    });
-                }
-            });
-        }
-
-        // Add ambient turn particles
-        if (prev.canShoot && Math.random() < 0.02) {
-            const config = PARTICLE_CONFIG.TURN_DRIFT;
-            const team = prev.currentTurn;
-            const startX = Math.random() * BOARD_WIDTH;
-            let startY, velY;
-
-            if (team === 'BLUE') { // Top team, particles drift down
-                startY = (Math.random() * BOARD_HEIGHT * 0.4) - 20; // Spawn in top 40% of board, slightly off-screen
-                velY = config.speed;
-            } else { // Bottom team, particles drift up
-                startY = BOARD_HEIGHT - (Math.random() * BOARD_HEIGHT * 0.4) + 20; // Spawn in bottom 40%
-                velY = -config.speed;
-            }
-
-            spawnParticle(newParticles, {
-                position: { x: startX, y: startY },
-                velocity: { x: (BOARD_WIDTH / 2 - startX) * 0.001, y: velY },
-                radius: config.radius,
-                color: TEAM_COLORS[team],
-                opacity: 0.6,
-                life: config.life,
-                decay: config.decay,
-            });
-        }
-
-        // Update existing particles (Recycle with Pooling)
         const activeParticles: Particle[] = [];
         for (const p of newParticles) {
             p.life -= 1;
             p.opacity -= p.decay;
             if (p.life > 0 && p.opacity > 0) {
-                p.position.x += p.velocity.x;
-                p.position.y += p.velocity.y;
+                if (p.renderType === 'orbiting') {
+                     // Orbiting logic update for ambient mode
+                     if (p.progress !== undefined && p.speed !== undefined) {
+                        p.progress = (p.progress + p.speed) % 1;
+                        const totalPerimeter = 2 * BOARD_WIDTH + 2 * BOARD_HEIGHT;
+                        const prog = p.progress * totalPerimeter;
+                        if (prog < BOARD_WIDTH) { p.position = { x: prog, y: 0 }; }
+                        else if (prog < BOARD_WIDTH + BOARD_HEIGHT) { p.position = { x: BOARD_WIDTH, y: prog - BOARD_WIDTH }; }
+                        else if (prog < 2 * BOARD_WIDTH + BOARD_HEIGHT) { p.position = { x: BOARD_WIDTH - (prog - (BOARD_WIDTH + BOARD_HEIGHT)), y: BOARD_HEIGHT }; }
+                        else { p.position = { x: 0, y: BOARD_HEIGHT - (prog - (2 * BOARD_WIDTH + BOARD_HEIGHT)) }; }
+                    }
+                }
                 activeParticles.push(p);
             } else {
                 particlePool.current.push(p);
@@ -1905,722 +1718,409 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
         }
         newParticles = activeParticles;
 
-        const newFloatingTexts = prev.floatingTexts.map(ft => ({
-            ...ft,
-            position: { x: ft.position.x + ft.velocity.x, y: ft.position.y + ft.velocity.y },
-            life: ft.life - 1,
-            opacity: ft.opacity - ft.decay,
-        })).filter(ft => ft.life > 0 && ft.opacity > 0);
-        
+         // Ambient Orbiting Particles Logic
+        newOrbitingParticles.forEach(orb => {
+            if (orb.progress !== undefined && orb.speed !== undefined) {
+                orb.progress = (orb.progress + orb.speed) % 1;
+                const totalPerimeter = 2 * BOARD_WIDTH + 2 * BOARD_HEIGHT;
+                const p = orb.progress * totalPerimeter;
+                 if (p < BOARD_WIDTH) { orb.position = { x: p, y: 0 }; }
+                 else if (p < BOARD_WIDTH + BOARD_HEIGHT) { orb.position = { x: BOARD_WIDTH, y: p - BOARD_WIDTH }; }
+                 else if (p < 2 * BOARD_WIDTH + BOARD_HEIGHT) { orb.position = { x: BOARD_WIDTH - (p - (BOARD_WIDTH + BOARD_HEIGHT)), y: BOARD_HEIGHT }; }
+                 else { orb.position = { x: 0, y: BOARD_HEIGHT - (p - (2 * BOARD_WIDTH + BOARD_HEIGHT)) }; }
+            }
+        });
+
+        // Ambient Spawning (Idle effects)
+        prev.pucks.forEach(puck => {
+             if (Math.random() < 0.005) {
+                // Subtle glint
+             }
+             if (puck.isCharged && Math.random() < 0.02) {
+                 const config = PARTICLE_CONFIG.IDLE_PULSE || { life: 40, decay: 0.02, radius: 2 };
+                 spawnParticle({
+                     position: { ...puck.position },
+                     velocity: { x: 0, y: 0 },
+                     radius: puck.radius,
+                     color: '#fde047',
+                     opacity: 0.6,
+                     life: config.life,
+                     decay: config.decay,
+                     renderType: 'idle_pulse',
+                     puckType: puck.puckType,
+                     rotation: puck.rotation,
+                 });
+             }
+        });
+
         ambientAnimationFrameId.current = requestAnimationFrame(ambientLoop);
-        
         return {
             ...prev,
             particles: newParticles,
-            floatingTexts: newFloatingTexts,
             orbitingParticles: newOrbitingParticles,
         };
     });
   }, []);
 
-  // Effect to manage starting/stopping the physics simulation loop
   useEffect(() => {
     if (gameState.isSimulating) {
-        if (!animationFrameId.current) { // Prevent multiple loops
+        if (!animationFrameId.current) {
             animationFrameId.current = requestAnimationFrame(gameLoop);
         }
-    }
-    return () => {
-      if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-        animationFrameId.current = null;
-      }
-    };
-  }, [gameState.isSimulating, gameLoop]);
-
-  // Effect to manage starting/stopping the ambient effects loop
-  useEffect(() => {
-    if (!gameState.isSimulating && !gameState.goalScoredInfo && !gameState.winner) {
+    } else {
         if (!ambientAnimationFrameId.current) {
             ambientAnimationFrameId.current = requestAnimationFrame(ambientLoop);
         }
-    } else {
-        if (ambientAnimationFrameId.current) {
-            cancelAnimationFrame(ambientAnimationFrameId.current);
-            ambientAnimationFrameId.current = null;
-        }
     }
     return () => {
-        if (ambientAnimationFrameId.current) {
-            cancelAnimationFrame(ambientAnimationFrameId.current);
-            ambientAnimationFrameId.current = null;
-        }
+        if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+        if (ambientAnimationFrameId.current) cancelAnimationFrame(ambientAnimationFrameId.current);
     };
-  }, [gameState.isSimulating, gameState.goalScoredInfo, gameState.winner, ambientLoop]);
-  
-  // Effect to handle inactivity timer
-  useEffect(() => {
-    const triggerHeartbeat = () => {
-        setGameState(prev => {
-            // Final check to ensure we should still trigger the effect
-            if (!prev.canShoot || prev.isSimulating || prev.winner || prev.selectedPuckId) {
-                return prev;
-            }
-            playSound('HEARTBEAT');
-            const newParticles: Particle[] = [...prev.particles];
+  }, [gameState.isSimulating, gameLoop, ambientLoop]);
 
-            const spawnParticle = (particlesArray: Particle[], props: Omit<Particle, 'id' | 'lifeSpan'> & { life: number }) => {
-                const p = particlePool.current.pop();
-                const finalProps = { ...props, lifeSpan: props.life };
-                if (p) {
-                    Object.assign(p, finalProps, { id: particleIdCounter.current++ });
-                    particlesArray.push(p);
-                } else {
-                    particlesArray.push({
-                        ...finalProps,
-                        id: particleIdCounter.current++,
-                    } as Particle);
-                }
-            };
-
-            // 1. Central heartbeat
-            spawnParticle(newParticles, {
-                position: { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT / 2 },
-                velocity: { x: 0, y: 0 },
-                radius: 10,
-                color: TEAM_COLORS[prev.currentTurn],
-                opacity: 0.3,
-                life: 90,
-                decay: 0.008,
-                renderType: 'heartbeat',
-            });
-
-            // 2. Pulse on shootable pucks
-            const shootablePucks = prev.pucks.filter(p =>
-                p.team === prev.currentTurn && !prev.pucksShotThisTurn.includes(p.id)
-            );
-
-            shootablePucks.forEach(puck => {
-                spawnParticle(newParticles, {
-                    position: { ...puck.position },
-                    velocity: { x: 0, y: 0 },
-                    radius: puck.radius, // Base radius
-                    color: TEAM_COLORS[puck.team],
-                    opacity: 0.4,
-                    life: 90,
-                    decay: 0, // Let render logic handle fade
-                    renderType: 'idle_pulse',
-                    puckType: puck.puckType,
-                    rotation: puck.rotation,
-                });
-            });
-
-            return {
-                ...prev,
-                particles: newParticles,
-            };
-        });
-    };
-
-    const clearInactivityTimers = () => {
-        if (inactivityStateRef.current.timeout) clearTimeout(inactivityStateRef.current.timeout);
-        if (inactivityStateRef.current.interval) clearInterval(inactivityStateRef.current.interval);
-        inactivityStateRef.current = { timeout: null, interval: null };
-    };
-
-    const isIdle = gameState.canShoot && !gameState.isSimulating && !gameState.winner && !gameState.selectedPuckId;
-
-    if (isIdle) {
-        if (!inactivityStateRef.current.timeout && !inactivityStateRef.current.interval) {
-            inactivityStateRef.current.timeout = setTimeout(() => {
-                triggerHeartbeat(); // First beat
-                inactivityStateRef.current.interval = setInterval(triggerHeartbeat, 12000); // Subsequent beats
-            }, 10000); // 10s initial delay
-        }
-    } else {
-        clearInactivityTimers();
-    }
-
-    return () => clearInactivityTimers();
-  }, [gameState.canShoot, gameState.isSimulating, gameState.winner, gameState.selectedPuckId, playSound]);
-
-  useEffect(() => {
-    if (gameState.goalScoredInfo) {
-      const { scoringTeam, pointsScored } = gameState.goalScoredInfo;
-
-      if (roundEndTimeoutRef.current) {
-        clearTimeout(roundEndTimeoutRef.current);
-      }
-      
-      roundEndTimeoutRef.current = setTimeout(() => {
-        setGameState(prev => {
-          if (!prev.goalScoredInfo) return prev;
-          
-          const newScore = { ...prev.score };
-          newScore[scoringTeam] += pointsScored;
-
-          const gameWinner = checkWinner(newScore);
-
-          if (gameWinner) {
-             return {
-                 ...prev,
-                 winner: gameWinner,
-                 score: newScore,
-                 isSimulating: false,
-                 canShoot: false,
-                 goalScoredInfo: null,
-             };
-          }
-
-          // Reset for next round if no winner
-          const nextGameState = createInitialGameState();
-          const loserStartsTurn = scoringTeam === 'BLUE' ? 'RED' : 'BLUE';
-          
-          // Preserve orbiting particles from the previous round
-          const preservedOrbs = prev.orbitingParticles.map(orb => ({
-              ...orb,
-              color: TEAM_COLORS[loserStartsTurn]
-          }));
-          
-          // If all orbs were collected, ensure at least one is present for the next round.
-          if (preservedOrbs.length === 0) {
-              const newInitialOrb = { ...nextGameState.orbitingParticles[0] };
-              newInitialOrb.color = TEAM_COLORS[loserStartsTurn];
-              preservedOrbs.push(newInitialOrb);
-          }
-          
-          return {
-            ...nextGameState,
-            score: newScore,
-            currentTurn: loserStartsTurn, 
-            pucks: nextGameState.pucks.map(p => ({...p, initialPosition: {...p.position}})),
-            orbitingParticles: preservedOrbs,
-          };
-        });
-      }, 3000); // Wait 3 seconds for the animation to play
-    }
-
-    return () => {
-      if (roundEndTimeoutRef.current) {
-        clearTimeout(roundEndTimeoutRef.current);
-      }
-    };
-  }, [gameState.goalScoredInfo]);
-
-  const handleMouseDown = useCallback((puckId: number, startPos: Vector) => {
-    clearInfoCardTimer();
-
+  const handleMouseDown = useCallback((puckId: number, pos: Vector) => {
     setGameState(prev => {
-      if (!prev.canShoot || prev.winner) return prev;
-
+      if (prev.isSimulating || !prev.canShoot) {
+          const clickedPuck = prev.pucks.find(p => p.id === puckId);
+          // Show info card if not in simulation or turn
+          if (clickedPuck && prev.infoCardPuckId !== puckId) {
+             // Clear existing timer
+             if (infoCardTimerRef.current) clearTimeout(infoCardTimerRef.current);
+             
+             // Set new timer to clear info card after 3 seconds
+             infoCardTimerRef.current = setTimeout(() => {
+                 setGameState(gs => ({ ...gs, infoCardPuckId: null }));
+                 infoCardTimerRef.current = null;
+             }, 3000);
+             
+             playSound('UI_CLICK_1');
+             return { ...prev, infoCardPuckId: puckId };
+          }
+          return prev;
+      }
+      
       const puck = prev.pucks.find(p => p.id === puckId);
-      if (!puck || puck.team !== prev.currentTurn || prev.pucksShotThisTurn.includes(puck.id)) {
-        if (prev.selectedPuckId !== null) playSound('UI_CLICK_2');
-        return { ...prev, selectedPuckId: null, infoCardPuckId: null, shotPreview: null, previewState: null, imaginaryLine: null };
+      if (!puck) return prev;
+
+      if (puck.team !== prev.currentTurn) {
+         // Show info card for opponent pucks
+         if (prev.infoCardPuckId !== puckId) {
+             if (infoCardTimerRef.current) clearTimeout(infoCardTimerRef.current);
+             infoCardTimerRef.current = setTimeout(() => {
+                 setGameState(gs => ({ ...gs, infoCardPuckId: null }));
+                 infoCardTimerRef.current = null;
+             }, 3000);
+             playSound('UI_CLICK_1');
+             return { ...prev, infoCardPuckId: puckId };
+         }
+         return prev;
       }
 
-      dragStateRef.current = { mouseDownPuckId: puckId, isDragging: false, startPos, justSelected: puckId !== prev.selectedPuckId };
+      if (prev.pucksShotThisTurn.includes(puckId)) return prev;
 
-      infoCardTimerRef.current = setTimeout(() => {
-        if (dragStateRef.current.mouseDownPuckId === puckId && !dragStateRef.current.isDragging) {
-          setGameState(current => ({ ...current, infoCardPuckId: puckId }));
+      dragStateRef.current = { mouseDownPuckId: puckId, isDragging: false, startPos: pos, justSelected: true };
+      
+      const potentialLines = calculatePotentialLines(puckId, prev.pucks);
+
+      // --- NEW: BUILD SPATIAL GRID FOR LINE CROSSING DETECTION ---
+      // This allows the high-performance physics loop to quickly check for line crossings.
+      const grid = new Map<string, number[]>();
+      potentialLines.forEach((line, index) => {
+          const cells = getCellsForSegment(line.start, line.end);
+          cells.forEach(cellKey => {
+              if (!grid.has(cellKey)) grid.set(cellKey, []);
+              grid.get(cellKey)!.push(index);
+          });
+      });
+      lineGridRef.current = grid;
+      // -----------------------------------------------------------
+
+      const isPawn = puck.puckType === 'PAWN';
+      const linesToCross = PUCK_TYPE_PROPERTIES[puck.puckType].linesToCrossForBonus;
+      const chargeText = isPawn 
+        ? "Cruza entre 2 peones y 1 especial para cargar" 
+        : `Cruza ${linesToCross} línea${linesToCross > 1 ? 's' : ''} para cargar`;
+
+      playSound('PUCK_SELECT');
+
+      return {
+        ...prev,
+        selectedPuckId: puckId,
+        infoCardPuckId: null, // Clear info card on selection
+        previewState: {
+            leadPuckId: puckId,
+            trajectories: [],
+            potentialLines,
+            linesToCrossForBonus: linesToCross,
+            chargeRequirementText: chargeText,
+        },
+        imaginaryLine: {
+            lines: potentialLines,
+            isConfirmed: false,
+            crossedLineIndices: new Set(),
+            pawnPawnLinesCrossed: new Set(),
+            pawnSpecialLinesCrossed: new Set(),
+            shotPuckId: puckId,
+            comboCount: 0,
+            highlightedLineIndex: null, // Reset highlight
         }
-      }, 500);
-
-      let nextState: GameState = { ...prev };
-
-      if (nextState.bonusTurnForTeam) {
-        nextState.bonusTurnForTeam = null;
-      }
-      
-      const pucksAfterCancel = prev.pucks;
-      nextState.pucks = pucksAfterCancel;
-
-      if (puckId !== prev.selectedPuckId) {
-        playSound('PUCK_SELECT');
-        const potentialLines = calculatePotentialLines(puckId, pucksAfterCancel);
-        
-        const newImaginaryLineState: ImaginaryLineState = potentialLines.length > 0 ? {
-          lines: potentialLines,
-          isConfirmed: false,
-          crossedLineIndices: new Set(),
-          pawnPawnLinesCrossed: new Set(),
-          pawnSpecialLinesCrossed: new Set(),
-          shotPuckId: puckId,
-          comboCount: 0,
-          highlightedLineIndex: null,
-        } : null;
-
-        nextState = {
-          ...nextState,
-          selectedPuckId: puckId,
-          infoCardPuckId: null,
-          shotPreview: null,
-          previewState: null,
-          imaginaryLine: newImaginaryLineState,
-        };
-      } else {
-        nextState = { 
-            ...nextState, 
-            pucks: pucksAfterCancel,
-            infoCardPuckId: null,
-            shotPreview: null,
-            previewState: null,
-            imaginaryLine: nextState.imaginaryLine ? { ...nextState.imaginaryLine, highlightedLineIndex: null } : null,
-        };
-      }
-      
-      return nextState;
+      };
     });
-  }, [playSound, clearInfoCardTimer]);
-  
-  const handleMouseMove = useCallback((currentPos: Vector) => {
-    const { mouseDownPuckId, isDragging: wasDragging, startPos } = dragStateRef.current;
-    if (mouseDownPuckId === null || !startPos) return;
+  }, [playSound]);
 
-    const dragDistanceSq = getVectorMagnitudeSq(subtractVectors(currentPos, startPos));
-    const isStartingToDrag = !wasDragging && dragDistanceSq >= MIN_DRAG_DISTANCE * MIN_DRAG_DISTANCE;
+  const handleMouseMove = useCallback((pos: Vector) => {
+    if (dragStateRef.current.mouseDownPuckId === null) return;
 
-    if (isStartingToDrag) {
-      dragStateRef.current.isDragging = true;
-      clearInfoCardTimer();
-    }
-    
     if (!dragStateRef.current.isDragging) {
-        return;
+      const dist = getVectorMagnitude(subtractVectors(pos, dragStateRef.current.startPos!));
+      if (dist > MIN_DRAG_DISTANCE) {
+        dragStateRef.current.isDragging = true;
+        setGameState(prev => ({...prev, isCameraInTensionMode: true}));
+      }
     }
+
+    if (dragStateRef.current.isDragging) {
+      setGameState(prev => {
+        const start = dragStateRef.current.startPos!;
+        const end = pos;
+        const dragVector = subtractVectors(start, end);
+        const dragDistance = getVectorMagnitude(dragVector);
+        
+        const power = Math.min(dragDistance, MAX_DRAG_FOR_POWER) / MAX_DRAG_FOR_POWER;
+        const isCancelZone = dragDistance < CANCEL_SHOT_THRESHOLD;
+
+        let specialShotType: SpecialShotStatus = 'NONE';
+        const puck = prev.pucks.find(p => p.id === dragStateRef.current.mouseDownPuckId);
+        if (puck && prev.pulsarShotArmed === puck.team) {
+            // Pulsar shot overrides standard special shots visually
+        } else if (puck && puck.puckType === 'KING') {
+             specialShotType = prev.specialShotStatus[puck.team];
+        }
+
+        // --- NEW: Run Aim Simulation ---
+        // This simulates the shot to see if it will hit any lines.
+        let highlightedLineIndex: number | null = null;
+        if (!isCancelZone && prev.previewState && prev.previewState.potentialLines.length > 0 && puck) {
+             const { trajectories } = runPreviewSimulation(prev.pucks, puck.id, dragVector, power);
+             const myTrajectory = trajectories.find(t => t.puckId === puck.id);
+             
+             if (myTrajectory && myTrajectory.path.length > 1) {
+                 const path = myTrajectory.path;
+                 // Check intersection with each potential line
+                 for (let i = 0; i < prev.previewState.potentialLines.length; i++) {
+                     const line = prev.previewState.potentialLines[i];
+                     // Only check interaction if neither source is the shooting puck (which is always true by definition of potentialLines)
+                     
+                     // Optimization: Check if path intersects line segment
+                     let intersects = false;
+                     // We check segments of the trajectory
+                     for (let j = 0; j < path.length - 1; j++) {
+                         if (getLineIntersection(path[j], path[j+1], line.start, line.end)) {
+                             intersects = true;
+                             break;
+                         }
+                     }
+                     
+                     if (intersects) {
+                         highlightedLineIndex = i;
+                         break; // Highlight the first one we hit
+                     }
+                 }
+             }
+        }
+        // -------------------------------
+
+        return {
+          ...prev,
+          shotPreview: {
+            start,
+            end,
+            isMaxPower: power >= 1,
+            isCancelZone,
+            specialShotType,
+            power,
+          },
+          imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, highlightedLineIndex } : null,
+        };
+      });
+    }
+  }, []);
+
+  const handleMouseUp = useCallback((pos: Vector) => {
+    const { mouseDownPuckId, isDragging, startPos } = dragStateRef.current;
+    
+    dragStateRef.current = { mouseDownPuckId: null, isDragging: false, startPos: null, justSelected: false };
 
     setGameState(prev => {
       const puck = prev.pucks.find(p => p.id === mouseDownPuckId);
       if (!puck) return prev;
+      
+      if (!isDragging) {
+          // If we just clicked without dragging, keep it selected (handled in MouseDown)
+          // Just turn off tension mode if it was on
+          return { ...prev, isCameraInTensionMode: false };
+      }
 
-      // --- We are now officially dragging ---
-      let newParticles = [...prev.particles];
-      const shotVector = subtractVectors(puck.position, currentPos);
-      const shotDistance = getVectorMagnitude(shotVector);
-      const isNowMaxPower = shotDistance >= MAX_DRAG_FOR_POWER;
-      const isCancelZone = shotDistance < CANCEL_SHOT_THRESHOLD;
-      const wasMaxPower = prev.shotPreview?.isMaxPower ?? false;
-      const power = Math.min(1, shotDistance / MAX_DRAG_FOR_POWER);
+      const dragVector = subtractVectors(startPos!, pos);
+      const dragDistance = getVectorMagnitude(dragVector);
+
+      if (dragDistance < CANCEL_SHOT_THRESHOLD) {
+          // Cancel Shot
+          return {
+              ...prev,
+              shotPreview: null,
+              previewState: null, // Clear lines
+              imaginaryLine: null,
+              isCameraInTensionMode: false,
+              selectedPuckId: null, // Deselect on cancel
+          };
+      }
+
+      // --- FIRE SHOT ---
+      const power = Math.min(dragDistance, MAX_DRAG_FOR_POWER) / MAX_DRAG_FOR_POWER;
       
-      const specialShotType = puck.puckType === 'KING' ? prev.specialShotStatus[puck.team] : null;
+      // Calculate velocity
+      const powerMultiplier = LAUNCH_POWER_MULTIPLIER * (PUCK_TYPE_PROPERTIES[puck.puckType].powerFactor || 1);
+      const finalLaunchPower = power * MAX_DRAG_FOR_POWER * powerMultiplier;
       
-      const spawnParticle = (particlesArray: Particle[], props: Omit<Particle, 'id' | 'lifeSpan'> & { life: number }) => {
-          const p = particlePool.current.pop();
-          const finalProps = { ...props, lifeSpan: props.life };
-          if (p) {
-              Object.assign(p, finalProps, { id: particleIdCounter.current++ });
-              particlesArray.push(p);
-          } else {
-              particlesArray.push({
-                  ...finalProps,
-                  id: particleIdCounter.current++,
-              } as Particle);
-          }
+      // Special Shot Logic
+      let specialStatus: SpecialShotStatus = 'NONE';
+      let isPulsarShot = false;
+
+      if (prev.pulsarShotArmed === puck.team) {
+          isPulsarShot = true;
+          // Pulsar shot logic (boost power/speed)
+          // For now, Pulsar shot just ensures high velocity and maybe special effect triggers
+      } else if (puck.puckType === 'KING') {
+          specialStatus = prev.specialShotStatus[puck.team];
+      }
+
+      // Apply velocity
+      // Note: We use the dragVector directly. The magnitude is clamped by power calculation, 
+      // but direction is preserved.
+      const launchVelocity = {
+          x: (dragVector.x / dragDistance) * finalLaunchPower,
+          y: (dragVector.y / dragDistance) * finalLaunchPower,
       };
 
-      if (isNowMaxPower && !wasMaxPower) {
-          playSound('MAX_POWER_LOCK');
-          const config = PARTICLE_CONFIG.MAX_POWER_REACHED;
-          let particleColor = TEAM_COLORS[puck.team];
-          if (specialShotType === 'ROYAL') particleColor = UI_COLORS.GOLD;
-          else if (specialShotType === 'ULTIMATE') particleColor = `hsl(${Date.now() / 20 % 360}, 100%, 70%)`;
-
-          for (let i = 0; i < config.count; i++) {
-              const angle = Math.random() * 2 * Math.PI;
-              const speed = Math.random() * config.speed;
-              spawnParticle(newParticles, {
-                  position: { ...puck.position },
-                  velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-                  radius: config.minRadius + Math.random() * (config.maxRadius - config.minRadius),
-                  color: particleColor,
-                  opacity: 0.9,
-                  life: config.life,
-                  decay: config.decay,
-              });
-          }
+      // Apply Special Shot Modifiers
+      if (specialStatus === 'ROYAL') {
+          launchVelocity.x *= ROYAL_SHOT_POWER_MULTIPLIER;
+          launchVelocity.y *= ROYAL_SHOT_POWER_MULTIPLIER;
+          puck.temporaryEffects.push({ type: 'ROYAL_RAGE', duration: 180, destroyedCount: 0 }); // 3 seconds
+      } else if (specialStatus === 'ULTIMATE') {
+          launchVelocity.x *= ULTIMATE_SHOT_POWER_MULTIPLIER;
+          launchVelocity.y *= ULTIMATE_SHOT_POWER_MULTIPLIER;
+           puck.temporaryEffects.push({ type: 'ULTIMATE_RAGE', duration: 240, destroyedCount: 0 }); // 4 seconds
+      } else if (isPulsarShot) {
+          launchVelocity.x *= 1.5;
+          launchVelocity.y *= 1.5;
       }
 
-      if (isNowMaxPower && Math.random() < 0.1) {
-        const config = PARTICLE_CONFIG.MAX_POWER_IDLE;
-        const angle = Math.random() * 2 * Math.PI;
-        let particleColor = TEAM_COLORS[puck.team];
-        if (specialShotType === 'ROYAL') particleColor = UI_COLORS.GOLD;
-        else if (specialShotType === 'ULTIMATE') particleColor = `hsl(${Date.now() / 20 % 360}, 100%, 70%)`;
-
-        spawnParticle(newParticles, {
-            position: { x: puck.position.x + (Math.random() - 0.5) * puck.radius * 2.5, y: puck.position.y + (Math.random() - 0.5) * puck.radius * 2.5 },
-            velocity: { x: Math.cos(angle) * config.speed, y: Math.sin(angle) * config.speed },
-            radius: config.radius,
-            color: particleColor,
-            opacity: 0.8,
-            life: config.life,
-            decay: config.decay,
-        });
-      }
-
-      if (!isCancelZone && power > 0.1 && Math.random() < 0.1) {
-        const config = PARTICLE_CONFIG.AIM_FLOW;
-        const angle = Math.atan2(shotVector.y, shotVector.x);
-        const speed = config.speed * (0.5 + power * 1.5);
-        
-        let particleColor = TEAM_COLORS[puck.team];
-        if (specialShotType === 'ULTIMATE') particleColor = `hsl(${Date.now() / 10 % 360}, 100%, 70%)`;
-        else if (specialShotType === 'ROYAL') particleColor = UI_COLORS.GOLD;
-        
-        spawnParticle(newParticles, {
-            position: { ...puck.position },
-            velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-            radius: config.radius * (0.5 + power),
-            color: particleColor,
-            opacity: 0.9,
-            life: config.life,
-            decay: config.decay,
-            renderType: 'aim_streak',
-        });
-    }
+      puck.velocity = {
+          x: launchVelocity.x / puck.mass,
+          y: launchVelocity.y / puck.mass,
+      };
       
-      const potentialLines = calculatePotentialLines(puck.id, prev.pucks);
-      const shotAngle = Math.atan2(shotVector.y, shotVector.x);
-
-      let bestLineIndex = -1;
-      let minAngleDiff = Math.PI;
-
-      potentialLines.forEach((line, index) => {
-          const lineVector = subtractVectors(line.end, line.start);
-          const lineAngle1 = Math.atan2(lineVector.y, lineVector.x);
-          const lineAngle2 = Math.atan2(-lineVector.y, -lineVector.x);
-          const diff1 = Math.abs(shotAngle - lineAngle1);
-          const angleDiff1 = Math.min(diff1, 2 * Math.PI - diff1);
-          const diff2 = Math.abs(shotAngle - lineAngle2);
-          const angleDiff2 = Math.min(diff2, 2 * Math.PI - diff2);
-          const minDiff = Math.min(angleDiff1, angleDiff2);
-
-          if (minDiff < minAngleDiff && minDiff < Math.PI / 8) { // 22.5 degree tolerance
-              minAngleDiff = minDiff;
-              bestLineIndex = index;
-          }
-      });
-      
-      const newImaginaryLine: ImaginaryLineState = prev.imaginaryLine ? {
-          ...prev.imaginaryLine,
-          lines: potentialLines,
-          shotPuckId: puck.id,
-          highlightedLineIndex: bestLineIndex,
-      } : null;
-
-      let newPreviewState: PreviewState | null = null;
-      if (!isCancelZone) {
-        const { trajectories } = runPreviewSimulation(prev.pucks, puck.id, shotVector, power);
-        
-        const puckProps = PUCK_TYPE_PROPERTIES[puck.puckType];
-        let chargeRequirementText: string;
-        if (puck.puckType === 'PAWN') {
-            chargeRequirementText = 'Cruza una línea Peón-Peón Y una Peón-Especial';
-        } else {
-            const lines = puckProps.linesToCrossForBonus;
-            chargeRequirementText = `Cruza ${lines} ${lines > 1 ? 'líneas' : 'línea'} para cargar`;
-        }
-        
-        newPreviewState = {
-            leadPuckId: puck.id,
-            trajectories: trajectories,
-            potentialLines: prev.imaginaryLine ? prev.imaginaryLine.lines : [],
-            linesToCrossForBonus: puckProps.linesToCrossForBonus,
-            chargeRequirementText,
-        };
+      // Consume Pulsar Power if used
+      let newPulsarPower = { ...prev.pulsarPower };
+      if (isPulsarShot) {
+          newPulsarPower[puck.team] = 0;
       }
+      
+      // Play Sound
+      if (specialStatus === 'ULTIMATE') playSound('ULTIMATE_SHOT');
+      else if (specialStatus === 'ROYAL') playSound('ROYAL_SHOT');
+      else if (isPulsarShot) playSound('PULSAR_SHOT');
+      else playSound('SHOT', { volume: 0.3 + power * 0.7 });
 
+      // Spawn Shot Particles
+      const newParticles = [...prev.particles];
+      const config = PARTICLE_CONFIG.SHOT_BURST;
+      for (let k = 0; k < config.count; k++) {
+          const angle = Math.atan2(-dragVector.y, -dragVector.x) + (Math.random() - 0.5) * 0.5;
+          const speed = config.speed * (0.5 + Math.random());
+          const p = particlePool.current.pop();
+          const props = {
+              position: { ...puck.position },
+              velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
+              radius: config.minRadius + Math.random() * (config.maxRadius - config.minRadius),
+              color: TEAM_COLORS[puck.team],
+              opacity: 1,
+              life: config.life,
+              decay: config.decay,
+              id: particleIdCounter.current++,
+              lifeSpan: config.life
+          };
+          if (p) Object.assign(p, props);
+          else newParticles.push(props as Particle);
+      }
+      
+      if (prev.imaginaryLine) {
+          prev.imaginaryLine.isConfirmed = true;
+          prev.imaginaryLine.shotPuckId = puck.id;
+      }
+      
+      // Apply ghost phase to other pucks crossed by line? No, that was removed.
+      
       return {
           ...prev,
-          shotPreview: { start: puck.position, end: currentPos, isMaxPower: isNowMaxPower, isCancelZone, specialShotType, power },
-          particles: newParticles,
-          imaginaryLine: newImaginaryLine,
-          infoCardPuckId: null, // Hide info card on drag
-          previewState: newPreviewState,
-      };
-    });
-  }, [playSound, clearInfoCardTimer]);
-
-  const handleMouseUp = useCallback((endPos: Vector | null) => {
-    clearInfoCardTimer();
-    
-    const { mouseDownPuckId, isDragging, justSelected } = dragStateRef.current;
-    
-    dragStateRef.current = { mouseDownPuckId: null, isDragging: false, startPos: null, justSelected: false };
-    
-    if (mouseDownPuckId === null) {
-      return;
-    }
-
-    if (!isDragging) {
-      if (justSelected) {
-        return;
-      }
-      setGameState(prev => {
-        if (mouseDownPuckId === prev.selectedPuckId) {
-          playSound('UI_CLICK_2');
-          lineGridRef.current = null;
-          return {
-            ...prev,
-            selectedPuckId: null,
-            infoCardPuckId: null,
-            shotPreview: null,
-            imaginaryLine: null,
-            previewState: null,
-          };
-        }
-        return prev;
-      });
-      return;
-    }
-
-    setGameState(prev => {
-        const puckToShoot = prev.pucks.find(p => p.id === mouseDownPuckId);
-        if (!puckToShoot) {
-            lineGridRef.current = null;
-            return { ...prev, selectedPuckId: null, shotPreview: null, imaginaryLine: null, previewState: null, infoCardPuckId: null };
-        }
-
-        const finalEndPos = endPos || prev.shotPreview?.end;
-        if (!finalEndPos) {
-            playSound('UI_CLICK_2');
-            lineGridRef.current = null;
-            return {
-                ...prev,
-                shotPreview: null,
-                imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, highlightedLineIndex: null } : null,
-                previewState: null,
-            };
-        }
-    
-        const launchVectorRaw = subtractVectors(puckToShoot.position, finalEndPos);
-        const launchDistance = getVectorMagnitude(launchVectorRaw);
-
-        if (launchDistance < CANCEL_SHOT_THRESHOLD) {
-            playSound('UI_CLICK_2');
-            lineGridRef.current = null;
-            return {
-                ...prev,
-                selectedPuckId: null,
-                infoCardPuckId: null,
-                shotPreview: null,
-                imaginaryLine: null,
-                previewState: null,
-            };
-        }
-        
-        const cappedDistance = Math.min(launchDistance, MAX_DRAG_FOR_POWER);
-        const launchVector = {
-            x: (launchVectorRaw.x / launchDistance) * cappedDistance,
-            y: (launchVectorRaw.y / launchDistance) * cappedDistance,
-        };
-
-        let newPucks = [...prev.pucks.map(p => ({ ...p, temporaryEffects: [...p.temporaryEffects] }))];
-        let puckIndex = newPucks.findIndex(p => p.id === mouseDownPuckId);
-        const puckBeingShot = newPucks[puckIndex];
-        
-        const isPulsarShot = prev.pulsarShotArmed === puckBeingShot.team;
-        const specialShotType = puckBeingShot.puckType === 'KING' ? prev.specialShotStatus[puckBeingShot.team] : 'NONE';
-        
-        let powerMultiplier = isPulsarShot ? LAUNCH_POWER_MULTIPLIER * 2.5 : LAUNCH_POWER_MULTIPLIER;
-        let newScreenShake = 0;
-        
-        if (specialShotType === 'ROYAL') {
-            powerMultiplier *= ROYAL_SHOT_POWER_MULTIPLIER;
-            newScreenShake = 15;
-        } else if (specialShotType === 'ULTIMATE') {
-            powerMultiplier *= ULTIMATE_SHOT_POWER_MULTIPLIER;
-            newScreenShake = 20;
-        }
-
-        const puckProps = PUCK_TYPE_PROPERTIES[puckBeingShot.puckType];
-        if (puckProps.powerFactor) {
-            powerMultiplier *= puckProps.powerFactor;
-        }
-
-        let newParticles = [...prev.particles];
-        let newSpecialShotStatus = { ...prev.specialShotStatus };
-        let newPulsarPower = { ...prev.pulsarPower };
-
-        // CRITICAL BUG FIX: Consume Special Shot resources immediately on firing.
-        if (specialShotType === 'ROYAL' || specialShotType === 'ULTIMATE') {
-            const shotTeam = puckBeingShot.team;
-
-            // Reset pulsar power bar to 0 for the team.
-            newPulsarPower[shotTeam] = 0;
-
-            // Uncharge all pucks for the team to consume the shot.
-            newPucks.forEach(p => {
-                if (p.team === shotTeam) {
-                    p.isCharged = false;
-                }
-            });
-        }
-        
-        const spawnParticle = (particlesArray: Particle[], props: Omit<Particle, 'id' | 'lifeSpan'> & { life: number }) => {
-            const p = particlePool.current.pop();
-            const finalProps = { ...props, lifeSpan: props.life };
-            if (p) {
-                Object.assign(p, finalProps, { id: particleIdCounter.current++ });
-                particlesArray.push(p);
-            } else {
-                particlesArray.push({
-                    ...finalProps,
-                    id: particleIdCounter.current++,
-                } as Particle);
-            }
-        };
-        
-        if (specialShotType === 'ROYAL') {
-            playSound('ROYAL_SHOT');
-            const config = PARTICLE_CONFIG.ROYAL_SHOT_LAUNCH;
-            for (let i = 0; i < config.count; i++) {
-                const angle = Math.random() * 2 * Math.PI;
-                const speed = Math.random() * config.speed;
-                spawnParticle(newParticles, {
-                    position: { ...puckToShoot.position },
-                    velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-                    radius: config.minRadius + Math.random() * (config.maxRadius - config.minRadius),
-                    color: UI_COLORS.GOLD,
-                    opacity: 1, life: config.life, decay: config.decay,
-                });
-            }
-            puckBeingShot.temporaryEffects.push({ type: 'ROYAL_RAGE', duration: 300, destroyedCount: 0 });
-            newSpecialShotStatus[puckToShoot.team] = 'NONE';
-        } else if (specialShotType === 'ULTIMATE') {
-            playSound('ULTIMATE_SHOT');
-            const config = PARTICLE_CONFIG.ULTIMATE_SHOT_LAUNCH;
-            for (let i = 0; i < config.count; i++) {
-                const angle = Math.random() * 2 * Math.PI;
-                const speed = Math.random() * config.speed;
-                spawnParticle(newParticles, {
-                    position: { ...puckToShoot.position },
-                    velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-                    radius: config.minRadius + Math.random() * (config.maxRadius - config.minRadius),
-                    color: `hsl(${i * 2 % 360}, 100%, 70%)`,
-                    opacity: 1, life: config.life, decay: config.decay,
-                });
-            }
-            puckBeingShot.temporaryEffects.push({ type: 'ULTIMATE_RAGE', duration: 400, destroyedCount: 0 });
-            newSpecialShotStatus[puckToShoot.team] = 'NONE';
-        } else if (isPulsarShot) {
-            playSound('PULSAR_SHOT');
-            const config = PARTICLE_CONFIG.PULSAR_LAUNCH;
-            for (let i = 0; i < config.count; i++) {
-                const angle = Math.random() * 2 * Math.PI;
-                const speed = Math.random() * config.speed;
-                spawnParticle(newParticles, {
-                    position: { ...puckToShoot.position },
-                    velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-                    radius: config.minRadius + Math.random() * (config.maxRadius - config.minRadius),
-                    color: TEAM_COLORS[puckToShoot.team],
-                    opacity: 1, life: config.life, decay: config.decay,
-                });
-            }
-        } else {
-          playSound('SHOT');
-           const shotConfig = PARTICLE_CONFIG.SHOT_BURST;
-          const angle = Math.atan2(launchVector.y, launchVector.x);
-          for(let i = 0; i < shotConfig.count; i++) {
-              const particleAngle = angle + Math.PI + (Math.random() - 0.5) * 1.5;
-              const speed = Math.random() * shotConfig.speed;
-              spawnParticle(newParticles, {
-                  position: { ...puckToShoot.position },
-                  velocity: { x: Math.cos(particleAngle) * speed, y: Math.sin(particleAngle) * speed },
-                  radius: shotConfig.minRadius + Math.random() * shotConfig.maxRadius - shotConfig.minRadius,
-                  color: TEAM_COLORS[puckToShoot.team],
-                  opacity: 0.9,
-                  life: shotConfig.life,
-                  decay: shotConfig.decay,
-              });
-          }
-        }
-
-        const finalLaunchVelocity = {
-            x: (launchVector.x * powerMultiplier) / puckBeingShot.mass, 
-            y: (launchVector.y * powerMultiplier) / puckBeingShot.mass 
-        };
-        puckBeingShot.velocity = finalLaunchVelocity;
-        newPucks[puckIndex] = puckBeingShot;
-
-        const newLineGrid = new Map<string, number[]>();
-        if (prev.imaginaryLine) {
-            prev.imaginaryLine.lines.forEach((line, index) => {
-                const cells = getCellsForSegment(line.start, line.end);
-                cells.forEach(key => {
-                    if (!newLineGrid.has(key)) {
-                        newLineGrid.set(key, []);
-                    }
-                    newLineGrid.get(key)!.push(index);
-                });
-            });
-        }
-        lineGridRef.current = newLineGrid;
-
-        return {
-          ...prev,
-          pucks: newPucks,
-          particles: newParticles,
+          pucksShotThisTurn: [...prev.pucksShotThisTurn, puck.id],
           isSimulating: true,
-          canShoot: false,
-          selectedPuckId: null,
-          infoCardPuckId: null,
+          canShoot: false, // Wait until turn ends (or bonus triggers)
           shotPreview: null,
-          imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, isConfirmed: true } : null,
-          previewState: null,
-          pucksShotThisTurn: [...prev.pucksShotThisTurn, puckToShoot.id],
-          pulsarShotArmed: isPulsarShot ? null : prev.pulsarShotArmed,
-          pulsarPower: isPulsarShot ? { ...newPulsarPower, [puckToShoot.team]: 0 } : newPulsarPower,
-          specialShotStatus: newSpecialShotStatus,
-          lastShotWasSpecial: specialShotType,
-          screenShake: newScreenShake,
+          previewState: null, // Stop showing lines once shot is fired
+          isCameraInTensionMode: false,
+          particles: newParticles,
+          pulsarPower: newPulsarPower,
+          pulsarShotArmed: null, // Consumed
+          lastShotWasSpecial: specialStatus,
           orbHitsThisShot: 0,
-        };
-      });
-  }, [playSound, clearInfoCardTimer]);
-
-  const handleBoardMouseDown = useCallback(() => {
-    clearInfoCardTimer();
-    setGameState(prev => {
-      if (prev.isSimulating || dragStateRef.current.mouseDownPuckId !== null) {
-        return prev;
-      }
-
-      if (prev.selectedPuckId !== null) {
-        playSound('UI_CLICK_2');
-        lineGridRef.current = null;
-        const newPucks = prev.pucks;
-        return { ...prev, pucks: newPucks, selectedPuckId: null, infoCardPuckId: null, shotPreview: null, previewState: null, imaginaryLine: null, bonusTurnForTeam: null };
-      }
-      
-      return prev;
-    });
-  }, [playSound, clearInfoCardTimer]);
-
-  const handleActivatePulsar = useCallback(() => {
-    setGameState(prev => {
-        // Prevent interaction during simulation or if the player can't shoot.
-        if (prev.isSimulating || !prev.canShoot) {
-            return prev;
-        }
-
-        // If it's already armed for the current team, disarm it (cancel).
-        if (prev.pulsarShotArmed === prev.currentTurn) {
-            playSound('UI_CLICK_2'); // A deactivation/cancel sound
-            return { ...prev, pulsarShotArmed: null };
-        } 
-        
-        // If it's not armed, and the power is full for the current team, arm it.
-        if (!prev.pulsarShotArmed && prev.pulsarPower[prev.currentTurn] >= MAX_PULSAR_POWER) {
-            playSound('PULSAR_ACTIVATE');
-            return { ...prev, pulsarShotArmed: prev.currentTurn };
-        }
-        
-        // In any other case (e.g., not enough power), do nothing.
-        return prev;
+      };
     });
   }, [playSound]);
 
-  return { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn };
+  const handleBoardMouseDown = useCallback(() => {
+      // If clicking on empty board while selected, deselect
+      setGameState(prev => {
+          if (prev.selectedPuckId !== null && !prev.isSimulating) {
+              return { ...prev, selectedPuckId: null, previewState: null, imaginaryLine: null, shotPreview: null };
+          }
+          if (prev.infoCardPuckId !== null) {
+              return { ...prev, infoCardPuckId: null };
+          }
+          return prev;
+      });
+  }, []);
+
+  const handleActivatePulsar = useCallback(() => {
+      setGameState(prev => {
+          if (!prev.canShoot || prev.isSimulating) return prev;
+          const team = prev.currentTurn;
+          if (prev.pulsarPower[team] < MAX_PULSAR_POWER && prev.pulsarShotArmed !== team) return prev; // Cannot arm if not full
+          
+          const isArmed = prev.pulsarShotArmed === team;
+          
+          if (!isArmed) {
+               playSound('MAX_POWER_LOCK');
+          }
+
+          return {
+              ...prev,
+              pulsarShotArmed: isArmed ? null : team
+          };
+      });
+  }, [playSound]);
+
+  return {
+    gameState,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    resetGame,
+    handleBoardMouseDown,
+    handleActivatePulsar,
+    clearTurnLossReason,
+    clearBonusTurn,
+  };
 };

@@ -133,6 +133,7 @@ export const PARTICLE_CONFIG = {
     TELEPORT_OUT: { count: 25, life: 15, decay: 0.08, minSpeed: 4, maxSpeed: 8 },
     REPULSOR_AURA: { life: 10, decay: 0.1, speed: 6 },
     AIM_FLOW: { life: 13, decay: 0.12, radius: 2.5, speed: 8 },
+    IDLE_PULSE: { life: 40, decay: 0.02, radius: 2 },
 };
 
 // Colors for combo shockwaves

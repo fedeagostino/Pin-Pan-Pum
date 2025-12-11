@@ -230,6 +230,12 @@ function App() {
             background-color: #010409;
             overflow: hidden;
             position: relative;
+            
+            /* Safe Area Support */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
         
         /* Flex Layout that preserves UI and flexes the board area */
@@ -241,6 +247,18 @@ function App() {
             justify-content: space-between;
             align-items: center;
             position: relative;
+            margin: 0 auto;
+        }
+        
+        /* Desktop/Tablet Optimization: Keep it phone-sized */
+        @media (min-width: 768px) {
+            .game-content-layout {
+                max-width: 65vh; /* Aspect ratio lock for wide screens */
+                border-left: 1px solid #30363d;
+                border-right: 1px solid #30363d;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+                background-color: #0d1117;
+            }
         }
 
         /* Board Area - Grows to fill space between UI bars */
@@ -251,21 +269,21 @@ function App() {
             align-items: center;
             width: 100%;
             overflow: hidden;
-            padding: 4px; /* Slight padding from edges */
+            padding: 0; /* No padding to maximize size on mobile */
             min-height: 0; /* Critical for correct flexbox scaling */
             position: relative;
+            z-index: 1;
         }
         
         /* Constrains the SVG to the correct aspect ratio */
         .board-aspect-ratio-box {
             aspect-ratio: ${BOARD_WIDTH} / ${BOARD_HEIGHT + GOAL_DEPTH * 2};
-            width: auto;
-            height: auto;
+            width: 100%;
+            height: 100%;
             max-width: 100%;
             max-height: 100%;
             
-            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-            border-radius: 20px;
+            border-radius: 4px;
             overflow: hidden;
             background-color: var(--color-bg-dark);
             position: relative;
@@ -291,6 +309,7 @@ function App() {
         .player-ui-container {
             flex-shrink: 0;
             z-index: 20;
+            width: 100%;
         }
 
         /* Winner Modal Styles */
@@ -490,5 +509,4 @@ function App() {
   );
 }
 
-// FIX: Add default export to resolve module loading error.
 export default App;
