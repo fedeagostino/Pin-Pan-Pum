@@ -13,7 +13,8 @@ const getFillColorForPuck = (puck: Puck): string => {
     if (puckType === 'KING') return UI_COLORS.GOLD;
     
     const minMass = PUCK_TYPE_PROPERTIES.PAWN.mass;
-    const maxMass = PUCK_TYPE_PROPERTIES.ANCHOR.mass;
+    // FIX: 'ANCHOR' puck type does not exist. Using 'KING' as it has the highest mass.
+    const maxMass = PUCK_TYPE_PROPERTIES.KING.mass;
     const normalizedMass = (Math.max(minMass, Math.min(mass, maxMass)) - minMass) / (maxMass - minMass);
 
     const rgb = hexToRgb(baseTeamColor);
@@ -32,53 +33,59 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
     const teamColor = TEAM_COLORS[team];
     const fillColor = getFillColorForPuck(puck);
     const svgData = PUCK_SVG_DATA[puckType];
-    const uniqueId = `grad-${puck.id}-${puck.team}`;
+
+    const gradientId = `grad-${puck.id}`;
+    const highlightColor = puckType === 'KING' ? '#fffadd' : 'rgba(255,255,255,0.7)';
 
     const pathProps = {
-        fill: `url(#${uniqueId})`,
+        fill: `url(#${gradientId})`,
         stroke: "rgba(0,0,0,0.6)",
         strokeWidth: 2,
         vectorEffect: "non-scaling-stroke",
     } as const;
-    
-    const ShapeContent = () => {
-        if (svgData && svgData.path) {
-            const scale = radius / svgData.designRadius;
-            return (
-                 <g>
-                    <path transform={`scale(${scale})`} d={svgData.path} {...pathProps} />
-                    {puckType === 'KING' && (
-                         <g transform={`scale(${scale * 1.4})`}>
-                            <path d="M -10 6 L -10 -4 L -5 -8 L 0 -4 L 5 -8 L 10 -4 L 10 6 Z" fill={teamColor} stroke={UI_COLORS.GOLD} strokeWidth="1.5" />
-                        </g>
-                    )}
-                </g>
-            );
-        }
-        return <circle r={radius} {...pathProps} />;
-    };
 
+    if (svgData && svgData.path) {
+        const scale = radius / svgData.designRadius;
+        return (
+             <g>
+                <defs>
+                    <radialGradient id={gradientId} cx="0.25" cy="0.25" r="0.75">
+                        <stop offset="0%" stopColor={highlightColor} />
+                        <stop offset="100%" stopColor={fillColor} />
+                    </radialGradient>
+                </defs>
+                <path transform={`scale(${scale})`} d={svgData.path} {...pathProps} />
+                {puckType === 'KING' && (
+                     <g transform={`scale(${scale * 1.4})`}>
+                        <path d="M -10 6 L -10 -4 L -5 -8 L 0 -4 L 5 -8 L 10 -4 L 10 6 Z" fill={teamColor} stroke={UI_COLORS.GOLD} strokeWidth="1.5" />
+                    </g>
+                )}
+            </g>
+        );
+    }
+    
     return (
         <g>
-           <defs>
-                <radialGradient id={uniqueId} cx="0.3" cy="0.3" r="0.7">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+            <defs>
+                <radialGradient id={gradientId} cx="0.25" cy="0.25" r="0.75">
+                    <stop offset="0%" stopColor={highlightColor} />
                     <stop offset="100%" stopColor={fillColor} />
                 </radialGradient>
             </defs>
-           <ShapeContent />
+            <circle r={radius} {...pathProps} />
         </g>
     );
 }, (prevProps, nextProps) => {
+    // Custom comparison function for React.memo.
+    // Only re-render if essential visual properties change.
+    // Position and rotation are handled by transforms on the parent SVG group.
     const p1 = prevProps.puck;
     const p2 = nextProps.puck;
     return p1.id === p2.id &&
            p1.puckType === p2.puckType &&
            p1.team === p2.team &&
            p1.mass === p2.mass &&
-           p1.radius === p2.radius &&
-           p1.isCharged === p2.isCharged &&
-           p1.activeSynergy?.type === p2.activeSynergy?.type;
-}));
+           p1.radius === p2.radius;
+});
 
 export default PuckShape;

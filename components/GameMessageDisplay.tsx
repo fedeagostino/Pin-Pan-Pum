@@ -1,47 +1,67 @@
-import React from 'react';
-import { UI_COLORS, SYNERGY_EFFECTS } from '../constants';
-import { SynergyType } from '../types';
+import React, { useState, useEffect } from 'react';
+// FIX: SYNERGY_EFFECTS is no longer exported from constants.
+import { UI_COLORS } from '../constants';
+// FIX: SynergyType is no longer exported from types.
 
 interface GameMessageDisplayProps {
     message: {
         text: string;
-        type: 'royal' | 'ultimate' | 'synergy' | 'powerup';
-        synergyType?: SynergyType;
-        id: number;
+        // FIX: 'synergy' type and synergyType prop are removed as the feature is deprecated.
+        type: 'royal' | 'ultimate' | 'powerup';
     } | null;
 }
 
 const GameMessageDisplay: React.FC<GameMessageDisplayProps> = ({ message }) => {
-    if (!message) {
-        return null;
-    }
+    const [isVisible, setIsVisible] = useState(false);
+    const [currentMessage, setCurrentMessage] = useState(message);
 
-    const { text, type, synergyType, id } = message;
+    useEffect(() => {
+        if (message) {
+            setCurrentMessage(message);
+            setIsVisible(true);
+        } else {
+            setIsVisible(false);
+        }
+    }, [message]);
 
+    if (!currentMessage) return null;
+
+    // FIX: synergyType is removed.
+    const { text, type } = currentMessage;
+
+    let bannerClass = 'game-message-banner';
     let bannerStyle: React.CSSProperties = {};
+    let textStyle: React.CSSProperties = {};
 
     switch(type) {
         case 'royal':
-            bannerStyle = { backgroundColor: UI_COLORS.GOLD, color: UI_COLORS.TEXT_DARK };
+            bannerStyle = { backgroundColor: UI_COLORS.GOLD, borderColor: '#fffadd' };
+            textStyle = { color: 'black' };
             break;
         case 'ultimate':
-             bannerStyle = { background: 'linear-gradient(90deg, #E53935, #FDD835, #43A047, #1E88E5, #E53935)', color: 'white', ['--animationName' as any]: 'rainbow-bg' };
+            bannerClass += ' ultimate';
+            textStyle = { color: 'white' };
             break;
-        case 'synergy':
-            if (synergyType) {
-                const color = SYNERGY_EFFECTS[synergyType].color;
-                bannerStyle = { backgroundColor: color, color: 'white' };
-            }
-            break;
+        // FIX: 'synergy' case removed as feature is deprecated.
         case 'powerup':
-            bannerStyle = { backgroundColor: UI_COLORS.ACCENT_GREEN, color: 'white' };
+            bannerStyle = {
+                backgroundColor: UI_COLORS.ACCENT_GREEN,
+                borderColor: 'white',
+                boxShadow: `0 0 25px ${UI_COLORS.ACCENT_GREEN}, 0 0 40px ${UI_COLORS.ACCENT_GREEN}`
+            };
+            textStyle = { color: 'white' };
             break;
     }
     
-    // By keying the entire container with the message ID, we ensure the component
-    // fully re-mounts for each new message, which guarantees the animation restarts correctly.
+    const BannerContent = () => (
+        <div className={bannerClass} style={bannerStyle}>
+            <span style={textStyle}>{text}</span>
+        </div>
+    );
+
+
     return (
-        <div key={id} className="game-message-overlay">
+        <div className={`game-message-overlay ${isVisible ? 'visible' : ''}`}>
              <style>{`
                 .game-message-overlay {
                     position: absolute;
@@ -53,22 +73,30 @@ const GameMessageDisplay: React.FC<GameMessageDisplayProps> = ({ message }) => {
                     z-index: 110;
                     pointer-events: none;
                     overflow: hidden;
+                    opacity: 0;
+                    transition: opacity 0.3s ease-out;
+                }
+                .game-message-overlay.visible {
+                    opacity: 1;
                 }
                 .game-message-banner {
-                    font-family: var(--font-family-main);
-                    padding: 1rem 3rem;
+                    padding: 0.75rem 3rem;
+                    color: white;
                     font-size: 2.5rem;
-                    font-weight: 400;
+                    font-weight: 900;
                     letter-spacing: 2px;
                     text-transform: uppercase;
-                    -webkit-text-stroke: 2px var(--color-shadow-main);
-                    text-stroke: 2px var(--color-shadow-main);
-                    border: 4px solid var(--color-shadow-main);
-                    border-radius: 12px;
-                    box-shadow: 0 6px 0 0 var(--color-shadow-main);
+                    text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+                    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+                    border: 3px solid;
                     white-space: nowrap;
-                    animation: message-pop-in 2.5s cubic-bezier(0.68, -0.6, 0.32, 1.6) forwards, var(--animationName, none) 4s linear infinite;
+                    animation: message-pop-in 2.5s cubic-bezier(0.68, -0.6, 0.32, 1.6) forwards;
+                }
+                 .game-message-banner.ultimate {
+                    background: linear-gradient(90deg, #ff0000, #ff7700, #ffff00, #00ff00, #0000ff, #ff00ff, #ff0000);
                     background-size: 200% 200%;
+                    border-color: white;
+                    animation: message-pop-in 2.5s cubic-bezier(0.68, -0.6, 0.32, 1.6) forwards, rainbow-bg 4s linear infinite;
                 }
                 @keyframes message-pop-in {
                     0% { transform: scale(0.5); opacity: 0; }
@@ -82,13 +110,8 @@ const GameMessageDisplay: React.FC<GameMessageDisplayProps> = ({ message }) => {
                     50% { background-position: 100% 50%; }
                     100% { background-position: 0% 50%; }
                 }
-                 @media (max-width: 640px) {
-                    .game-message-banner { font-size: 1.5rem; padding: 0.75rem 1.5rem; }
-                 }
-            `}</style>
-             <div className="game-message-banner" style={bannerStyle}>
-                <span>{text}</span>
-            </div>
+             `}</style>
+             <BannerContent />
         </div>
     );
 };

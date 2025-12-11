@@ -13,17 +13,16 @@ const REASON_TEXT: Record<TurnLossReason, { title: string; subtitle: string }> =
   UNCHARGED_GOAL: { title: 'TURNO PERDIDO', subtitle: 'FICHA NO CARGADA' },
   PHASED_GOAL: { title: 'TURNO PERDIDO', subtitle: 'GOL INTANGIBLE' },
   SPECIAL_NO_GOAL: { title: 'TURNO PERDIDO', subtitle: 'TIRO ESPECIAL SIN GOL' },
-  NO_PUCKS_LEFT: { title: 'TURNO PERDIDO', subtitle: 'SIN FICHAS RESTANTES' },
 };
 
-const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, reason }) => {
+const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, previousTeam, reason }) => {
   const newTeamName = team === 'BLUE' ? 'TURNO DEL EQUIPO AZUL' : 'TURNO DEL EQUIPO ROJO';
   const newTeamColor = TEAM_COLORS[team];
+  const oldTeamColor = previousTeam ? TEAM_COLORS[previousTeam] : '#808080';
   const reasonInfo = reason ? REASON_TEXT[reason] : null;
-  const animationDuration = 2.5;
+  const isFirstTurn = !previousTeam;
 
-  const textToShow = reasonInfo ? reasonInfo.title : newTeamName;
-  const subtextToShow = reasonInfo ? reasonInfo.subtitle : null;
+  const animationDuration = 2.5;
 
   return (
     <div className="turn-change-overlay">
@@ -37,55 +36,119 @@ const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, reason 
           z-index: 100;
           pointer-events: none;
           overflow: hidden;
+          perspective: 1200px;
         }
 
-        .turn-change-panel {
+        .turn-change-flash {
+            position: absolute;
+            inset: 0;
             background-color: ${newTeamColor};
-            color: white;
-            padding: 1.5rem 3rem;
-            border-radius: 16px;
-            border: 5px solid var(--color-shadow-main);
-            box-shadow: 0 8px 0 0 var(--color-shadow-main);
+            animation: screen-flash ${animationDuration}s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .flipper {
+            width: 90%;
+            max-width: 500px;
+            height: 120px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: flipper-sequence ${animationDuration}s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .flipper-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            border: 3px solid rgba(255,255,255,0.7);
             text-align: center;
-            animation: panel-pop-in-out ${animationDuration}s cubic-bezier(0.68, -0.6, 0.32, 1.6) forwards;
+            padding: 1rem;
+        }
+
+        .flipper-front {
+            background-color: ${oldTeamColor};
+            box-shadow: 0 0 25px ${oldTeamColor};
+            transform: rotateY(0deg);
         }
         
-        .turn-change-main-text {
-            font-family: var(--font-family-main);
-            font-size: 2.5rem;
-            font-weight: 400;
+        .flipper-back {
+            background-color: ${newTeamColor};
+            box-shadow: 0 0 25px ${newTeamColor};
+            transform: rotateY(180deg);
+        }
+        
+        .flipper-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .flipper-main-text {
+            font-size: 2.2rem;
+            font-weight: 900;
             letter-spacing: 1.5px;
-            -webkit-text-stroke: 2px var(--color-shadow-main);
-            text-stroke: 2px var(--color-shadow-main);
+            color: white;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
             text-transform: uppercase;
         }
-        .turn-change-subtitle {
-            font-family: var(--font-family-main);
-            font-size: 1.5rem;
-            font-weight: 400;
-            color: var(--color-background-paper);
-            text-shadow: 2px 2px 0px var(--color-shadow-main);
+        .flipper-subtitle {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
             text-transform: uppercase;
             margin-top: 0.25rem;
         }
 
-        @keyframes panel-pop-in-out {
-            0% { transform: scale(0.5); opacity: 0; }
-            20% { transform: scale(1.1); opacity: 1; }
-            35% { transform: scale(1.0); }
-            80% { transform: scale(1.0); opacity: 1; }
-            100% { transform: scale(1.2); opacity: 0; }
+        @keyframes screen-flash {
+            0% { opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes flipper-sequence {
+            0% { transform: scale(0.5) rotateY(0deg); opacity: 0; }
+            15% { transform: scale(1.05) rotateY(0deg); opacity: 1; }
+            25% { transform: scale(1) rotateY(0deg); opacity: 1; }
+            45% { transform: scale(1) rotateY(180deg); opacity: 1; }
+            65% { transform: scale(1) rotateY(180deg); opacity: 1; }
+            85% { transform: scale(1.1) rotateY(180deg); opacity: 1; }
+            100% { transform: scale(0.5) rotateY(180deg); opacity: 0; }
         }
 
          @media (max-width: 640px) {
-            .turn-change-panel { padding: 1rem 2rem; }
-            .turn-change-main-text { font-size: 1.5rem; }
-            .turn-change-subtitle { font-size: 1rem; }
+            .flipper { height: 100px; }
+            .flipper-main-text { font-size: 1.5rem; }
+            .flipper-subtitle { font-size: 1rem; }
          }
       `}</style>
-      <div className="turn-change-panel">
-            <div className="turn-change-main-text">{textToShow}</div>
-            {subtextToShow && <div className="turn-change-subtitle">{subtextToShow}</div>}
+      <div className="turn-change-flash" />
+      <div className="flipper">
+          <div className="flipper-face flipper-front">
+              <div className="flipper-content-wrapper">
+                {isFirstTurn ? (
+                    <div className="flipper-main-text">¡A JUGAR!</div>
+                ) : reasonInfo ? (
+                    <>
+                        <div className="flipper-main-text">{reasonInfo.title}</div>
+                        <div className="flipper-subtitle">{reasonInfo.subtitle}</div>
+                    </>
+                ) : ( <div className="flipper-main-text">FIN DEL TURNO</div> )}
+              </div>
+          </div>
+          <div className="flipper-face flipper-back">
+              <div className="flipper-content-wrapper">
+                <div className="flipper-main-text">{newTeamName}</div>
+              </div>
+          </div>
       </div>
     </div>
   );

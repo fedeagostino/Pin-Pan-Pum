@@ -5,25 +5,16 @@ export type Vector = {
 
 export type Team = 'RED' | 'BLUE';
 
-export type PuckType = 'STANDARD' | 'HEAVY' | 'FAST' | 'GHOST' | 'ANCHOR' | 'KING' | 'SWERVE' | 'BOUNCER' | 'DAMPENER' | 'PAWN' | 'GUARD' | 'INFILTRATOR' | 'WIZARD' | 'BASTION' | 'REAPER' | 'PHANTOM' | 'MENDER' | 'DISRUPTOR' | 'JUGGERNAUT' | 'SEER' | 'PULVERIZER' | 'ORBITER' | 'TRAPPER';
-
-export type SynergyType = 'POWER' | 'SPEED' | 'CONTROL' | 'GRAVITY_WELL' | 'TELEPORT_STRIKE' | 'REPULSOR_ARMOR';
+export type PuckType = 'KING' | 'PAWN' | 'GUARDIAN';
 
 export type SpecialShotStatus = 'NONE' | 'ROYAL' | 'ULTIMATE';
 
-export type TemporaryEffectType = 'PHASED' | 'EMP_BURST' | 'ROYAL_RAGE' | 'ULTIMATE_RAGE' | 'REPULSOR_ARMOR' | 'NEUTRALIZED';
+export type TemporaryEffectType = 'PHASED' | 'EMP_BURST' | 'ROYAL_RAGE' | 'ULTIMATE_RAGE' | 'REPULSOR_ARMOR';
 
 export type TemporaryEffect = {
   type: TemporaryEffectType;
   duration: number; // Ticks to live
   destroyedCount?: number;
-  originalStats?: {
-      mass: number;
-      friction: number;
-      elasticity?: number;
-      swerveFactor?: number;
-      puckType: PuckType;
-  };
 };
 
 export type Puck = {
@@ -41,20 +32,7 @@ export type Puck = {
   elasticity?: number;
   swerveFactor?: number;
   durability?: number;
-  activeSynergy?: {
-    type: SynergyType;
-    initialStats: {
-        mass: number;
-        friction: number;
-        elasticity?: number;
-        swerveFactor?: number;
-    },
-    lineAngle: number;
-  };
-  synergyEffectTriggered?: boolean;
   temporaryEffects: TemporaryEffect[];
-  distanceTraveledThisShot?: number;
-  collisionsThisShot?: number;
 };
 
 export type Particle = {
@@ -90,7 +68,6 @@ export type ImaginaryLine = {
     start: Vector;
     end: Vector;
     sourcePuckIds: [number, number];
-    synergyType: SynergyType | null;
     passivelyCrossedBy: Set<number>; // Holds GHOST puck IDs this line passes over
 };
 
@@ -115,9 +92,10 @@ export type PreviewState = {
   trajectories: PuckTrajectory[];
   potentialLines: ImaginaryLine[];
   linesToCrossForBonus: number;
+  chargeRequirementText: string;
 } | null;
 
-export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_PUCKS_LEFT';
+export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL';
 
 export type GameState = {
   pucks: Puck[];
@@ -136,7 +114,7 @@ export type GameState = {
     end: Vector;
     isMaxPower: boolean;
     isCancelZone: boolean;
-    specialShotStatus: SpecialShotStatus | null;
+    specialShotType: SpecialShotStatus | null;
     power: number;
   } | null;
   imaginaryLine: ImaginaryLineState;
@@ -151,7 +129,8 @@ export type GameState = {
     pointsScored: number;
     scoringPuckType: PuckType;
   } | null;
-  gameMessage: { text: string; type: 'royal' | 'ultimate' | 'synergy' | 'powerup'; synergyType?: SynergyType; id: number; } | null;
+  // FIX: Removed 'synergy' as it's a deprecated feature.
+  gameMessage: { text: string; type: 'royal' | 'ultimate' | 'powerup'; } | null;
   bonusTurnForTeam: Team | null;
   screenShake: number;
   previewState: PreviewState | null;
@@ -161,16 +140,4 @@ export type GameState = {
   turnCount: number;
   orbCollection: { RED: number; BLUE: number; };
   overchargedTeam: Team | null;
-};
-
-// NEW: Types for team setup
-export type FormationLayout = {
-    name: string;
-    puckLayout: { position: { x: number, y: number } }[];
-};
-
-export type TeamConfig = {
-    team: Team;
-    pucks: PuckType[]; // The 7 selected pucks
-    strategicPlanName: string;
 };

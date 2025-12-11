@@ -1,8 +1,9 @@
 import React from 'react';
-import { GameState, Vector, Puck, PuckType, SynergyType, SpecialShotStatus } from '../types';
-import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG } from '../constants';
-import InfoPanel from './InfoPanel';
-import PuckShape from './PuckShape';
+import { GameState, Vector, Puck } from './types';
+// FIX: Import EMP_BURST_RADIUS to be used in particle rendering.
+import { BOARD_WIDTH, BOARD_HEIGHT, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, PAWN_DURABILITY, UI_COLORS, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG, GUARDIAN_DURABILITY, EMP_BURST_RADIUS } from './constants';
+import InfoPanel from './components/InfoPanel';
+import PuckShape from './components/PuckShape';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -78,9 +79,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
   const highlightedLine = gameState.imaginaryLine && gameState.imaginaryLine.highlightedLineIndex !== null
     ? gameState.imaginaryLine.lines[gameState.imaginaryLine.highlightedLineIndex]
     : null;
-    
-  const synergyPuckIds = highlightedLine?.synergyType ? new Set(highlightedLine.sourcePuckIds) : new Set();
-  const passiveGhostPuckIds = highlightedLine?.passivelyCrossedBy ?? new Set();
 
   const infoCardPuck = gameState.infoCardPuckId !== null
     ? gameState.pucks.find(p => p.id === gameState.infoCardPuckId)
@@ -201,8 +199,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
       const { position, radius, team } = infoCardPuck;
 
       // --- DYNAMIC Vertical Positioning ---
-      // The panel appears above pucks in the bottom half and below pucks in the top half.
-      // This keeps the panel away from the user's finger and the edges of the screen.
       const renderDirection = position.y > BOARD_HEIGHT / 2 ? 'up' : 'down';
 
       // --- Horizontal Positioning (clamped to board edges) ---
@@ -220,15 +216,14 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
       if (renderDirection === 'up') {
           top = position.y - radius - INFO_PANEL_PUCK_OFFSET;
-          baseTransform = 'translateY(-100%)'; // Aligns bottom of panel with `top` value
+          baseTransform = 'translateY(-100%)';
           transformOrigin = 'center bottom';
       } else { // 'down'
           top = position.y + radius + INFO_PANEL_PUCK_OFFSET;
-          baseTransform = 'translateY(0)'; // Aligns top of panel with `top` value
+          baseTransform = 'translateY(0)';
           transformOrigin = 'center top';
       }
 
-      // The BLUE team's UI is always rotated 180 degrees for head-to-head play.
       const rotation = team === 'BLUE' ? ' rotate(180deg)' : '';
 
       infoPanelContainerStyle = {
@@ -243,8 +238,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           display: 'block',
       };
       
-      // This prop tells the InfoPanel component which way to draw its pointer.
-      // The rotation is handled by the container style above.
       infoPanelProps = { renderDirection, pointerHorizontalOffset };
   }
 
@@ -253,10 +246,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
     : 'cursor-default';
 
   const isAiming = gameState.shotPreview !== null && !gameState.shotPreview.isCancelZone;
-  const isAimingSpecialShot = gameState.shotPreview?.specialShotStatus === 'ROYAL' || gameState.shotPreview?.specialShotStatus === 'ULTIMATE';
+  const isAimingSpecialShot = gameState.shotPreview?.specialShotType === 'ROYAL' || gameState.shotPreview?.specialShotType === 'ULTIMATE';
   
   const focusPucks = React.useMemo(() => {
-    // When aiming, we want to highlight all pucks of the current team.
     if (!isAiming) {
         return [];
     }
@@ -283,6 +275,11 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                     0% { stroke-opacity: 0.3; }
                     50% { stroke-opacity: 0.6; }
                     100% { stroke-opacity: 0.3; }
+                }
+                 @keyframes strong-breathe {
+                    0% { opacity: 0.5; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.5; }
                 }
                 .line-breathe {
                     animation: breathe 2.5s infinite ease-in-out;
@@ -314,7 +311,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                     font-size: 1.5rem;
                     font-weight: 800;
                     paint-order: stroke;
-                    stroke: #000000;
+                    stroke: #010409;
                     stroke-width: 4px;
                     stroke-linecap: round;
                     stroke-linejoin: round;
@@ -329,7 +326,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                     stroke-linejoin: round;
                     animation: rise-and-fade 2.5s ease-out forwards;
                     animation-delay: 1.5s;
-                    opacity: 0; /* Start invisible */
+                    opacity: 0;
                 }
                 
                 @keyframes goal-glow-positive-anim {
@@ -341,16 +338,15 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                     100% { filter: drop-shadow(0 0 calc(var(--glow-intensity-blur) * 0.7) var(--glow-color)); opacity: 0.8; }
                 }
                  
-                 @keyframes card-fade-in-up {
-                    from { opacity: 0; transform: translateY(15px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
                  @keyframes special-aim-dim {
                     from { opacity: 0; }
                     to { opacity: 1; }
                  }
                  .special-aim-dim-rect {
                     animation: special-aim-dim 0.3s ease-out forwards;
+                 }
+                 .board-border {
+                    animation: strong-breathe 4s infinite ease-in-out;
                  }
             `}
         </style>
@@ -389,6 +385,15 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             <stop offset="83%" stopColor="#ff00ff" />
             <stop offset="100%" stopColor="#ff0000" />
         </linearGradient>
+        <linearGradient id="aim-power-gradient-blue" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="${TEAM_COLORS.BLUE}" />
+            <stop offset="100%" stopColor="#ffffff" />
+        </linearGradient>
+        <linearGradient id="aim-power-gradient-red" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="${TEAM_COLORS.RED}" />
+            <stop offset="100%" stopColor="#ffffff" />
+        </linearGradient>
+
         <filter id="pulsar-glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
             <feMerge>
@@ -396,13 +401,11 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 <feMergeNode in="SourceGraphic" />
             </feMerge>
         </filter>
-        {Object.entries(SYNERGY_EFFECTS).map(([key, value]) => (
-            <filter key={`synergy-glow-${key}`} id={`synergy-glow-${key as SynergyType}`} x="-50%" y="-50%" width="200%" height="200%">
-                 <feDropShadow dx="0" dy="0" stdDeviation="3.5" floodColor={value.color} floodOpacity="1" />
-            </filter>
-        ))}
-        <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
-            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(0, 246, 255, 0.04)" strokeWidth="1"/>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 246, 255, 0.04)" strokeWidth="1"/>
+        </pattern>
+        <pattern id="hexGrid" patternUnits="userSpaceOnUse" width="60" height="103.92" patternTransform="scale(0.5)">
+            <path d="M-30,51.96l30-51.96l60,0l30,51.96l-30,51.96l-60,0Z" fill="transparent" stroke="rgba(148, 202, 255, 0.07)" stroke-width="2"/>
         </pattern>
         <pattern id="goal-net-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
           <path d="M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2" stroke="currentColor" strokeWidth="1" />
@@ -422,25 +425,29 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         </mask>
       </defs>
 
-      {/* Opaque board background */}
-      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="var(--color-bg-dark)" />
       {/* Board Background Texture */}
+      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill={UI_COLORS.BACKGROUND_DARK} />
+      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="url(#hexGrid)" opacity="0.5" />
       <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="url(#grid)" opacity="0.5" />
+      
+      {/* Board Border */}
+      <rect x="0" y="0" width={BOARD_WIDTH} height={BOARD_HEIGHT} fill="none" stroke={TEAM_COLORS[gameState.currentTurn]} strokeWidth="3" className="board-border" opacity="0.5" filter="url(#pulsar-glow)" />
+
 
       {/* Goals */}
       <g style={topGoalStyle}>
-        <rect x={goalX} y={-GOAL_DEPTH} width={GOAL_WIDTH} height={GOAL_DEPTH} fill={UI_COLORS.BG_MEDIUM} />
+        <rect x={goalX} y={-GOAL_DEPTH} width={GOAL_WIDTH} height={GOAL_DEPTH} fill={UI_COLORS.BACKGROUND_MEDIUM} />
         <rect x={goalX} y={-GOAL_DEPTH} width={GOAL_WIDTH} height={GOAL_DEPTH} fill="url(#goal-net-pattern)" style={{color: TEAM_COLORS.BLUE, opacity: 0.4}}/>
         <rect x={goalX-5} y={-GOAL_DEPTH} width={5} height={GOAL_DEPTH} fill={TEAM_COLORS.BLUE} style={{color: TEAM_COLORS.BLUE}} />
         <rect x={goalX+GOAL_WIDTH} y={-GOAL_DEPTH} width={5} height={GOAL_DEPTH} fill={TEAM_COLORS.BLUE} style={{color: TEAM_COLORS.BLUE}}/>
-        <line x1={goalX} y1={0} x2={goalX+GOAL_WIDTH} y2={0} stroke={TEAM_COLORS.BLUE} strokeWidth="4" style={{color: TEAM_COLORS.BLUE}} />
+        <line x1={goalX} y1={0} x2={goalX+GOAL_WIDTH} y2={0} stroke={TEAM_COLORS.BLUE} strokeWidth="4" style={{color: TEAM_COLORS.BLUE, filter: `drop-shadow(0 0 5px ${TEAM_COLORS.BLUE})`}} />
       </g>
       <g style={bottomGoalStyle}>
-        <rect x={goalX} y={BOARD_HEIGHT} width={GOAL_WIDTH} height={GOAL_DEPTH} fill={UI_COLORS.BG_MEDIUM} />
+        <rect x={goalX} y={BOARD_HEIGHT} width={GOAL_WIDTH} height={GOAL_DEPTH} fill={UI_COLORS.BACKGROUND_MEDIUM} />
         <rect x={goalX} y={BOARD_HEIGHT} width={GOAL_WIDTH} height={GOAL_DEPTH} fill="url(#goal-net-pattern)" style={{color: TEAM_COLORS.RED, opacity: 0.4}}/>
         <rect x={goalX-5} y={BOARD_HEIGHT} width={5} height={GOAL_DEPTH} fill={TEAM_COLORS.RED} style={{color: TEAM_COLORS.RED}} />
         <rect x={goalX+GOAL_WIDTH} y={BOARD_HEIGHT} width={5} height={GOAL_DEPTH} fill={TEAM_COLORS.RED} style={{color: TEAM_COLORS.RED}} />
-        <line x1={goalX} y1={BOARD_HEIGHT} x2={goalX+GOAL_WIDTH} y2={BOARD_HEIGHT} stroke={TEAM_COLORS.RED} strokeWidth="4" style={{color: TEAM_COLORS.RED}} />
+        <line x1={goalX} y1={BOARD_HEIGHT} x2={goalX+GOAL_WIDTH} y2={BOARD_HEIGHT} stroke={TEAM_COLORS.RED} strokeWidth="4" style={{color: TEAM_COLORS.RED, filter: `drop-shadow(0 0 5px ${TEAM_COLORS.RED})`}} />
       </g>
 
       {/* Board Center Lines & Markings */}
@@ -476,14 +483,13 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
       {/* Shot Preview */}
       <g className="shot-preview">
         {gameState.shotPreview && (() => {
-            const { start, end, power, isCancelZone, specialShotStatus } = gameState.shotPreview;
+            const { start, end, power, isCancelZone, specialShotType } = gameState.shotPreview;
             const puck = gameState.pucks.find(p => p.id === gameState.selectedPuckId);
             if (!puck) return null;
 
             const shotVector = subtractVectors(start, end);
             const distance = getVectorMagnitude(shotVector);
             
-            // A smaller threshold than MIN_DRAG_DISTANCE to avoid flickering at the start of a drag
             if (distance < MIN_DRAG_DISTANCE / 2) return null;
 
             const cappedDistance = Math.min(distance, MAX_DRAG_FOR_POWER);
@@ -494,7 +500,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 y: start.y + Math.sin(angle) * puck.radius,
             };
             const beamEnd = {
-                x: start.x + Math.cos(angle) * (puck.radius + cappedDistance * 0.95), // End slightly before tip for clean arrowhead
+                x: start.x + Math.cos(angle) * (puck.radius + cappedDistance * 0.95),
                 y: start.y + Math.sin(angle) * (puck.radius + cappedDistance * 0.95),
             };
             const tipPosition = {
@@ -504,49 +510,35 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
             const pathD = `M ${beamStart.x} ${beamStart.y} L ${beamEnd.x} ${beamEnd.y}`;
 
-            let color = TEAM_COLORS[gameState.currentTurn];
-            let tipColor = 'white';
+            let powerColorUrl = gameState.currentTurn === 'BLUE' ? 'url(#aim-power-gradient-blue)' : 'url(#aim-power-gradient-red)';
+            let tipColor = `hsl(${(1-power) * 240}, 100%, ${70 + power * 30}%)`; // Blue -> White for Blue team, Red -> White for Red team
             
-            if (specialShotStatus === 'ULTIMATE') {
-                color = 'url(#rainbow-gradient)';
+            if (specialShotType === 'ULTIMATE') {
+                powerColorUrl = 'url(#rainbow-gradient)';
                 tipColor = 'white';
-            } else if (specialShotStatus === 'ROYAL') {
-                color = UI_COLORS.GOLD;
+            } else if (specialShotType === 'ROYAL') {
+                powerColorUrl = UI_COLORS.GOLD;
                 tipColor = '#fffadd';
             }
 
             if (isCancelZone) {
-                color = 'rgba(100, 116, 139, 0.2)';
+                powerColorUrl = 'rgba(100, 116, 139, 0.2)';
                 tipColor = 'rgba(100, 116, 139, 0.4)';
             }
 
             const beamStrokeWidth = 4 + power * 10;
             const coreStrokeWidth = 1 + power * 2;
-            
             const arrowheadPath = "M 12 0 L -6 -7 L -6 7 Z";
 
             return (
                 <g style={{ pointerEvents: 'none', opacity: Math.min(1, power * 2) }}>
-                    <defs>
-                        <linearGradient id="aim-fade-gradient" gradientUnits="userSpaceOnUse" x1={beamStart.x} y1={beamStart.y} x2={beamEnd.x} y2={beamEnd.y}>
-                            <stop offset="0%" stopColor="white" stopOpacity="0.05" />
-                            <stop offset="30%" stopColor="white" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="white" stopOpacity="1" />
-                        </linearGradient>
-                        <mask id="aim-fade-mask">
-                            <path
-                                d={pathD}
-                                stroke="url(#aim-fade-gradient)"
-                                strokeWidth={beamStrokeWidth + 4}
-                                strokeLinecap="round"
-                                fill="none"
-                            />
-                        </mask>
-                    </defs>
+                    {isCancelZone && puck && (
+                      <circle cx={puck.position.x} cy={puck.position.y} r={CANCEL_SHOT_THRESHOLD} fill="rgba(255, 7, 58, 0.2)" stroke={TEAM_COLORS.RED} strokeWidth="2" className="line-breathe" style={{animationDuration: '1s'}} />
+                    )}
 
                     <g mask="url(#aim-fade-mask)">
-                        <path d={pathD} stroke={color} strokeWidth={beamStrokeWidth} strokeLinecap="round" fill="none" />
-                        <path d={pathD} stroke={tipColor} strokeWidth={coreStrokeWidth} strokeLinecap="round" fill="none" />
+                        <path d={pathD} stroke={powerColorUrl} strokeWidth={beamStrokeWidth} strokeLinecap="round" fill="none" />
+                        <path d={pathD} stroke="white" strokeWidth={coreStrokeWidth} strokeLinecap="round" fill="none" opacity="0.5" />
                     </g>
                     
                     <path
@@ -610,7 +602,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 const scaleAnim = Math.sin(progress * Math.PI * 2) * 0.5 + 0.5; // Gentle pulse 0..1..0
                 const radiusWithPulse = p.radius + scaleAnim * 6; // Reduced pulse size
                 
-                // Always render a circle for performance, instead of a complex path.
                 return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={radiusWithPulse} fill="none" stroke={p.color} strokeWidth={2} style={{ opacity: p.opacity * scaleAnim, pointerEvents: 'none' }} />;
             }
             if (p.renderType === 'goal_shard') {
@@ -650,19 +641,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             if (p.renderType === 'synergy_charge') {
                 return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={p.radius} fill={p.color} style={{ opacity: p.opacity, filter: 'url(#pulsar-glow)' }} />;
             }
-            if (p.renderType === 'gravity_well') {
-                const progress = 1 - (p.life / p.lifeSpan);
-                const angle = progress * Math.PI * 6 + (p.id % 10) * 0.628; // Controls rotation and offset
-                const radius = GRAVITY_WELL_RADIUS * (1 - progress); // Controls inward movement
-                const px = p.position.x + Math.cos(angle) * radius;
-                const py = p.position.y + Math.sin(angle) * radius;
-                return <circle key={p.id} cx={px} cy={py} r={p.radius} fill={p.color} style={{ opacity: p.opacity }} />;
-            }
-            if (p.renderType === 'repulsor_aura') {
-                const progress = (p.lifeSpan - p.life) / p.lifeSpan;
-                const radius = p.radius + progress * (REPULSOR_ARMOR_RADIUS - p.radius);
-                return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={radius} fill="none" stroke={p.color} strokeWidth={3} style={{ opacity: p.opacity }} />;
-            }
             return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={p.radius} fill={p.color} style={{ opacity: p.opacity }} />;
         })}
          {/* Orbiting Particles */}
@@ -681,7 +659,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
        {/* Special Aiming Puck Glows */}
         <g>
           {isAimingSpecialShot && gameState.pucks.map(p => {
-              const isContributingPawn = gameState.shotPreview?.specialShotStatus === 'ULTIMATE' && p.puckType === 'PAWN';
+              const isContributingPawn = gameState.shotPreview?.specialShotType === 'ULTIMATE' && p.puckType === 'PAWN';
               const isContributingSpecial = SPECIAL_PUCKS_FOR_ROYAL_SHOT.includes(p.puckType);
 
               if (p.team === gameState.currentTurn && p.isCharged && (isContributingPawn || isContributingSpecial)) {
@@ -709,23 +687,17 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         {gameState.pucks.map((puck) => {
           const isSelected = gameState.selectedPuckId === puck.id;
           const isShootable = gameState.canShoot && puck.team === gameState.currentTurn && !gameState.pucksShotThisTurn.includes(puck.id);
-          const isSynergySource = synergyPuckIds.has(puck.id);
-          const isPassiveGhost = passiveGhostPuckIds.has(puck.id);
           const isPhased = puck.temporaryEffects.some(e => e.type === 'PHASED');
           
           const kingSpecialStatus = (puck.puckType === 'KING' && isShootable) ? gameState.specialShotStatus[puck.team] : 'NONE';
 
           let glowFilter = "";
-          if (puck.activeSynergy) {
-             glowFilter = `url(#synergy-glow-${puck.activeSynergy.type})`;
-          } else if (isSelected) {
+          if (isSelected) {
             glowFilter = puck.team === 'BLUE' ? `url(#puck-glow-blue-active)` : `url(#puck-glow-red-active)`;
           } else if (kingSpecialStatus === 'ULTIMATE') {
             glowFilter = 'url(#puck-glow-ultimate-ready)';
           } else if (kingSpecialStatus === 'ROYAL') {
             glowFilter = 'url(#puck-glow-royal-ready)';
-          } else if (isSynergySource || isPassiveGhost) {
-            glowFilter = `url(#synergy-glow-${highlightedLine?.synergyType})`;
           } else if (puck.isCharged && !gameState.isSimulating) {
             glowFilter = "url(#puck-glow-charged)";
           } else if (isShootable) {
@@ -733,15 +705,15 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           }
           
           let puckOpacity = 1;
-          if (isPhased && puck.puckType !== 'GHOST') {
+          if (isPhased) {
               puckOpacity = 0.7;
           }
 
           const svgData = PUCK_SVG_DATA[puck.puckType];
           const isPathBased = !!(svgData && svgData.path);
           const scale = isPathBased ? puck.radius / (svgData.designRadius || puck.radius) : 1;
-          const pawnPathLength = svgData?.pathLength || 90;
-          // Add a larger invisible hitbox, especially for smaller pucks.
+          const pathLength = svgData?.pathLength || 90;
+          const maxDurability = puck.puckType === 'PAWN' ? PAWN_DURABILITY : GUARDIAN_DURABILITY;
           const hitboxRadius = puck.radius + (puck.radius < KING_PUCK_RADIUS ? 12 : 8);
 
           return (
@@ -753,31 +725,28 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               style={{ opacity: puckOpacity, willChange: 'transform' }}
               className={`${isShootable ? 'cursor-pointer' : ''} ${isPhased ? 'phased-puck' : ''}`}
             >
-              {/* HITBOX - Invisible circle to make selection easier */}
               <circle r={hitboxRadius} fill="transparent" />
               
               <g filter={glowFilter}>
                 <g transform={`rotate(${puck.rotation})`}>
                   <PuckShape puck={puck} />
                   
-                  {/* Durability indicator for Pawns */}
-                  {puck.puckType === 'PAWN' && puck.durability !== undefined && svgData && isPathBased && (
+                  {(puck.puckType === 'PAWN' || puck.puckType === 'GUARDIAN') && puck.durability !== undefined && svgData && isPathBased && (
                       <g transform={`scale(${scale}) rotate(-90)`}>
                           <path d={svgData.path} fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2.5" />
                           <path
                               d={svgData.path}
                               fill="none"
-                              stroke={getDurabilityColor(puck.durability / PAWN_DURABILITY)}
+                              stroke={getDurabilityColor(puck.durability / maxDurability)}
                               strokeWidth="2.5"
                               strokeLinecap="round"
-                              strokeDasharray={pawnPathLength}
-                              strokeDashoffset={pawnPathLength * (1 - Math.max(0, puck.durability / PAWN_DURABILITY))}
+                              strokeDasharray={pathLength}
+                              strokeDashoffset={pathLength * (1 - Math.max(0, puck.durability / maxDurability))}
                               style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.5s ease' }}
                           />
                       </g>
                   )}
                   
-                  {/* Charged state indicator */}
                   {puck.isCharged && (
                       isPathBased && svgData ? (
                           <path
@@ -801,7 +770,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                       )
                   )}
                   
-                  {/* Active turn indicator */}
                   {isShootable && !isSelected && (
                      isPathBased && svgData ? (
                           <path
@@ -848,7 +816,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
       <g className="imaginary-lines">
           {gameState.imaginaryLine && !gameState.imaginaryLine.isConfirmed && gameState.imaginaryLine.lines.map((line, index) => {
               const isHighlighted = index === gameState.imaginaryLine.highlightedLineIndex;
-              const hasSynergy = !!line.synergyType;
               
               const shotPuck = gameState.pucks.find(p => p.id === gameState.imaginaryLine?.shotPuckId);
 
@@ -868,7 +835,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               
               const strokeWidth = isHighlighted ? highlightedStrokeWidth : baseStrokeWidth;
               const strokeColor = isHighlighted
-                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType].color : 'white')
+                  ? 'white'
                   : (isAiming ? (isPawnStyleLine ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.45)') : (isPawnStyleLine ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.3)'));
 
               const strokeDasharray = isHighlighted ? "8 8" : (isPawnStyleLine ? "2 8" : "4 6");
@@ -909,7 +876,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         ))}
       </g>
       
-      {/* Info Panel needs to be a foreignObject to be rendered on top of SVG elements and receive DOM events */}
        <foreignObject x="0" y="0" width={BOARD_WIDTH} height={BOARD_HEIGHT} style={{ pointerEvents: 'none' }}>
             <div style={infoPanelContainerStyle}>
                 {infoCardPuck && (

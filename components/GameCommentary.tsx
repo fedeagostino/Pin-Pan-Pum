@@ -24,10 +24,9 @@ const GameCommentary: React.FC<GameCommentaryProps> = ({ text, team, position, c
     const isReversed = team === 'BLUE'; 
 
     const finalTransform = show ? 'translateY(0)' : 'translateY(20px)';
-    const finalRotation = isReversed ? ' rotate(180deg)' : '';
 
     const containerStyle: React.CSSProperties = {
-        transform: `${finalTransform}${finalRotation}`,
+        transform: finalTransform,
         opacity: show ? 1 : 0,
     };
     
@@ -57,7 +56,7 @@ const GameCommentary: React.FC<GameCommentaryProps> = ({ text, team, position, c
                 .commentary-container.reversed { bottom: auto; top: 1rem; }
 
                 .commentary-box {
-                    background: rgba(var(--color-shadow-main-rgb), 0.75);
+                    background: var(--color-bg-glass);
                     border: 2px solid;
                     border-radius: 8px;
                     padding: 0.75rem 1rem;
@@ -65,6 +64,8 @@ const GameCommentary: React.FC<GameCommentaryProps> = ({ text, team, position, c
                     font-size: 0.9rem;
                     font-weight: 600;
                     line-height: 1.4;
+                    backdrop-filter: blur(4px);
+                    -webkit-backdrop-filter: blur(4px);
                     min-height: 70px;
                 }
                 .commentary-text::after {

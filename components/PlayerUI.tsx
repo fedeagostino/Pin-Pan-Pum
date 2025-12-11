@@ -14,7 +14,7 @@ const CrownIcon: React.FC<{ status: SpecialShotStatus }> = ({ status }) => (
     <svg 
         className={`crown-icon ${status.toLowerCase()}`}
         viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5"
-        strokeLinecap="round" strokeLinejoin="round">
+        strokeLinecap="round" strokeLinejoin="round" style={{ width: '1.5rem', height: '1.5rem' }}>
         <path d="M2 13.177l2.039-7.543L8.01 2l3.978 3.634L15.966 2l3.97 3.634L22 5.634l2 7.543-11.012 3.823L2 13.177z" />
     </svg>
 );
@@ -22,21 +22,28 @@ const CrownIcon: React.FC<{ status: SpecialShotStatus }> = ({ status }) => (
 const PulsarBar: React.FC<{ power: number; team: Team; onActivate: () => void; isArmed: boolean; canActivate: boolean }> = ({ power, team, onActivate, isArmed, canActivate }) => {
     const percentage = Math.min(100, (power / MAX_PULSAR_POWER) * 100);
     const isFull = percentage >= 100;
+    const showButton = isArmed || (isFull && canActivate);
     const isClickable = (isFull || isArmed) && canActivate;
+    const teamColor = TEAM_COLORS[team];
+    const NUM_SEGMENTS = 10;
 
     return (
-        <div className="pulsar-pod">
-            <div className={`pulsar-bar-background ${isFull ? 'full' : ''}`}>
-                 <div className="pulsar-bar-fill" style={{ width: `${percentage}%` }}/>
-                 <div className="pulsar-bar-text">{Math.floor(power)}/{MAX_PULSAR_POWER}</div>
+        <div className="pulsar-bar-container">
+            <div className="pulsar-bar-background" style={{'--team-color': teamColor} as React.CSSProperties}>
+                <div className="pulsar-bar-segments">
+                    {Array.from({ length: NUM_SEGMENTS }).map((_, i) => (
+                        <div key={i} className={`segment ${((i + 1) / NUM_SEGMENTS) * 100 <= percentage ? 'active' : ''}`} />
+                    ))}
+                </div>
+                 <div className={`pulsar-bar-text ${showButton ? 'hidden' : ''}`}>{Math.floor(power)}/{MAX_PULSAR_POWER}</div>
             </div>
             <button 
-                className={`pulsar-activate-button ${isArmed ? 'armed' : ''}`} 
+                className={`pulsar-activate-button ${isArmed ? 'armed' : ''} ${showButton ? 'visible' : ''}`} 
                 onClick={onActivate} 
                 disabled={!isClickable}
             >
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                <span>{isArmed ? 'ARMADO' : 'PULSAR'}</span>
+                <span>{isArmed ? 'ARMADO' : 'ACTIVAR'}</span>
             </button>
         </div>
     );
@@ -54,119 +61,145 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
     const isMyTurn = gameState.currentTurn === team && gameState.canShoot && !gameState.isSimulating;
 
     return (
-        <header className={`player-ui-container ${isReversed ? 'reversed' : ''}`} style={{'--team-color': teamColor, '--team-glow': `${teamColor}99`} as React.CSSProperties}>
+        <header className={`player-ui-container ${isReversed ? 'reversed' : ''}`} style={{'--team-color': teamColor} as React.CSSProperties}>
              <style>{`
-                @keyframes score-pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); filter: drop-shadow(0 0 10px var(--team-color)); } 100% { transform: scale(1); } }
-                @keyframes active-turn-glow { 0%, 100% { box-shadow: 0 0 20px -5px var(--team-glow), inset 0 0 10px -4px var(--team-glow), 0 4px 0 0 var(--color-shadow-main), 0 8px 10px 0px var(--color-shadow-main); } 50% { box-shadow: 0 0 30px 0px var(--team-color), inset 0 0 14px 0px var(--team-color), 0 4px 0 0 var(--color-shadow-main), 0 8px 10px 0px var(--color-shadow-main); } }
-                @keyframes special-ready-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 12px var(--glow-color); } 50% { transform: scale(1.05); box-shadow: 0 0 20px var(--glow-color); } }
-                @keyframes ultimate-color-cycle { 0% { --glow-color: #ff00de; color: #ff00de; } 50% { --glow-color: #00f6ff; color: #00f6ff; } 100% { --glow-color: #ff00de; color: #ff00de; } }
-                @keyframes pulsar-full-glow { 0%, 100% { background-color: var(--team-color); box-shadow: 0 0 10px var(--team-glow); } 50% { background-color: #fff; box-shadow: 0 0 20px #fff; } }
-
-                .player-ui-container {
-                    display: flex; justify-content: center; align-items: center;
-                    height: clamp(64px, 10vh, 72px); width: 100%;
-                    position: relative; z-index: 10; padding: 0 1rem;
+                @keyframes score-pop {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.3); }
+                    100% { transform: scale(1); }
                 }
-                .player-ui-container.reversed {
-                    transform: rotate(180deg);
+                .player-ui-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 64px;
+                    width: 100%;
+                    position: relative;
+                    z-index: 10;
+                    padding: 0 1rem;
+                    flex-shrink: 0;
                 }
                 
                 .ui-content-wrapper {
-                    display: flex; align-items: stretch; justify-content: space-between;
-                    width: 100%; max-width: 900px; height: 56px; gap: 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    width: 100%;
+                    max-width: 900px;
+                    height: 48px;
+                    padding: 0 1rem;
+                    gap: 1rem;
+                    background: var(--color-bg-glass);
+                    border: 1px solid var(--color-border-glass);
+                    border-radius: 12px;
+                    backdrop-filter: blur(5px);
+                    -webkit-backdrop-filter: blur(5px);
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 }
-                .player-ui-container.reversed .ui-content-wrapper { flex-direction: row-reverse; }
-                
-                .score-pod {
-                    background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main);
-                    box-shadow: 0 4px 0 0 var(--color-shadow-main);
-                    border-radius: 12px 0 0 12px;
-                    display: flex; align-items: center; justify-content: center;
-                    padding: 0 1.5rem;
-                    transition: box-shadow 0.3s ease;
+                .player-ui-container.reversed .ui-content-wrapper {
+                    flex-direction: row-reverse;
                 }
-                .player-ui-container.reversed .score-pod { border-radius: 0 12px 12px 0; }
-                .score-pod.active-turn { animation: active-turn-glow 2s infinite ease-in-out; }
+                .ui-content-wrapper::before {
+                    content: '';
+                    position: absolute;
+                    inset: -1px;
+                    border-radius: 12px;
+                    border: 2px solid var(--team-color);
+                    opacity: 0;
+                    transition: opacity 0.4s ease-in-out;
+                    box-shadow: 0 0 15px var(--team-color), inset 0 0 8px var(--team-color);
+                    pointer-events: none;
+                }
+                .ui-content-wrapper.active-turn::before {
+                    opacity: 1;
+                    animation: strong-breathe 2s infinite ease-in-out;
+                }
                 
                 .score-display { 
-                    font-family: var(--font-family-main); font-size: 2.8rem; line-height: 1; 
-                    color: var(--team-color); -webkit-text-stroke: 2px var(--color-shadow-main);
-                    text-stroke: 2px var(--color-shadow-main);
-                    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+                    font-size: 2.5rem; 
+                    font-weight: 900; 
+                    line-height: 1; 
+                    color: var(--team-color); 
+                    text-shadow: 0 0 10px var(--team-color); 
+                    width: 60px;
+                    text-align: center;
                 }
-                .score-display.pop { animation: score-pop 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+                .score-display.pop {
+                    animation: score-pop 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+                }
                 
                 .center-hub {
-                    flex-grow: 1; display: flex; align-items: stretch; gap: 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
                 }
-                .player-ui-container.reversed .center-hub { flex-direction: row-reverse; }
-
-                .special-shot-pod {
-                    background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main);
-                    box-shadow: 0 4px 0 0 var(--color-shadow-main);
-                    padding: 0 1rem; display: flex; align-items: center;
-                    border-radius: 8px; transition: all 0.3s ease;
+                .player-ui-container.reversed .center-hub {
+                    flex-direction: row-reverse;
                 }
-                .special-shot-pod .crown-icon { font-size: 2rem; color: #00000033; transition: all 0.3s ease; }
-                .special-shot-pod.royal { --glow-color: ${UI_COLORS.GOLD}; animation: special-ready-pulse 2s infinite ease-in-out; }
-                .special-shot-pod.ultimate { animation: special-ready-pulse 2s infinite ease-in-out, ultimate-color-cycle 3s linear infinite; }
-                .special-shot-pod.royal .crown-icon, .special-shot-pod.ultimate .crown-icon { color: var(--glow-color); filter: drop-shadow(0 0 5px var(--glow-color)); }
                 
-                .pulsar-pod { display: flex; align-items: stretch; background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main); box-shadow: 0 4px 0 0 var(--color-shadow-main); border-radius: 8px; flex-grow: 1; padding: 4px; gap: 4px; }
-                .pulsar-bar-background { flex-grow: 1; height: 100%; background: var(--color-wood-medium); border-radius: 5px; position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); }
-                .pulsar-bar-background.full .pulsar-bar-fill { animation: pulsar-full-glow 1.5s infinite ease-in-out; }
-                .pulsar-bar-fill { height: 100%; background-color: var(--team-color); border-radius: 5px; transition: width 0.3s ease; }
-                .pulsar-bar-text { position: absolute; inset: 0; text-align: center; font-size: 1rem; font-weight: 400; font-family: var(--font-family-main); color: white; text-shadow: 1px 1px 2px black; line-height: 2.2; z-index: 2; }
+                .team-identifier { display: flex; align-items: center; gap: 0.75rem; }
+                .team-icon { width: 12px; height: 12px; background-color: var(--team-color); border-radius: 50%; box-shadow: 0 0 8px var(--team-color); }
+                .special-shot-status { display: flex; align-items: center; gap: 0.5rem; opacity: 0.7; }
+                .special-shot-status .crown-icon.none { color: var(--color-text-dark); }
+                .special-shot-status .crown-icon.royal { color: ${UI_COLORS.GOLD}; filter: drop-shadow(0 0 5px ${UI_COLORS.GOLD}); animation: strong-breathe 2s infinite ease-in-out; }
+                .special-shot-status .crown-icon.ultimate { color: white; animation: ultimate-glow-pulse 2s infinite; }
+                @keyframes ultimate-glow-pulse { 50% { filter: drop-shadow(0 0 8px #00f6ff); color: #00f6ff; } }
+
+                .pulsar-bar-container { position: relative; display: flex; align-items: center; height: 30px; }
+                .pulsar-bar-background { width: 250px; height: 14px; background: rgba(0,0,0,0.4); border-radius: 7px; position: relative; border: 1px solid var(--color-border); }
+                .pulsar-bar-text { position: absolute; inset: 0; text-align: center; font-size: 0.7rem; font-weight: 700; color: white; text-shadow: 0 1px 2px black; line-height: 14px; transition: opacity 0.2s ease; z-index: 2; }
+                .pulsar-bar-text.hidden { opacity: 0; }
+
+                .pulsar-bar-segments { display: flex; position: absolute; inset: 1px; gap: 1px; }
+                .segment { flex: 1; background-color: transparent; transition: background-color 0.3s ease; }
+                .segment.active { background-color: var(--team-color); }
+                .pulsar-bar-background:has(.segment:last-child.active) .segment.active { animation: pulse-glow 1.5s infinite ease-in-out; }
+                @keyframes pulse-glow { 50% { filter: brightness(1.7); box-shadow: 0 0 8px var(--team-color); } }
 
                 .pulsar-activate-button {
-                    font-family: var(--font-family-main);
-                    display: flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0 1rem; 
-                    font-size: 1rem; border-radius: 5px; cursor: pointer; color: white;
-                    border: 2px solid var(--color-shadow-main);
-                    background: var(--color-wood-light); color: var(--color-text-dark);
-                    transition: all 0.2s ease-out; opacity: 0.6;
+                    position: absolute; left: 50%; top: 50%;
+                    transform: translate(-50%, -50%) scale(0.8); opacity: 0; pointer-events: none;
+                    transition: all 0.2s ease-out;
+                    display: flex; align-items: center; gap: 0.35rem; padding: 0.5rem 1rem; 
+                    font-size: 0.8rem; font-weight: 800; border-radius: 20px; cursor: pointer; 
+                    background: var(--glow-green); color: white; border: 1px solid white;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 10px var(--glow-green);
+                    white-space: nowrap;
                 }
-                .pulsar-activate-button:disabled:not(.armed) { cursor: not-allowed; }
-                .pulsar-activate-button:not(:disabled) { opacity: 1; background: var(--color-accent-green); color: white; }
-                .pulsar-activate-button:not(:disabled):hover { transform: scale(1.05); }
-                .pulsar-activate-button.armed { opacity: 1; background: var(--color-team-color); }
+                .pulsar-activate-button.visible { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+                .pulsar-activate-button.visible:not(:disabled):hover { transform: translate(-50%, -50%) scale(1.05); }
+                .pulsar-activate-button.armed { background: var(--color-bg-light); border-color: var(--color-border); box-shadow: none; }
+                .pulsar-activate-button:disabled { cursor: not-allowed; }
 
-                .help-button-pod {
-                     background: var(--color-wood-dark); border: 3px solid var(--color-shadow-main);
-                    box-shadow: 0 4px 0 0 var(--color-shadow-main);
-                    border-radius: 0 12px 12px 0;
-                    display: flex; align-items: center; justify-content: center;
-                    padding: 0 1rem;
-                }
-                .player-ui-container.reversed .help-button-pod { border-radius: 12px 0 0 12px; }
                 .help-button { 
-                    background: var(--color-wood-light); border: 2px solid var(--color-shadow-main); 
-                    color: var(--color-text-dark); width: 36px; height: 36px; 
+                    background: none; border: 1px solid var(--color-border-glass); 
+                    color: var(--color-text-medium); width: 32px; height: 32px; 
                     border-radius: 50%; cursor: pointer; display: flex; 
                     align-items: center; justify-content: center; 
                     transition: all 0.2s ease; flex-shrink: 0;
                 }
-                .help-button:hover { transform: scale(1.1); }
                 .help-button svg { width: 18px; height: 18px; }
-
-                @media (max-width: 640px) {
-                    .player-ui-container { height: clamp(56px, 8vh, 60px); }
-                    .ui-content-wrapper { height: 48px; }
-                    .score-pod { padding: 0 1rem; }
-                    .score-display { font-size: 2.2rem; }
-                    .special-shot-pod { display: none; }
-                    .pulsar-bar-text { font-size: 0.9rem; line-height: 2.4; }
+                .help-button:hover { background: var(--color-bg-light); color: white; transform: scale(1.1); }
+                
+                @media (max-width: 768px) {
+                    .ui-content-wrapper { max-width: 100%; gap: 0.5rem; padding: 0 0.5rem; }
+                    .score-display { font-size: 2rem; width: 40px;}
+                    .center-hub { gap: 0.5rem; }
+                    .pulsar-bar-background { width: 150px; }
+                }
+                 @media (max-width: 480px) {
+                    .pulsar-bar-background { display: none; }
+                    .pulsar-activate-button { position: static; transform: none; opacity: 1; pointer-events: auto; }
+                    .pulsar-activate-button:not(.visible) { display: none; }
+                    .team-identifier { display: none; }
                 }
             `}</style>
-            <div className={`ui-content-wrapper`}>
-                <div className={`score-pod ${isMyTurn ? 'active-turn' : ''}`}>
-                    <div className={`score-display ${scoreShouldPop ? 'pop' : ''}`}>{score}</div>
-                </div>
+            <div className={`ui-content-wrapper ${isMyTurn ? 'active-turn' : ''}`}>
+                <div className={`score-display ${scoreShouldPop ? 'pop' : ''}`}>{score}</div>
 
                 <div className="center-hub">
-                    <div className={`special-shot-pod ${specialShotStatus.toLowerCase()}`}>
-                        <CrownIcon status={specialShotStatus} />
-                    </div>
                     <PulsarBar 
                         power={pulsarPower} 
                         team={team} 
@@ -174,13 +207,16 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                         isArmed={isPulsarArmed} 
                         canActivate={canActivatePulsar} 
                     />
+                    <div className="team-identifier">
+                        <div className="special-shot-status">
+                            <CrownIcon status={specialShotStatus} />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="help-button-pod">
-                    <button className="help-button" onClick={onHelpClick} aria-label="Ayuda e Información">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    </button>
-                </div>
+                <button className="help-button" onClick={onHelpClick} aria-label="Ayuda e Información">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </button>
             </div>
         </header>
     );
