@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerUI from './components/PlayerUI';
@@ -10,8 +11,6 @@ import PuckTypeIcon from './components/PuckTypeIcon';
 import HelpModal from './components/HelpModal';
 import GameMessageDisplay from './components/GameMessageDisplay';
 import BonusTurnIndicator from './components/BonusTurnIndicator';
-import useGemini from './hooks/useGemini';
-import GameCommentary from './components/GameCommentary';
 
 const WinnerModal: React.FC<{ winner: Team; score: { RED: number; BLUE: number }; onRestart: () => void; playSound: (sound: string) => void; }> = ({ winner, score, onRestart, playSound }) => {
   const teamName = winner === 'BLUE' ? 'Equipo Azul' : 'Equipo Rojo';
@@ -80,13 +79,6 @@ function App() {
   const [turnChangeInfo, setTurnChangeInfo] = useState<{ team: Team; previousTeam: Team | null; key: number; reason: TurnLossReason | null } | null>(null);
   const prevTurnRef = useRef<Team | null>(null);
   const [isGoalShaking, setIsGoalShaking] = useState(false);
-  
-  const { generateCommentaryStream } = useGemini();
-  const [leftCommentary, setLeftCommentary] = useState({ text: '', team: 'BLUE' as Team, key: 0 });
-  const [rightCommentary, setRightCommentary] = useState({ text: '', team: 'RED' as Team, key: 0 });
-  const nextCommentarySide = useRef<'left' | 'right'>('left');
-  const prevGameStateRef = useRef(gameState);
-  const commentaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
   useEffect(() => {
@@ -123,45 +115,6 @@ function App() {
         return () => clearTimeout(timer);
     }
   }, [gameState.goalScoredInfo]);
-
-  useEffect(() => {
-    const triggerCommentary = async (prompt: string, team: Team) => {
-        const side = nextCommentarySide.current;
-        const setCommentary = side === 'left' ? setLeftCommentary : setRightCommentary;
-        nextCommentarySide.current = side === 'left' ? 'right' : 'left';
-        if (commentaryTimeoutRef.current) clearTimeout(commentaryTimeoutRef.current);
-        try {
-            const stream = await generateCommentaryStream(prompt);
-            if (!stream) return;
-            let fullText = '';
-            for await (const chunk of stream) {
-                fullText += chunk.text;
-                setCommentary({ text: fullText, team, key: Date.now() });
-            }
-            commentaryTimeoutRef.current = setTimeout(() => setCommentary(prev => ({ ...prev, text: '' })), 4000);
-        } catch (e) { console.error("Commentary stream failed:", e);
-        }
-    };
-    
-    // Simple state diffing to generate prompts for the commentator AI
-    if (gameState.isSimulating && !prevGameStateRef.current.isSimulating) {
-        // Start of shot
-        const shotPuck = gameState.pucks.find(p => p.id === gameState.imaginaryLine?.shotPuckId);
-        if(shotPuck) {
-            let prompt = `El equipo ${shotPuck.team === 'BLUE' ? 'Azul' : 'Rojo'} dispara con su ficha ${shotPuck.puckType}.`;
-            if (gameState.lastShotWasSpecial === 'ROYAL') prompt = `¡Tiro Real del equipo ${shotPuck.team === 'BLUE' ? 'Azul' : 'Rojo'}!`;
-            if (gameState.lastShotWasSpecial === 'ULTIMATE') prompt = `¡EL LEGENDARIO TIRO DEFINITIVO DEL EQUIPO ${shotPuck.team === 'BLUE' ? 'Azul' : 'Rojo'}!`;
-            triggerCommentary(prompt, shotPuck.team);
-        }
-    } else if (gameState.goalScoredInfo && !prevGameStateRef.current.goalScoredInfo) {
-        // Goal scored
-        const { scoringTeam, pointsScored, scoringPuckType } = gameState.goalScoredInfo;
-        const prompt = `¡GOLAZO del equipo ${scoringTeam === 'BLUE' ? 'Azul' : 'Rojo'}! Anotan ${pointsScored} puntos con su ${scoringPuckType}.`;
-        triggerCommentary(prompt, scoringTeam);
-    }
-
-    prevGameStateRef.current = gameState;
-  }, [gameState, generateCommentaryStream]);
 
 
   const getBoardCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -482,9 +435,6 @@ function App() {
                     onBoardMouseDown={handleBoardMouseDown}
                 />
              </div>
-             {/* Commentary is positioned relative to the board area to sit neatly between UI bars */}
-             <GameCommentary text={leftCommentary.text} team={leftCommentary.team} position="left" componentKey={leftCommentary.key} />
-             <GameCommentary text={rightCommentary.text} team={rightCommentary.team} position="right" componentKey={rightCommentary.key} />
         </div>
         
          <PlayerUI 

@@ -247,15 +247,20 @@ const calculatePotentialLines = (puckId: number, allPucks: Puck[]): ImaginaryLin
 
 // --- PREVIEW SIMULATION ---
 const runPreviewSimulation = (initialPucks: Puck[], shotPuckId: number, shotVector: Vector, power: number): { trajectories: PuckTrajectory[] } => {
-    // Deep copy pucks to avoid mutating real state
-    let simPucks = JSON.parse(JSON.stringify(initialPucks)) as Puck[];
+    // Optimization: Shallow copy pucks instead of full deep clone. 
+    // We only mutate properties we need for sim (pos, vel).
+    const simPucks = initialPucks.map(p => ({
+        ...p,
+        position: { ...p.position },
+        velocity: { ...p.velocity }
+    }));
+
     const trajectories: Map<number, Vector[]> = new Map();
 
     // Apply initial shot
-    const puckIndex = simPucks.findIndex(p => p.id === shotPuckId);
-    if (puckIndex === -1) return { trajectories: [] };
+    const puckToShoot = simPucks.find(p => p.id === shotPuckId);
+    if (!puckToShoot) return { trajectories: [] };
 
-    const puckToShoot = simPucks[puckIndex];
     const launchDistance = getVectorMagnitude(shotVector);
     if (launchDistance === 0) return { trajectories: [] };
 
@@ -787,8 +792,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
       }
 
       // --- Check for imaginary line cross (DIRECT ITERATION - REPLACES GRID) ---
-      // This is O(N * M) where N is moving pucks and M is number of lines.
-      // Since M is typically < 20, this is extremely fast and avoids the complexity/bugs of the grid system.
+      // FIX CRITICAL BUG: Lines were static. Now we recalculate the line position based on the current position
+      // of the source pucks in `newPucks`.
       if (newImaginaryLine && newImaginaryLine.isConfirmed) {
         const movingPucksData = [];
         for (const puckPrev of prev.pucks) {
@@ -804,38 +809,33 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
             const movementSegmentStart = puckPrev.position;
             const movementSegmentEnd = puckNew!.position;
             
-            newImaginaryLine.lines.forEach((line, index) => {
+            // Iterate over the indices of the lines, but get coordinate data dynamically
+            newImaginaryLine.lines.forEach((originalLineData, index) => {
                 // If this line was already crossed, ignore it
                 if (newImaginaryLine.crossedLineIndices.has(index)) return;
 
-                const intersectionPoint = getLineIntersection(movementSegmentStart, movementSegmentEnd, line.start, line.end);
+                // --- CRITICAL FIX START ---
+                // Find the source pucks in the CURRENT state (newPucks)
+                const sourcePuck1 = newPucks.find(p => p.id === originalLineData.sourcePuckIds[0]);
+                const sourcePuck2 = newPucks.find(p => p.id === originalLineData.sourcePuckIds[1]);
+
+                if (!sourcePuck1 || !sourcePuck2) {
+                    // One of the pucks forming the line was destroyed.
+                    newImaginaryLine.crossedLineIndices.add(index);
+                    return; 
+                }
+
+                // Use the CURRENT positions of the source pucks to define the line
+                const dynamicLineStart = sourcePuck1.position;
+                const dynamicLineEnd = sourcePuck2.position;
+
+                const intersectionPoint = getLineIntersection(movementSegmentStart, movementSegmentEnd, dynamicLineStart, dynamicLineEnd);
+                // --- CRITICAL FIX END ---
                 
                 if (intersectionPoint) {
-                    // VALIDATE SOURCE PUCKS EXISTENCE TO PREVENT GHOST CHARGES
-                    const sourcePuck1 = newPucks.find(p => p.id === line.sourcePuckIds[0]);
-                    const sourcePuck2 = newPucks.find(p => p.id === line.sourcePuckIds[1]);
-
-                    if (!sourcePuck1 || !sourcePuck2) {
-                        // Line source destroyed - Line is effectively broken
-                        // Mark as crossed so we don't check again, but give no reward
-                        newImaginaryLine.crossedLineIndices.add(index);
-                        newFloatingTexts.push({
-                            id: floatingTextIdCounter.current++,
-                            text: '¡Enlace Roto!',
-                            position: intersectionPoint,
-                            color: '#ef4444', // Red
-                            opacity: 1,
-                            life: FLOATING_TEXT_CONFIG.LIFE,
-                            decay: FLOATING_TEXT_CONFIG.DECAY,
-                            velocity: { x: 0, y: FLOATING_TEXT_CONFIG.RISE_SPEED },
-                        });
-                        return; 
-                    }
-
                     newImaginaryLine.crossedLineIndices.add(index);
                     
                     if (puckNew.puckType === 'PAWN' && puckNew.id === newImaginaryLine.shotPuckId) {
-                        // sourcePuck1/2 are validated above
                         const isSpecial = (p: Puck) => p.puckType !== 'PAWN';
                         const s1Type = sourcePuck1.puckType;
                         const s2Type = sourcePuck2.puckType;
@@ -856,8 +856,8 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
                         let powerGained = PULSAR_POWER_PER_LINE;
                         let isPerfect = false;
 
-                        const lineLengthSq = getVectorMagnitudeSq(subtractVectors(line.end, line.start));
-                        const lineCenter = { x: (line.start.x + line.end.x) / 2, y: (line.start.y + line.end.y) / 2 };
+                        const lineLengthSq = getVectorMagnitudeSq(subtractVectors(dynamicLineEnd, dynamicLineStart));
+                        const lineCenter = { x: (dynamicLineStart.x + dynamicLineEnd.x) / 2, y: (dynamicLineStart.y + dynamicLineEnd.y) / 2 };
                         const distToCenterSq = getVectorMagnitudeSq(subtractVectors(intersectionPoint, lineCenter));
                         if (distToCenterSq / lineLengthSq < PERFECT_CROSSING_THRESHOLD * PERFECT_CROSSING_THRESHOLD) {
                             powerGained += PERFECT_CROSSING_BONUS;
@@ -1968,10 +1968,12 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
           else newParticles.push(props as Particle);
       }
       
-      if (prev.imaginaryLine) {
-          prev.imaginaryLine.isConfirmed = true;
-          prev.imaginaryLine.shotPuckId = puck.id;
-      }
+      // Ensure the imaginary line data persists but is marked as confirmed
+      const newImaginaryLine = prev.imaginaryLine ? {
+          ...prev.imaginaryLine,
+          isConfirmed: true,
+          shotPuckId: puck.id
+      } : null;
       
       return {
           ...prev,
@@ -1986,6 +1988,7 @@ export const useGameEngine = ({ playSound }: UseGameEngineProps) => {
           pulsarShotArmed: null, // Consumed
           lastShotWasSpecial: specialStatus,
           orbHitsThisShot: 0,
+          imaginaryLine: newImaginaryLine,
       };
     });
   }, [playSound]);

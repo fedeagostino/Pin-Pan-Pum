@@ -814,8 +814,22 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
       {/* Imaginary Lines */}
       <g className="imaginary-lines">
-          {gameState.imaginaryLine && gameState.imaginaryLine.lines.map((line, index) => {
-              const isHighlighted = index === gameState.imaginaryLine.highlightedLineIndex;
+          {gameState.imaginaryLine && gameState.imaginaryLine.lines.map((originalLineData, index) => {
+              // Hide if already crossed
+              if (gameState.imaginaryLine!.crossedLineIndices.has(index)) return null;
+
+              const isHighlighted = index === gameState.imaginaryLine!.highlightedLineIndex;
+              
+              // --- VISUAL FIX: Use CURRENT positions for drawing lines ---
+              // Find the pucks in the current state to get their real-time positions
+              const sourcePuck1 = gameState.pucks.find(p => p.id === originalLineData.sourcePuckIds[0]);
+              const sourcePuck2 = gameState.pucks.find(p => p.id === originalLineData.sourcePuckIds[1]);
+
+              // If a puck was destroyed, don't draw the line
+              if (!sourcePuck1 || !sourcePuck2) return null;
+
+              const line = { start: sourcePuck1.position, end: sourcePuck2.position };
+              // -------------------------------------------------------------
               
               const shotPuck = gameState.pucks.find(p => p.id === gameState.imaginaryLine?.shotPuckId);
 
@@ -823,9 +837,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               if (shotPuck?.puckType === 'PAWN') {
                   isPawnStyleLine = true;
               } else if (shotPuck?.puckType === 'KING') {
-                  const sourcePuck1 = gameState.pucks.find(p => p.id === line.sourcePuckIds[0]);
-                  const sourcePuck2 = gameState.pucks.find(p => p.id === line.sourcePuckIds[1]);
-                  if (sourcePuck1?.puckType === 'PAWN' && sourcePuck2?.puckType === 'PAWN') {
+                  if (sourcePuck1.puckType === 'PAWN' && sourcePuck2.puckType === 'PAWN') {
                       isPawnStyleLine = true;
                   }
               }
@@ -840,8 +852,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
               const strokeDasharray = isHighlighted ? "8 8" : (isPawnStyleLine ? "2 8" : "4 6");
 
-              const opacity = gameState.imaginaryLine!.isConfirmed ? 0.3 : 1;
-
               return (
                   <line
                       key={index}
@@ -851,7 +861,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                       strokeWidth={strokeWidth}
                       strokeDasharray={strokeDasharray}
                       className={isHighlighted ? "line-flow" : ""}
-                      style={{ transition: 'stroke 0.2s ease, stroke-width 0.2s ease', pointerEvents: 'none', opacity }}
+                      style={{ transition: 'stroke 0.2s ease, stroke-width 0.2s ease', pointerEvents: 'none' }}
                   />
               );
           })}
