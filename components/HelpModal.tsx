@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { PuckType, Team } from '../types';
-import { PUCK_TYPE_INFO, SCORE_TO_WIN, PUCK_TYPE_PROPERTIES, PUCK_GOAL_POINTS, GUARDIAN_DURABILITY } from '../constants';
+import { PuckType, SynergyType, Team } from '../types';
+import { PUCK_TYPE_INFO, SYNERGY_DESCRIPTIONS, SYNERGY_COMBOS, SCORE_TO_WIN, PUCK_TYPE_PROPERTIES, PUCK_GOAL_POINTS } from '../constants';
 import PuckTypeIcon from './PuckTypeIcon';
 
-type HelpTab = 'objetivo' | 'controles' | 'reglas' | 'fichas';
+type HelpTab = 'objetivo' | 'controles' | 'reglas' | 'fichas' | 'sinergias';
 
 // --- SVG ICONS ---
 const GoalIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" /><circle cx="12" cy="10" r="3" /></svg>;
@@ -19,6 +19,7 @@ const TabIconObjetivo = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0
 const TabIconControles = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.75a2 2 0 100 4 2 2 0 000-4zM4 3.75a2 2 0 100 4 2 2 0 000-4zM16 3.75a2 2 0 100 4 2 2 0 000-4zM10 9.75a2 2 0 100 4 2 2 0 000-4zM4 9.75a2 2 0 100 4 2 2 0 000-4zM16 9.75a2 2 0 100 4 2 2 0 000-4z" /></svg>;
 const TabIconReglas = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v11.5A2.25 2.25 0 004.25 18h11.5A2.25 2.25 0 0018 15.75V4.25A2.25 2.25 0 0015.75 2H4.25zm5.75 4a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0V6zM10 10.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0v-.01a.75.75 0 01.75-.75zM8.5 10.25a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0v-.01zM11.5 10.25a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0v-.01zM8.5 12.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0v-.01a.75.75 0 01.75-.75zM10 14a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0V14zM11.5 12.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0v-.01a.75.75 0 01.75-.75z" clipRule="evenodd" /></svg>;
 const TabIconFichas = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM10 11a6 6 0 016 6H4a6 6 0 016-6z" /></svg>;
+const TabIconSinergias = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.216 2.457l-1.128 1.127a.75.75 0 01-1.06-1.06l1.127-1.128a5.5 5.5 0 018.472-8.472l1.128-1.127a.75.75 0 011.061 1.06l-1.127 1.128a5.501 5.501 0 01-.228 6.453z" clipRule="evenodd" /><path fillRule="evenodd" d="M4.688 8.576a5.5 5.5 0 019.216-2.457l1.128-1.127a.75.75 0 011.06 1.06l-1.127 1.128a5.5 5.5 0 01-8.472 8.472l-1.128 1.127a.75.75 0 01-1.06-1.06l1.127-1.128a5.501 5.501 0 01.228-6.453z" clipRule="evenodd" /></svg>;
 
 
 // --- TAB CONTENT COMPONENTS ---
@@ -78,11 +79,11 @@ const ReglasTab: React.FC = () => (
     <div className="help-section">
         <h3>Reglas Clave</h3>
         <div className="rules-list">
-            <div className="rule-item"><div className="rule-icon"><RoyalShotIcon /></div><div className="rule-details"><h4>Tiro Real y Definitivo</h4><p>Cuando todas tus fichas Guardianas están cargadas, tu ficha Rey desbloquea un <strong>Tiro Real</strong>, un disparo superpotente. Si además cargas a todos tus peones, el Rey desata un <strong>Tiro Definitivo</strong>, aún más devastador y capaz de destruir fichas rivales.</p></div></div>
+            <div className="rule-item"><div className="rule-icon"><RoyalShotIcon /></div><div className="rule-details"><h4>Tiro Real y Definitivo</h4><p>Cuando todas tus fichas especiales (no peones) están cargadas, tu ficha Rey desbloquea un <strong>Tiro Real</strong>, un disparo superpotente. Si además cargas a todos tus peones, el Rey desata un <strong>Tiro Definitivo</strong>, aún más devastador y capaz de destruir fichas rivales.</p></div></div>
             <div className="rule-item"><div className="rule-icon"><BonusTurnIcon /></div><div className="rule-details"><h4>Turno Extra (Tiro en Cadena)</h4><p>Al cargar una ficha, obtienes un <strong>turno extra inmediato</strong>. Puedes seleccionar otra ficha y disparar de nuevo mientras las demás aún están en movimiento, permitiendo combos espectaculares.</p></div></div>
             <div className="rule-item"><div className="rule-icon"><PulsarIcon /></div><div className="rule-details"><h4>Poder Pulsar</h4><p>Ganas poder al cruzar líneas y golpear orbes. Cuando la barra de Poder Pulsar se llena, puedes activarla antes de tu disparo para lanzar un <strong>Tiro Pulsar</strong> con una potencia descomunal.</p></div></div>
             <div className="rule-item"><div className="rule-icon"><OrbIcon /></div><div className="rule-details"><h4>Orbes y Sobrecarga</h4><p>Periódicamente, aparecen orbes de poder en los bordes. Golpéalos para ganar mucho Poder Pulsar. Al recolectar 3 orbes, tu equipo entra en estado de <strong>Sobrecarga</strong> durante un turno, repeliendo a las fichas enemigas cercanas.</p></div></div>
-            <div className="rule-item"><div className="rule-icon"><TurnLossIcon /></div><div className="rule-details"><h4>Pérdida de Turno</h4><p>Pierdes tu turno instantáneamente si cometes una de las siguientes faltas:</p><ul><li><strong>Autogol:</strong> Marcar en tu propia portería.</li><li><strong>Gol Ilegal:</strong> Marcar con una ficha que no estaba cargada.</li><li><strong>Fallo Especial:</strong> Realizar un Tiro Real o Definitivo sin marcar un gol.</li></ul></div></div>
+            <div className="rule-item"><div className="rule-icon"><TurnLossIcon /></div><div className="rule-details"><h4>Pérdida de Turno</h4><p>Pierdes tu turno instantáneamente si cometes una de las siguientes faltas:</p><ul><li><strong>Autogol:</strong> Marcar en tu propia portería.</li><li><strong>Gol Ilegal:</strong> Marcar con una ficha que no estaba cargada.</li><li><strong>Gol Fantasma:</strong> Marcar con una ficha mientras es intangible (efecto Fantasma o Sinergia).</li><li><strong>Fallo Especial:</strong> Realizar un Tiro Real o Definitivo sin marcar un gol.</li></ul></div></div>
         </div>
     </div>
 );
@@ -111,6 +112,28 @@ const FichasTab: React.FC = () => (
     </div>
 );
 
+const SinergiasTab: React.FC = () => (
+    <div className="help-section">
+        <h3>Sinergias</h3>
+        <p>Apunta sobre una línea imaginaria entre dos fichas especiales compatibles durante <strong>1.2 segundos</strong> para activar una poderosa habilidad de un solo uso para ese disparo.</p>
+        <div className="puck-list">
+            {Object.entries(SYNERGY_DESCRIPTIONS).map(([synergyType, info]) => {
+                const comboKey = Object.keys(SYNERGY_COMBOS).find(k => SYNERGY_COMBOS[k] === synergyType);
+                if (!comboKey) return null;
+                const [puck1, puck2] = comboKey.split('-') as [PuckType, PuckType];
+
+                return (
+                    <div key={synergyType} className="puck-info-item synergy-item">
+                        <div className="synergy-combo-icons"><PuckTypeIcon puckType={puck1} className="puck-info-icon" /><span>+</span><PuckTypeIcon puckType={puck2} className="puck-info-icon" /></div>
+                        <div className="puck-info-details"><h4>{info.name}</h4><p>{info.description}</p></div>
+                    </div>
+                );
+            })}
+        </div>
+    </div>
+);
+
+
 const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (sound: string) => void; team: Team | null; }> = ({ isOpen, onClose, playSound, team }) => {
     const [activeTab, setActiveTab] = useState<HelpTab>('objetivo');
 
@@ -125,6 +148,7 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
         { id: 'controles', label: 'Controles', icon: TabIconControles },
         { id: 'reglas', label: 'Reglas', icon: TabIconReglas },
         { id: 'fichas', label: 'Fichas', icon: TabIconFichas },
+        { id: 'sinergias', label: 'Sinergias', icon: TabIconSinergias }
     ];
 
     const renderTabContent = () => {
@@ -133,6 +157,7 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
             case 'controles': return <ControlesTab />;
             case 'reglas': return <ReglasTab />;
             case 'fichas': return <FichasTab />;
+            case 'sinergias': return <SinergiasTab />;
             default: return null;
         }
     };
@@ -209,6 +234,11 @@ const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (so
                 .stat-icon-item { display: flex; align-items: center; gap: 0.35rem; color: var(--color-text-medium); }
                 .stat-icon-item svg { width: 16px; height: 16px; }
                 .stat-icon-item span { font-size: 0.9rem; font-weight: 600; color: white; }
+
+                .synergy-item { grid-template-columns: 120px 1fr; }
+                .synergy-combo-icons { display: flex; align-items: center; justify-content: center; gap: 0.25rem; height: 48px; }
+                .synergy-combo-icons > span { font-size: 1.5rem; font-weight: 700; color: var(--color-text-medium); }
+                .synergy-combo-icons .puck-info-icon { width: 40px; height: 40px; }
 
                 .rule-item { display: grid; grid-template-columns: 32px 1fr; gap: 1rem; align-items: flex-start; }
                 .rule-icon { width: 32px; height: 32px; color: var(--color-accent-purple); }

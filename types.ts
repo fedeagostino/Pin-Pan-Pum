@@ -5,7 +5,9 @@ export type Vector = {
 
 export type Team = 'RED' | 'BLUE';
 
-export type PuckType = 'KING' | 'PAWN' | 'GUARDIAN';
+export type PuckType = 'STANDARD' | 'HEAVY' | 'FAST' | 'GHOST' | 'ANCHOR' | 'KING' | 'SWERVE' | 'BOUNCER' | 'DAMPENER' | 'PAWN';
+
+export type SynergyType = 'POWER' | 'SPEED' | 'CONTROL' | 'GRAVITY_WELL' | 'TELEPORT_STRIKE' | 'REPULSOR_ARMOR';
 
 export type SpecialShotStatus = 'NONE' | 'ROYAL' | 'ULTIMATE';
 
@@ -32,6 +34,17 @@ export type Puck = {
   elasticity?: number;
   swerveFactor?: number;
   durability?: number;
+  activeSynergy?: {
+    type: SynergyType;
+    initialStats: {
+        mass: number;
+        friction: number;
+        elasticity?: number;
+        swerveFactor?: number;
+    },
+    lineAngle: number;
+  };
+  synergyEffectTriggered?: boolean;
   temporaryEffects: TemporaryEffect[];
 };
 
@@ -68,6 +81,7 @@ export type ImaginaryLine = {
     start: Vector;
     end: Vector;
     sourcePuckIds: [number, number];
+    synergyType: SynergyType | null;
     passivelyCrossedBy: Set<number>; // Holds GHOST puck IDs this line passes over
 };
 
@@ -92,7 +106,6 @@ export type PreviewState = {
   trajectories: PuckTrajectory[];
   potentialLines: ImaginaryLine[];
   linesToCrossForBonus: number;
-  chargeRequirementText: string;
 } | null;
 
 export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL';
@@ -129,8 +142,7 @@ export type GameState = {
     pointsScored: number;
     scoringPuckType: PuckType;
   } | null;
-  // FIX: Removed 'synergy' as it's a deprecated feature.
-  gameMessage: { text: string; type: 'royal' | 'ultimate' | 'powerup'; } | null;
+  gameMessage: { text: string; type: 'royal' | 'ultimate' | 'synergy' | 'powerup'; synergyType?: SynergyType; } | null;
   bonusTurnForTeam: Team | null;
   screenShake: number;
   previewState: PreviewState | null;

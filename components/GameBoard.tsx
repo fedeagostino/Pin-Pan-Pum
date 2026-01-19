@@ -1,7 +1,7 @@
+
 import React from 'react';
-import { GameState, Vector, Puck } from '../types';
-// FIX: Import EMP_BURST_RADIUS to be used in particle rendering.
-import { BOARD_WIDTH, BOARD_HEIGHT, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, PAWN_DURABILITY, UI_COLORS, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG, GUARDIAN_DURABILITY, EMP_BURST_RADIUS } from '../constants';
+import { GameState, Vector, Puck, PuckType, SynergyType, SpecialShotStatus } from '../types';
+import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG } from '../constants';
 import InfoPanel from './InfoPanel';
 import PuckShape from './PuckShape';
 
@@ -79,6 +79,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
   const highlightedLine = gameState.imaginaryLine && gameState.imaginaryLine.highlightedLineIndex !== null
     ? gameState.imaginaryLine.lines[gameState.imaginaryLine.highlightedLineIndex]
     : null;
+    
+  const synergyPuckIds = highlightedLine?.synergyType ? new Set(highlightedLine.sourcePuckIds) : new Set();
+  const passiveGhostPuckIds = highlightedLine?.passivelyCrossedBy ?? new Set();
 
   const infoCardPuck = gameState.infoCardPuckId !== null
     ? gameState.pucks.find(p => p.id === gameState.infoCardPuckId)
@@ -178,7 +181,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             '--glow-color': color,
             '--glow-intensity-blur': `${5 + glowState.intensity * 40}px`,
             animationName,
-            animationDuration: '1.5s',
             animationIterationCount: 'infinite',
             animationTimingFunction: 'ease-in-out'
         } as React.CSSProperties;
@@ -348,6 +350,14 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                  .board-border {
                     animation: strong-breathe 4s infinite ease-in-out;
                  }
+
+                 @keyframes charged-ring-rotate {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                 }
+                 .charged-energy-ring {
+                    animation: charged-ring-rotate 4s linear infinite;
+                 }
             `}
         </style>
         <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
@@ -401,6 +411,11 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 <feMergeNode in="SourceGraphic" />
             </feMerge>
         </filter>
+        {Object.entries(SYNERGY_EFFECTS).map(([key, value]) => (
+            <filter key={`synergy-glow-${key}`} id={`synergy-glow-${key as SynergyType}`} x="-50%" y="-50%" width="200%" height="200%">
+                 <feDropShadow dx="0" dy="0" stdDeviation="3.5" floodColor={value.color} floodOpacity="1" />
+            </filter>
+        ))}
         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 246, 255, 0.04)" strokeWidth="1"/>
         </pattern>
@@ -641,6 +656,19 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             if (p.renderType === 'synergy_charge') {
                 return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={p.radius} fill={p.color} style={{ opacity: p.opacity, filter: 'url(#pulsar-glow)' }} />;
             }
+            if (p.renderType === 'gravity_well') {
+                const progress = 1 - (p.life / p.lifeSpan);
+                const angle = progress * Math.PI * 6 + (p.id % 10) * 0.628;
+                const radius = GRAVITY_WELL_RADIUS * (1 - progress);
+                const px = p.position.x + Math.cos(angle) * radius;
+                const py = p.position.y + Math.sin(angle) * radius;
+                return <circle key={p.id} cx={px} cy={py} r={p.radius} fill={p.color} style={{ opacity: p.opacity }} />;
+            }
+            if (p.renderType === 'repulsor_aura') {
+                const progress = (p.lifeSpan - p.life) / p.lifeSpan;
+                const radius = p.radius + progress * (REPULSOR_ARMOR_RADIUS - p.radius);
+                return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={radius} fill="none" stroke={p.color} strokeWidth={3} style={{ opacity: p.opacity }} />;
+            }
             return <circle key={p.id} cx={p.position.x} cy={p.position.y} r={p.radius} fill={p.color} style={{ opacity: p.opacity }} />;
         })}
          {/* Orbiting Particles */}
@@ -687,17 +715,23 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         {gameState.pucks.map((puck) => {
           const isSelected = gameState.selectedPuckId === puck.id;
           const isShootable = gameState.canShoot && puck.team === gameState.currentTurn && !gameState.pucksShotThisTurn.includes(puck.id);
+          const isSynergySource = synergyPuckIds.has(puck.id);
+          const isPassiveGhost = passiveGhostPuckIds.has(puck.id);
           const isPhased = puck.temporaryEffects.some(e => e.type === 'PHASED');
           
           const kingSpecialStatus = (puck.puckType === 'KING' && isShootable) ? gameState.specialShotStatus[puck.team] : 'NONE';
 
           let glowFilter = "";
-          if (isSelected) {
+          if (puck.activeSynergy) {
+             glowFilter = `url(#synergy-glow-${puck.activeSynergy.type})`;
+          } else if (isSelected) {
             glowFilter = puck.team === 'BLUE' ? `url(#puck-glow-blue-active)` : `url(#puck-glow-red-active)`;
           } else if (kingSpecialStatus === 'ULTIMATE') {
             glowFilter = 'url(#puck-glow-ultimate-ready)';
           } else if (kingSpecialStatus === 'ROYAL') {
             glowFilter = 'url(#puck-glow-royal-ready)';
+          } else if (isSynergySource || isPassiveGhost) {
+            glowFilter = `url(#synergy-glow-${highlightedLine?.synergyType})`;
           } else if (puck.isCharged && !gameState.isSimulating) {
             glowFilter = "url(#puck-glow-charged)";
           } else if (isShootable) {
@@ -705,15 +739,14 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           }
           
           let puckOpacity = 1;
-          if (isPhased) {
+          if (isPhased && puck.puckType !== 'GHOST') {
               puckOpacity = 0.7;
           }
 
           const svgData = PUCK_SVG_DATA[puck.puckType];
           const isPathBased = !!(svgData && svgData.path);
           const scale = isPathBased ? puck.radius / (svgData.designRadius || puck.radius) : 1;
-          const pathLength = svgData?.pathLength || 90;
-          const maxDurability = puck.puckType === 'PAWN' ? PAWN_DURABILITY : GUARDIAN_DURABILITY;
+          const pawnPathLength = svgData?.pathLength || 90;
           const hitboxRadius = puck.radius + (puck.radius < KING_PUCK_RADIUS ? 12 : 8);
 
           return (
@@ -731,43 +764,56 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 <g transform={`rotate(${puck.rotation})`}>
                   <PuckShape puck={puck} />
                   
-                  {(puck.puckType === 'PAWN' || puck.puckType === 'GUARDIAN') && puck.durability !== undefined && svgData && isPathBased && (
+                  {puck.puckType === 'PAWN' && puck.durability !== undefined && svgData && isPathBased && (
                       <g transform={`scale(${scale}) rotate(-90)`}>
                           <path d={svgData.path} fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2.5" />
                           <path
                               d={svgData.path}
                               fill="none"
-                              stroke={getDurabilityColor(puck.durability / maxDurability)}
+                              stroke={getDurabilityColor(puck.durability / PAWN_DURABILITY)}
                               strokeWidth="2.5"
                               strokeLinecap="round"
-                              strokeDasharray={pathLength}
-                              strokeDashoffset={pathLength * (1 - Math.max(0, puck.durability / maxDurability))}
+                              strokeDasharray={pawnPathLength}
+                              strokeDashoffset={pawnPathLength * (1 - Math.max(0, puck.durability / PAWN_DURABILITY))}
                               style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.5s ease' }}
                           />
                       </g>
                   )}
                   
                   {puck.isCharged && (
-                      isPathBased && svgData ? (
-                          <path
-                              d={svgData.path}
-                              transform={`scale(${scale})`}
-                              fill="none"
-                              stroke="#fde047"
-                              strokeWidth="3"
-                              className="line-breathe"
-                              style={{ pointerEvents: 'none' }}
-                          />
-                      ) : (
-                          <circle
-                              r={puck.radius}
-                              fill="none"
-                              stroke="#fde047"
-                              strokeWidth="3"
-                              className="line-breathe"
-                              style={{ pointerEvents: 'none' }}
-                          />
-                      )
+                    <g>
+                        {/* --- NEW: Energy Field Ring for Charged Pucks --- */}
+                        <circle
+                            r={puck.radius + 6}
+                            fill="none"
+                            stroke="#fde047"
+                            strokeWidth="2"
+                            strokeDasharray="4 8"
+                            className="charged-energy-ring"
+                            style={{ opacity: 0.8 }}
+                        />
+                        {/* Static outline */}
+                        {isPathBased && svgData ? (
+                            <path
+                                d={svgData.path}
+                                transform={`scale(${scale})`}
+                                fill="none"
+                                stroke="#fde047"
+                                strokeWidth="3"
+                                className="line-breathe"
+                                style={{ pointerEvents: 'none' }}
+                            />
+                        ) : (
+                            <circle
+                                r={puck.radius}
+                                fill="none"
+                                stroke="#fde047"
+                                strokeWidth="3"
+                                className="line-breathe"
+                                style={{ pointerEvents: 'none' }}
+                            />
+                        )}
+                    </g>
                   )}
                   
                   {isShootable && !isSelected && (
@@ -814,22 +860,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
 
       {/* Imaginary Lines */}
       <g className="imaginary-lines">
-          {gameState.imaginaryLine && gameState.imaginaryLine.lines.map((originalLineData, index) => {
-              // Hide if already crossed
-              if (gameState.imaginaryLine!.crossedLineIndices.has(index)) return null;
-
-              const isHighlighted = index === gameState.imaginaryLine!.highlightedLineIndex;
-              
-              // --- VISUAL FIX: Use CURRENT positions for drawing lines ---
-              // Find the pucks in the current state to get their real-time positions
-              const sourcePuck1 = gameState.pucks.find(p => p.id === originalLineData.sourcePuckIds[0]);
-              const sourcePuck2 = gameState.pucks.find(p => p.id === originalLineData.sourcePuckIds[1]);
-
-              // If a puck was destroyed, don't draw the line
-              if (!sourcePuck1 || !sourcePuck2) return null;
-
-              const line = { start: sourcePuck1.position, end: sourcePuck2.position };
-              // -------------------------------------------------------------
+          {gameState.imaginaryLine && !gameState.imaginaryLine.isConfirmed && gameState.imaginaryLine.lines.map((line, index) => {
+              const isHighlighted = index === gameState.imaginaryLine.highlightedLineIndex;
+              const hasSynergy = !!line.synergyType;
               
               const shotPuck = gameState.pucks.find(p => p.id === gameState.imaginaryLine?.shotPuckId);
 
@@ -837,7 +870,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               if (shotPuck?.puckType === 'PAWN') {
                   isPawnStyleLine = true;
               } else if (shotPuck?.puckType === 'KING') {
-                  if (sourcePuck1.puckType === 'PAWN' && sourcePuck2.puckType === 'PAWN') {
+                  const sourcePuck1 = gameState.pucks.find(p => p.id === line.sourcePuckIds[0]);
+                  const sourcePuck2 = gameState.pucks.find(p => p.id === line.sourcePuckIds[1]);
+                  if (sourcePuck1?.puckType === 'PAWN' && sourcePuck2?.puckType === 'PAWN') {
                       isPawnStyleLine = true;
                   }
               }
@@ -847,7 +882,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               
               const strokeWidth = isHighlighted ? highlightedStrokeWidth : baseStrokeWidth;
               const strokeColor = isHighlighted
-                  ? 'white'
+                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType].color : 'white')
                   : (isAiming ? (isPawnStyleLine ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.45)') : (isPawnStyleLine ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.3)'));
 
               const strokeDasharray = isHighlighted ? "8 8" : (isPawnStyleLine ? "2 8" : "4 6");

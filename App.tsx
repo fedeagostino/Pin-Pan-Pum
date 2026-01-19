@@ -1,16 +1,17 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerUI from './components/PlayerUI';
 import TurnChangeIndicator from './components/TurnChangeIndicator';
 import { useGameEngine } from './hooks/useGameEngine';
 import { useSoundManager } from './hooks/useSoundManager';
-import { TEAM_COLORS, BOARD_WIDTH, BOARD_HEIGHT, PUCK_TYPE_INFO, UI_COLORS, GOAL_DEPTH } from './constants';
+import { TEAM_COLORS, BOARD_WIDTH, BOARD_HEIGHT, PUCK_TYPE_INFO, UI_COLORS, SYNERGY_DESCRIPTIONS } from './constants';
 import { Team, Vector, PuckType, TurnLossReason } from './types';
 import PuckTypeIcon from './components/PuckTypeIcon';
 import HelpModal from './components/HelpModal';
 import GameMessageDisplay from './components/GameMessageDisplay';
 import BonusTurnIndicator from './components/BonusTurnIndicator';
+import useGemini from './hooks/useGemini';
+import GameCommentary from './components/GameCommentary';
 
 const WinnerModal: React.FC<{ winner: Team; score: { RED: number; BLUE: number }; onRestart: () => void; playSound: (sound: string) => void; }> = ({ winner, score, onRestart, playSound }) => {
   const teamName = winner === 'BLUE' ? 'Equipo Azul' : 'Equipo Rojo';
@@ -79,6 +80,13 @@ function App() {
   const [turnChangeInfo, setTurnChangeInfo] = useState<{ team: Team; previousTeam: Team | null; key: number; reason: TurnLossReason | null } | null>(null);
   const prevTurnRef = useRef<Team | null>(null);
   const [isGoalShaking, setIsGoalShaking] = useState(false);
+  
+  const { generateCommentaryStream } = useGemini();
+  const [leftCommentary, setLeftCommentary] = useState({ text: '', team: 'BLUE' as Team, key: 0 });
+  const [rightCommentary, setRightCommentary] = useState({ text: '', team: 'RED' as Team, key: 0 });
+  const nextCommentarySide = useRef<'left' | 'right'>('left');
+  const prevGameStateRef = useRef(gameState);
+  const commentaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
   useEffect(() => {
@@ -116,346 +124,207 @@ function App() {
     }
   }, [gameState.goalScoredInfo]);
 
+  useEffect(() => {
+    const triggerCommentary = async (prompt: string, team: Team) => {
+        const side = nextCommentarySide.current;
+        const setCommentary = side === 'left' ? setLeftCommentary : setRightCommentary;
+        nextCommentarySide.current = side === 'left' ? 'right' : 'left';
+        if (commentaryTimeoutRef.current) clearTimeout(commentaryTimeoutRef.current);
+        try {
+            const stream = await generateCommentaryStream(prompt);
+            if (!stream) return;
+            let fullText = '';
+            for await (const chunk of stream) {
+                fullText += chunk.text;
+                setCommentary({ text: fullText, team, key: Date.now() });
+            }
+            commentaryTimeoutRef.current = setTimeout(() => setCommentary(prev => ({ ...prev, text: '' })), 4000);
+        } catch (e) { console.error("Commentary stream failed", e); }
+    };
 
-  const getBoardCoordinates = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!svgRef.current) return { x: 0, y: 0 };
+    const prev = prevGameStateRef.current;
+    if (gameState.goalScoredInfo && !prev.goalScoredInfo) triggerCommentary(`The ${gameState.goalScoredInfo.scoringTeam} team scored a goal with the ${PUCK_TYPE_INFO[gameState.goalScoredInfo.scoringPuckType].name} puck for ${gameState.goalScoredInfo.pointsScored} points!`, gameState.goalScoredInfo.scoringTeam);
+    else if (gameState.gameMessage?.type === 'synergy' && prev.gameMessage?.type !== 'synergy') triggerCommentary(`The ${gameState.currentTurn} team has just activated the powerful ${SYNERGY_DESCRIPTIONS[gameState.gameMessage.synergyType!].name} synergy!`, gameState.currentTurn);
+    else if (gameState.specialShotStatus.RED !== prev.specialShotStatus.RED && gameState.specialShotStatus.RED !== 'NONE') triggerCommentary(`The RED team has unlocked their ${gameState.specialShotStatus.RED} SHOT!`, 'RED');
+    else if (gameState.specialShotStatus.BLUE !== prev.specialShotStatus.BLUE && gameState.specialShotStatus.BLUE !== 'NONE') triggerCommentary(`The BLUE team has unlocked their ${gameState.specialShotStatus.BLUE} SHOT!`, 'BLUE');
+    else if (gameState.turnLossReason && !prev.turnLossReason) triggerCommentary(`A costly mistake by the ${gameState.currentTurn} team results in a lost turn!`, gameState.currentTurn === 'BLUE' ? 'RED' : 'BLUE');
+    else if (gameState.bonusTurnForTeam && !prev.bonusTurnForTeam) triggerCommentary(`A brilliant play from the ${gameState.bonusTurnForTeam} team earns them a bonus turn!`, gameState.bonusTurnForTeam);
+    prevGameStateRef.current = gameState;
+  }, [gameState, generateCommentaryStream]);
+
+
+  const getSVGCoordinates = useCallback((clientX: number, clientY: number): Vector | null => {
     const svg = svgRef.current;
-    
-    let clientX, clientY;
-    if ('touches' in e) { // TouchEvent
-      const touch = e.touches[0] || e.changedTouches[0];
-      clientX = touch.clientX;
-      clientY = touch.clientY;
-    } else { // MouseEvent
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    
+    if (!svg) return null;
     const pt = svg.createSVGPoint();
     pt.x = clientX;
     pt.y = clientY;
-    const screenCTM = svg.getScreenCTM();
-    if (!screenCTM) return { x: 0, y: 0 };
-    return pt.matrixTransform(screenCTM.inverse());
+    return pt.matrixTransform(svg.getScreenCTM()!.inverse());
   }, []);
 
-  const handleGlobalMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
-    handleMouseMove(getBoardCoordinates(e as any));
-  }, [handleMouseMove, getBoardCoordinates]);
+  useEffect(() => {
+    const handleGlobalMove = (e: MouseEvent | TouchEvent) => {
+      if (e instanceof TouchEvent && gameState.selectedPuckId !== null) e.preventDefault();
+      const touch = e instanceof TouchEvent ? e.touches[0] : e;
+      if (!touch) return;
+      const coords = getSVGCoordinates(touch.clientX, touch.clientY);
+      if (coords) handleMouseMove(coords);
+    };
+    const handleGlobalUp = (e: MouseEvent | TouchEvent) => {
+      const touch = e instanceof TouchEvent ? e.changedTouches[0] : e;
+      handleMouseUp(touch ? getSVGCoordinates(touch.clientX, touch.clientY) : null);
+    };
+    
+    window.addEventListener('mousemove', handleGlobalMove);
+    window.addEventListener('mouseup', handleGlobalUp);
+    window.addEventListener('touchmove', handleGlobalMove, { passive: false });
+    window.addEventListener('touchend', handleGlobalUp);
+    window.addEventListener('touchcancel', handleGlobalUp);
 
-  const handleGlobalMouseUp = useCallback((e: MouseEvent | TouchEvent) => {
-    handleMouseUp(getBoardCoordinates(e as any));
-    window.removeEventListener('mousemove', handleGlobalMouseMove);
-    window.removeEventListener('mouseup', handleGlobalMouseUp);
-    window.removeEventListener('touchmove', handleGlobalMouseMove);
-    window.removeEventListener('touchend', handleGlobalMouseUp);
-  }, [handleMouseUp, getBoardCoordinates, handleGlobalMouseMove]);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMove);
+      window.removeEventListener('mouseup', handleGlobalUp);
+      window.removeEventListener('touchmove', handleGlobalMove);
+      window.removeEventListener('touchend', handleGlobalUp);
+      window.removeEventListener('touchcancel', handleGlobalUp);
+    };
+  }, [handleMouseMove, handleMouseUp, getSVGCoordinates, gameState.selectedPuckId]);
+  
+  const handleScreenInteraction = () => {
+    // Dismiss the "Turn Change" indicator if it's visible.
+    if (turnChangeInfo) {
+        setTurnChangeInfo(null);
+        // If the turn change was due to a penalty, we also clear that reason from the state.
+        if (gameState.turnLossReason) {
+            clearTurnLossReason();
+        }
+    }
 
-  const handlePuckMouseDown = useCallback((puckId: number, pos: Vector) => {
-    handleMouseDown(puckId, pos);
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    window.addEventListener('mouseup', handleGlobalMouseUp);
-    window.addEventListener('touchmove', handleGlobalMouseMove);
-    window.addEventListener('touchend', handleGlobalMouseUp);
-  }, [handleMouseDown, handleGlobalMouseMove, handleGlobalMouseUp]);
-
-  const handleHelpClick = (team: Team) => {
-    playSound('UI_CLICK_1');
-    setHelpModalTeam(team);
+    // Dismiss the "Bonus Turn" indicator if it's visible.
+    if (gameState.bonusTurnForTeam) {
+        clearBonusTurn();
+    }
   };
   
-  const handlePulsarActivate = () => {
-    handleActivatePulsar();
-  };
+  const scoreShouldPop = isGoalShaking;
 
   return (
-    <>
-    <style>{`
-        /* Reset margins to prevent scrolling */
-        body { margin: 0; overflow: hidden; background-color: #010409; }
-
-        .game-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100dvh; /* Dynamic viewport height */
-            background-color: #010409;
-            overflow: hidden;
-            position: relative;
-            
-            /* Safe Area Support */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
-        }
-        
-        /* Flex Layout that preserves UI and flexes the board area */
-        .game-content-layout {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-            margin: 0 auto;
-        }
-        
-        /* Desktop/Tablet Optimization: Keep it phone-sized */
-        @media (min-width: 768px) {
-            .game-content-layout {
-                max-width: 65vh; /* Aspect ratio lock for wide screens */
-                border-left: 1px solid #30363d;
-                border-right: 1px solid #30363d;
-                box-shadow: 0 0 50px rgba(0,0,0,0.5);
-                background-color: #0d1117;
+    <div 
+      className={`app-container ${gameState.screenShake > 0 ? 'screen-shake' : ''}`}
+      onMouseDown={handleScreenInteraction}
+      onTouchStart={handleScreenInteraction}
+    >
+        <style>
+          {`
+            .app-container {
+              display: flex;
+              flex-direction: column;
+              width: 100vw;
+              height: 100vh;
+              height: 100dvh;
+              overflow: hidden;
+              position: relative;
             }
-        }
 
-        /* Board Area - Grows to fill space between UI bars */
-        .board-area {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            overflow: hidden;
-            padding: 0; /* No padding to maximize size on mobile */
-            min-height: 0; /* Critical for correct flexbox scaling */
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Constrains the SVG to the correct aspect ratio */
-        .board-aspect-ratio-box {
-            aspect-ratio: ${BOARD_WIDTH} / ${BOARD_HEIGHT + GOAL_DEPTH * 2};
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: 100%;
+            .main-content-area {
+              flex-grow: 1;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 0.5rem;
+              position: relative;
+            }
             
-            border-radius: 4px;
-            overflow: hidden;
-            background-color: var(--color-bg-dark);
-            position: relative;
-        }
+            .game-board-wrapper {
+              height: 100%;
+              max-width: 100%;
+              aspect-ratio: ${BOARD_WIDTH} / ${BOARD_HEIGHT};
+              position: relative;
+              background: var(--color-bg-dark);
+              border-radius: 10px;
+              box-shadow: 0 0 20px -5px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.5);
+              transition: box-shadow 0.5s ease;
+            }
+
+            .winner-modal-layout {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2rem;
+                width: 90%; max-width: 450px;
+                animation: modal-content-pop-in 0.5s 0.1s cubic-bezier(0.25, 1, 0.5, 1) both;
+                position: relative;
+            }
+             .winner-modal-rays { 
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                width: 150%; padding-bottom: 150%; z-index: -1;
+                background: conic-gradient(from 0deg, transparent 0%, var(--team-color) 10%, transparent 20%);
+                opacity: 0.2;
+                animation: goal-rays-spin 20s linear infinite;
+            }
+            .winner-info-panel {
+                background: linear-gradient(180deg, var(--color-bg-light), var(--color-bg-medium));
+                border: 2px solid var(--team-color);
+                border-radius: 16px;
+                box-shadow: 0 0 40px -10px var(--team-color), inset 0 0 10px rgba(255,255,255,0.05);
+                padding: 2rem; text-align: center; width: 100%;
+            }
+            .winner-title {
+                font-size: clamp(3rem, 10vw, 4.5rem); font-weight: 900;
+                color: white; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+                -webkit-text-stroke: 2px var(--team-color);
+            }
+            .winner-team {
+                font-size: clamp(1.5rem, 6vw, 2.5rem); font-weight: 700;
+                color: var(--team-color); text-shadow: 0 0 15px currentColor; margin-bottom: 2rem;
+            }
+            .final-score-box { display: flex; align-items: baseline; justify-content: center; gap: 1.5rem; font-size: 4rem; font-weight: 900; line-height: 1; }
+            .restart-button {
+              padding: 1rem 2.5rem; background: var(--glow-green); color: white;
+              font-weight: 700; font-size: 1.25rem; border-radius: 8px; border: none; cursor: pointer;
+              box-shadow: 0 0 20px -5px var(--glow-green), inset 0 1px 0 rgba(255,255,255,0.2);
+              transition: all 0.2s ease;
+            }
+            .restart-button:hover { transform: scale(1.05); box-shadow: 0 0 30px 0px var(--glow-green); }
+
+            .goal-transition-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 40; pointer-events: none; animation: goal-fade-in-out 3s ease-in-out forwards; }
+            @keyframes goal-fade-in-out { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+            .goal-transition-content { text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; }
+            .goal-rays-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 1px; height: 1px; z-index: -1; background: conic-gradient(from 0deg, transparent, var(--ray-color), transparent); width: 1000px; height: 1000px; mask: radial-gradient(circle, transparent 30%, black 70%); animation: goal-rays-spin 5s linear infinite, goal-rays-fade-in 1s ease-out; }
+            @keyframes goal-rays-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+            @keyframes goal-rays-fade-in { from { opacity: 0; } to { opacity: 0.4; } }
+            .goal-puck-icon { width: clamp(4rem, 15vw, 6rem); height: clamp(4rem, 15vw, 6rem); filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); animation: goal-icon-spin-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+            @keyframes goal-icon-spin-in { from { transform: scale(0) rotate(-180deg); } to { transform: scale(1) rotate(0deg); } }
+            .goal-transition-text { font-size: clamp(4rem, 15vw, 8rem); font-weight: 900; -webkit-text-stroke: 4px var(--text-color); color: transparent; animation: goal-text-slam 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+            .goal-transition-text > span { display: block; background: linear-gradient(180deg, #ffffff, #d1d5db); -webkit-background-clip: text; background-clip: text; }
+            @keyframes goal-text-slam { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+            .goal-transition-subtitle { font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 700; animation: goal-subtext-fade-in 0.5s ease-out 0.5s forwards; opacity: 0; }
+            @keyframes goal-subtext-fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          `}
+        </style>
+
+        <PlayerUI team="BLUE" gameState={gameState} onHelpClick={() => setHelpModalTeam('BLUE')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={scoreShouldPop} />
         
-        .board-aspect-ratio-box svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+        <main className="main-content-area">
+          <GameCommentary text={leftCommentary.text} team={leftCommentary.team} position="left" componentKey={leftCommentary.key} />
+          <div className="game-board-wrapper">
+            <GameBoard ref={svgRef} gameState={gameState} onMouseDown={handleMouseDown} onBoardMouseDown={handleBoardMouseDown} />
+            {gameState.goalScoredInfo && <GoalTransition info={gameState.goalScoredInfo} />}
+            {turnChangeInfo && <TurnChangeIndicator key={turnChangeInfo.key} team={turnChangeInfo.team} previousTeam={turnChangeInfo.previousTeam} reason={turnChangeInfo.reason} />}
+            <GameMessageDisplay message={gameState.gameMessage} />
+            <BonusTurnIndicator team={gameState.bonusTurnForTeam} />
+          </div>
+          <GameCommentary text={rightCommentary.text} team={rightCommentary.team} position="right" componentKey={rightCommentary.key} />
+        </main>
 
-        .board-aspect-ratio-box.goal-shake {
-          animation: goal-shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both;
-        }
-        @keyframes goal-shake-anim {
-          10%, 90% { transform: translate3d(-1px, 0, 0); }
-          20%, 80% { transform: translate3d(2px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-          40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-
-        /* Prevent Player UI from shrinking */
-        .player-ui-container {
-            flex-shrink: 0;
-            z-index: 20;
-            width: 100%;
-        }
-
-        /* Winner Modal Styles */
-        .winner-modal-layout {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            animation: modal-content-pop-in 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        .winner-modal-rays {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 2px;
-            height: 2px;
-            background: transparent;
-            box-shadow: 
-                0 0 15px 5px var(--team-color),
-                0 0 30px 15px var(--team-color),
-                0 0 60px 30px #fff,
-                0 0 120px 60px var(--team-color);
-            border-radius: 50%;
-            transform-origin: center;
-            animation: rays-rotate 20s linear infinite, rays-pulse 2s ease-in-out infinite alternate;
-        }
-        @keyframes rays-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes rays-pulse { from { opacity: 0.7; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-        .winner-info-panel {
-            background: var(--color-bg-glass);
-            border: 2px solid var(--team-color);
-            box-shadow: 0 0 25px var(--team-color);
-            border-radius: 1rem;
-            padding: 2rem 3rem;
-            text-align: center;
-            position: relative;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-        .winner-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin: 0;
-        }
-        .winner-team {
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: var(--team-color);
-            text-shadow: 0 0 15px var(--team-color), 0 0 25px white;
-            margin: 0.5rem 0;
-            line-height: 1.1;
-        }
-        .final-score-box {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 0.5rem 1.5rem;
-            font-size: 2rem;
-            font-weight: 800;
-            display: inline-flex;
-            gap: 1rem;
-            align-items: center;
-            margin-top: 1rem;
-        }
-        .final-score-box span:nth-child(2) { color: var(--color-text-medium); }
-        .restart-button {
-            background: var(--color-bg-medium);
-            border: 2px solid var(--color-border);
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 700;
-            padding: 0.75rem 2.5rem;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            position: relative;
-        }
-        .restart-button:hover {
-            background: var(--color-accent-green);
-            border-color: white;
-            transform: scale(1.05);
-            box-shadow: 0 0 15px var(--color-accent-green);
-        }
-
-        /* Goal Transition Styles */
-        .goal-transition-overlay {
-            position: absolute;
-            inset: 0;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            animation: goal-overlay-fade-out 3s forwards;
-        }
-        @keyframes goal-overlay-fade-out { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
-        .goal-transition-content {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            animation: goal-content-anim 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        @keyframes goal-content-anim {
-            0% { transform: scale(0.5); opacity: 0; }
-            20% { transform: scale(1.1); opacity: 1; }
-            30% { transform: scale(1); }
-            80% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.2); opacity: 0; }
-        }
-        .goal-rays-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 2px;
-            height: 2px;
-            background: transparent;
-            box-shadow: 0 0 20px 10px var(--ray-color);
-            border-radius: 50%;
-            transform-origin: center;
-            animation: rays-rotate 10s linear infinite;
-            z-index: -1;
-        }
-        .goal-puck-icon {
-            width: 100px;
-            height: 100px;
-            filter: drop-shadow(0 0 20px var(--ray-color));
-        }
-        .goal-transition-text {
-            font-size: 5rem;
-            font-weight: 900;
-            color: var(--text-color);
-            text-shadow: 0 0 25px var(--text-color), 0 0 40px white;
-            line-height: 1;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        .goal-transition-subtitle {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            margin: 0;
-        }
-    `}</style>
-    <div className="game-container">
-      <div className="game-content-layout">
-
-        <PlayerUI 
-            gameState={gameState} 
-            team="BLUE" 
-            onHelpClick={() => handleHelpClick('BLUE')} 
-            onActivatePulsar={handlePulsarActivate}
-            scoreShouldPop={!!(gameState.goalScoredInfo && gameState.goalScoredInfo.scoringTeam === 'BLUE')}
+        <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={scoreShouldPop} />
+        
+        {gameState.winner && <WinnerModal winner={gameState.winner} score={gameState.score} onRestart={resetGame} playSound={playSound} />}
+        <HelpModal 
+            isOpen={helpModalTeam !== null} 
+            onClose={() => setHelpModalTeam(null)} 
+            team={helpModalTeam}
+            playSound={playSound} 
         />
-        
-        <div className="board-area">
-             <div className={`board-aspect-ratio-box ${isGoalShaking ? 'goal-shake' : ''}`}>
-                <GameBoard
-                    ref={svgRef}
-                    gameState={gameState}
-                    onMouseDown={handlePuckMouseDown}
-                    onBoardMouseDown={handleBoardMouseDown}
-                />
-             </div>
-        </div>
-        
-         <PlayerUI 
-            gameState={gameState} 
-            team="RED" 
-            onHelpClick={() => handleHelpClick('RED')} 
-            onActivatePulsar={handlePulsarActivate}
-            scoreShouldPop={!!(gameState.goalScoredInfo && gameState.goalScoredInfo.scoringTeam === 'RED')}
-        />
-
-      </div>
-
-      {/* MODALS & OVERLAYS */}
-      {gameState.winner && <WinnerModal winner={gameState.winner} score={gameState.score} onRestart={resetGame} playSound={playSound} />}
-      <GoalTransition info={gameState.goalScoredInfo} />
-      {turnChangeInfo && <TurnChangeIndicator team={turnChangeInfo.team} previousTeam={turnChangeInfo.previousTeam} reason={turnChangeInfo.reason} />}
-      <GameMessageDisplay message={gameState.gameMessage} />
-      <BonusTurnIndicator team={gameState.bonusTurnForTeam} />
-      <HelpModal isOpen={helpModalTeam !== null} onClose={() => setHelpModalTeam(null)} playSound={playSound} team={helpModalTeam} />
     </div>
-    </>
   );
 }
 

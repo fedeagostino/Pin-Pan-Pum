@@ -77,8 +77,6 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                     position: relative;
                     z-index: 10;
                     padding: 0 1rem;
-                    flex-shrink: 0;
-                    transition: height 0.3s ease;
                 }
                 
                 .ui-content-wrapper {
@@ -98,7 +96,6 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                     position: relative;
                     overflow: hidden;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                    transition: height 0.3s ease;
                 }
                 .player-ui-container.reversed .ui-content-wrapper {
                     flex-direction: row-reverse;
@@ -196,19 +193,6 @@ const PlayerUI: React.FC<PlayerUIProps> = ({ gameState, team, onHelpClick, onAct
                     .pulsar-activate-button { position: static; transform: none; opacity: 1; pointer-events: auto; }
                     .pulsar-activate-button:not(.visible) { display: none; }
                     .team-identifier { display: none; }
-                }
-                
-                /* Compact mode for short screens (landscape phones) */
-                @media (max-height: 500px) {
-                    .player-ui-container { height: 48px; padding: 0 0.5rem; }
-                    .ui-content-wrapper { height: 36px; padding: 0 0.5rem; }
-                    .score-display { font-size: 1.5rem; width: 30px; }
-                    .pulsar-bar-container { height: 24px; }
-                    .pulsar-bar-background { height: 10px; width: 120px; }
-                    .pulsar-activate-button { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
-                    .help-button { width: 24px; height: 24px; }
-                    .help-button svg { width: 14px; height: 14px; }
-                    .center-hub { gap: 0.5rem; }
                 }
             `}</style>
             <div className={`ui-content-wrapper ${isMyTurn ? 'active-turn' : ''}`}>

@@ -13,8 +13,7 @@ const getFillColorForPuck = (puck: Puck): string => {
     if (puckType === 'KING') return UI_COLORS.GOLD;
     
     const minMass = PUCK_TYPE_PROPERTIES.PAWN.mass;
-    // FIX: 'ANCHOR' puck type does not exist. Using 'KING' as it has the highest mass.
-    const maxMass = PUCK_TYPE_PROPERTIES.KING.mass;
+    const maxMass = PUCK_TYPE_PROPERTIES.ANCHOR.mass;
     const normalizedMass = (Math.max(minMass, Math.min(mass, maxMass)) - minMass) / (maxMass - minMass);
 
     const rgb = hexToRgb(baseTeamColor);

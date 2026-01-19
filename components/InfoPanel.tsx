@@ -1,6 +1,6 @@
 import React from 'react';
 import { Puck, SpecialShotStatus } from '../types';
-import { PUCK_TYPE_INFO, PUCK_TYPE_PROPERTIES, TEAM_COLORS, PAWN_DURABILITY, PUCK_GOAL_POINTS, UI_COLORS, GUARDIAN_DURABILITY } from '../constants';
+import { PUCK_TYPE_INFO, PUCK_TYPE_PROPERTIES, TEAM_COLORS, PAWN_DURABILITY, PUCK_GOAL_POINTS, UI_COLORS } from '../constants';
 import PuckTypeIcon from './PuckTypeIcon';
 
 interface InfoPanelProps {
@@ -38,8 +38,6 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
     } as React.CSSProperties;
     
     const cardClass = `puck-info-card ${renderDirection === 'down' ? 'render-down' : ''} ${specialClass}`;
-
-    const maxDurability = puck.puckType === 'PAWN' ? PAWN_DURABILITY : GUARDIAN_DURABILITY;
 
     return (
         <>
@@ -122,8 +120,8 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
                     <div className="stat-item"><span className="label">Puntos de Gol</span><span className="value">{PUCK_GOAL_POINTS[puck.puckType]}</span></div>
                     <div className="stat-item"><span className="label">Peso (Masa)</span><span className="value">{props.mass}</span></div>
                     <div className="stat-item"><span className="label">Líneas para Cargar</span><span className="value">{props.linesToCrossForBonus}</span></div>
-                    {(puck.puckType === 'PAWN' || puck.puckType === 'GUARDIAN') && puck.durability !== undefined && (
-                        <div className="stat-item"><span className="label">Durabilidad</span><span className="value">{puck.durability} / {maxDurability}</span></div>
+                    {puck.puckType === 'PAWN' && puck.durability !== undefined && (
+                        <div className="stat-item"><span className="label">Durabilidad</span><span className="value">{puck.durability} / {PAWN_DURABILITY}</span></div>
                     )}
                 </div>
             </div>

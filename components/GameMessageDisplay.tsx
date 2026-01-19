@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-// FIX: SYNERGY_EFFECTS is no longer exported from constants.
-import { UI_COLORS } from '../constants';
-// FIX: SynergyType is no longer exported from types.
+import { UI_COLORS, SYNERGY_EFFECTS } from '../constants';
+import { SynergyType } from '../types';
 
 interface GameMessageDisplayProps {
     message: {
         text: string;
-        // FIX: 'synergy' type and synergyType prop are removed as the feature is deprecated.
-        type: 'royal' | 'ultimate' | 'powerup';
+        type: 'royal' | 'ultimate' | 'synergy' | 'powerup';
+        synergyType?: SynergyType;
     } | null;
 }
 
@@ -26,8 +25,7 @@ const GameMessageDisplay: React.FC<GameMessageDisplayProps> = ({ message }) => {
 
     if (!currentMessage) return null;
 
-    // FIX: synergyType is removed.
-    const { text, type } = currentMessage;
+    const { text, type, synergyType } = currentMessage;
 
     let bannerClass = 'game-message-banner';
     let bannerStyle: React.CSSProperties = {};
@@ -42,7 +40,17 @@ const GameMessageDisplay: React.FC<GameMessageDisplayProps> = ({ message }) => {
             bannerClass += ' ultimate';
             textStyle = { color: 'white' };
             break;
-        // FIX: 'synergy' case removed as feature is deprecated.
+        case 'synergy':
+            if (synergyType) {
+                const color = SYNERGY_EFFECTS[synergyType].color;
+                bannerStyle = { 
+                    backgroundColor: color,
+                    borderColor: 'white',
+                    boxShadow: `0 0 25px ${color}, 0 0 40px ${color}`
+                };
+                textStyle = { color: 'white' };
+            }
+            break;
         case 'powerup':
             bannerStyle = {
                 backgroundColor: UI_COLORS.ACCENT_GREEN,
