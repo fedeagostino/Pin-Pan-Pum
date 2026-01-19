@@ -15,24 +15,146 @@ export const SCORE_TO_WIN = 3;
 export const PAWN_DURABILITY = 5;
 
 export const PUCK_GOAL_POINTS: Record<PuckType, number> = {
-    KING: 3,
-    HEAVY: 2,
-    ANCHOR: 2,
-    DAMPENER: 2,
-    STANDARD: 1,
-    FAST: 1,
-    GHOST: 1,
-    SWERVE: 1,
-    BOUNCER: 1,
-    PAWN: 1,
+  STANDARD: 1,
+  HEAVY: 1,
+  FAST: 1,
+  GHOST: 1,
+  ANCHOR: 1,
+  KING: 2,
+  SWERVE: 1,
+  BOUNCER: 1,
+  DAMPENER: 1,
+  PAWN: 1,
 };
 
-export const PREVIEW_SHOT_POWER = 4;
-export const PREVIEW_SIMULATION_FRAMES = 200;
+export type Language = 'en' | 'es';
+
+export const TRANSLATIONS = {
+    en: {
+        TITLE: 'WHAM BAM BOOM',
+        PLAY_FRIEND: 'Play vs Friend',
+        PLAY_AI: 'Play vs IA',
+        SETTINGS: 'Settings',
+        LANGUAGE: 'Language',
+        BACK: 'Back',
+        VICTORY: 'VICTORY',
+        RESTART: 'Restart',
+        MENU: 'Menu',
+        GOAL: 'GOAL!',
+        GOALAZO: 'BIG GOAL!',
+        POINTS: 'POINTS',
+        TURN_OF: 'Turn of',
+        EXTRA_TURN: 'EXTRA TURN!',
+        CHARGED: 'CHARGED!',
+        UNCHARGED: 'NOT CHARGED!',
+        OWN_GOAL: 'OWN GOAL!',
+        INTANGIBLE: 'INTANGIBLE!',
+        TURN_LOST: 'TURN LOST',
+        ROYAL_UNLOCKED: 'ROYAL SHOT UNLOCKED!',
+        ULTIMATE_UNLOCKED: 'ULTIMATE SHOT!',
+        OVERCHARGE: 'OVERCHARGE!',
+        SYNERGY_ACT: 'Activated!',
+        HELP: 'HELP',
+        TABS: {
+            GOAL: 'Objective',
+            CONTROLS: 'Controls',
+            RULES: 'Rules',
+            PUCKS: 'Pucks',
+            SYNERGIES: 'Synergies'
+        },
+        RULES_CONTENT: [
+            { title: 'THE CORE RULE', desc: 'You can ONLY score a goal with a CHARGED puck (glowing yellow). Normal pucks will be returned to their start position if they enter the goal.' },
+            { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines formed between your other pucks. Each puck type requires crossing a different number of lines to power up.' },
+            { title: 'EXTRA TURNS', desc: 'Successfully charging a puck grants you an IMMEDIATE extra shot with any available unit.' },
+            { title: 'TURN LOSS', desc: 'Your turn ends if you miss, score an own goal, or use an uncharged puck in the opponent\'s goal.' },
+            { title: 'THE KING\'S POWER', desc: 'The King (Eleven) can unleash devastating Special Shots. Royal Shot: Unlocked when all special units are charged. Ultimate Shot: Unlocked when every single unit is charged.' }
+        ],
+        PUCK_INFO: {
+            KING: { name: 'The King / Eleven', desc: 'The most powerful piece on the board. Scores 2 points.' },
+            PAWN: { name: 'Pawn / Henchman', desc: 'Expendable units with limited durability.' },
+            STANDARD: { name: 'Subject 01', desc: 'Basic experimental piece.' },
+            HEAVY: { name: 'Hawkins Tank', desc: 'Heavy and hard to move.' },
+            FAST: { name: 'Blue Flash', desc: 'Light and fast as lightning.' },
+            GHOST: { name: 'Ethereal Entity', desc: 'Can become intangible.' },
+            ANCHOR: { name: 'Mind Block', desc: 'Immovable and massive.' },
+            SWERVE: { name: 'Mind Curve', desc: 'Alters path mid-flight.' },
+            BOUNCER: { name: 'Elastic Bounce', desc: 'Gains energy on every bounce.' },
+            DAMPENER: { name: 'Absorbent', desc: 'Nullifies collision energy.' }
+        },
+        SYNERGY_INFO: {
+            POWER: { name: 'Demogorgon Power', desc: 'Massive shockwave on impact.' },
+            SPEED: { name: 'Speedy Void', desc: 'Passes through obstacles at first.' },
+            CONTROL: { name: 'Mental Precision', desc: 'Perfect bounces without energy loss.' },
+            GRAVITY_WELL: { name: 'Gravity Portal', desc: 'Attracts nearby pieces to impact point.' },
+            TELEPORT_STRIKE: { name: 'Dimension Jump', desc: 'Teleports after the first hit.' },
+            REPULSOR_ARMOR: { name: 'Psionic Shield', desc: 'Violently repels intruders.' }
+        }
+    },
+    es: {
+        TITLE: 'PIN PAN PUM',
+        PLAY_FRIEND: 'Jugar vs Amigo',
+        PLAY_AI: 'Jugar vs IA',
+        SETTINGS: 'Configuración',
+        LANGUAGE: 'Idioma',
+        BACK: 'Volver',
+        VICTORY: 'VICTORIA',
+        RESTART: 'Reiniciar',
+        MENU: 'Menú',
+        GOAL: '¡GOL!',
+        GOALAZO: '¡GOLAZO!',
+        POINTS: 'PUNTOS',
+        TURN_OF: 'Turno de',
+        EXTRA_TURN: '¡TURNO EXTRA!',
+        CHARGED: '¡CARGADO!',
+        UNCHARGED: '¡NO CARGADA!',
+        OWN_GOAL: '¡AUTOGOL!',
+        INTANGIBLE: '¡INTANGIBLE!',
+        TURN_LOST: 'TURNO PERDIDO',
+        ROYAL_UNLOCKED: '¡TIRO REAL DESBLOQUEADO!',
+        ULTIMATE_UNLOCKED: '¡TIRO DEFINITIVO!',
+        OVERCHARGE: '¡SOBRECARGA!',
+        SYNERGY_ACT: '¡Activada!',
+        HELP: 'AYUDA',
+        TABS: {
+            GOAL: 'Objetivo',
+            CONTROLS: 'Controles',
+            RULES: 'Reglas',
+            PUCKS: 'Fichas',
+            SYNERGIES: 'Sinergias'
+        },
+        RULES_CONTENT: [
+            { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo). Las fichas normales volverán a su sitio si entran en la portería.' },
+            { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas. Cada tipo de ficha necesita cruzar un número distinto de líneas para activarse.' },
+            { title: 'TIROS EXTRA', desc: 'Cargar con éxito una ficha te otorga un tiro extra INMEDIATO con cualquier unidad disponible.' },
+            { title: 'PÉRDIDA DE TURNO', desc: 'Tu turno termina si fallas el tiro, marcas un autogol o intentas marcar con una ficha sin carga.' },
+            { title: 'EL PODER DEL REY', desc: 'El Rey (Once) puede ejecutar Tiros Especiales. Tiro Real: Se desbloquea cuando todos los especialistas están cargados. Tiro Definitivo: Requiere que TODAS tus fichas estén cargadas.' }
+        ],
+        PUCK_INFO: {
+            KING: { name: 'El Rey / Once', desc: 'La ficha más poderosa. Vale 2 puntos.' },
+            PAWN: { name: 'Peón / Secuaz', desc: 'Unidades prescindibles con durabilidad limitada.' },
+            STANDARD: { name: 'Sujeto 01', desc: 'Ficha básica experimental.' },
+            HEAVY: { name: 'Tanque Hawkins', desc: 'Pesada y difícil de mover.' },
+            FAST: { name: 'Destello Azul', desc: 'Ligera y veloz como un rayo.' },
+            GHOST: { name: 'Entidad Etérea', desc: 'Puede volverse intangible.' },
+            ANCHOR: { name: 'Bloqueo Mental', desc: 'Inamovible y masiva.' },
+            SWERVE: { name: 'Curva Mental', desc: 'Altera su trayectoria en pleno vuelo.' },
+            BOUNCER: { name: 'Rebote Elástico', desc: 'Gana energía en cada rebote.' },
+            DAMPENER: { name: 'Absorbente', desc: 'Anula la energía de los choques.' }
+        },
+        SYNERGY_INFO: {
+            POWER: { name: 'Poder Demogorgon', desc: 'Onda expansiva masiva al impactar.' },
+            SPEED: { name: 'Vacío Veloz', desc: 'Atraviesa obstáculos en los primeros segundos.' },
+            CONTROL: { name: 'Precisión Mental', desc: 'Rebotes perfectos sin pérdida de energía.' },
+            GRAVITY_WELL: { name: 'Portal de Gravedad', desc: 'Atrae a las fichas cercanas al punto de impacto.' },
+            TELEPORT_STRIKE: { name: 'Salto Entre Dimensiones', desc: 'Se teletransporta tras el primer choque.' },
+            REPULSOR_ARMOR: { name: 'Escudo Psiónico', desc: 'Repele violentamente a cualquier intruso.' }
+        }
+    }
+};
 
 export const TEAM_COLORS: Record<Team, string> = {
-  BLUE: '#00d4ff', // Teal gélido
-  RED: '#ff0000',   // Rojo Stranger
+  BLUE: '#00d4ff',
+  RED: '#ff0000',
 };
 
 export const UI_COLORS = {
@@ -49,12 +171,15 @@ export const UI_COLORS = {
   RAINBOW_GRADIENT: 'linear-gradient(90deg, #ff0000, #990000, #ff0000)',
 };
 
-// Physics constants
+// Physics
 export const MIN_VELOCITY_TO_STOP = 0.1;
 export const MAX_VELOCITY_FOR_TURN_END = 0.4;
 export const LAUNCH_POWER_MULTIPLIER = 0.09;
 
-// Pulsar Power constants
+export const PREVIEW_SHOT_POWER = 0.09;
+export const PREVIEW_SIMULATION_FRAMES = 120;
+
+// Pulsar Power
 export const PULSAR_POWER_PER_LINE = 25;
 export const MAX_PULSAR_POWER = 1000;
 export const PERFECT_CROSSING_THRESHOLD = 0.15;
@@ -122,7 +247,7 @@ export const PARTICLE_CONFIG = {
     ULTIMATE_SHOT_LAUNCH: { count: 90, life: 80, decay: 0.015, minRadius: 3, maxRadius: 12, speed: 12 },
     ULTIMATE_RAGE_TRAIL: { life: 70, decay: 0.015, radius: 10, speed: 0.4 },
     TURN_CHANGE_BURST: { count: 50, life: 50, decay: 0.02, minRadius: 2, maxRadius: 6, minSpeed: 5, maxSpeed: 12 },
-    TURN_DRIFT: { life: 120, decay: 0.005, radius: 2, speed: 0.4 }, // Cenizas flotantes
+    TURN_DRIFT: { life: 120, decay: 0.005, radius: 2, speed: 0.4 },
     POWER_BEAM: { life: 30, decay: 0.04, speed: 15 },
     ROYAL_AURA: { life: 25, decay: 0.05, speed: 1 },
     ULTIMATE_AURA: { life: 25, decay: 0.04, speed: 1.5 },
@@ -201,19 +326,6 @@ export const PUCK_TYPE_PROPERTIES: Record<PuckType, PuckTypeProperties> = {
   BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.05, linesToCrossForBonus: 2 },
   DAMPENER: { mass: 1.9, friction: 0.9862, elasticity: 0.4, linesToCrossForBonus: 3 },
   PAWN: { mass: 0.5, friction: 0.980, elasticity: 0.9, linesToCrossForBonus: 2 },
-};
-
-export const PUCK_TYPE_INFO: Record<PuckType, { name: string, description: string }> = {
-    STANDARD: { name: 'Sujeto 01', description: 'Ficha básica experimental.' },
-    HEAVY: { name: 'Tanque Hawkins', description: 'Pesada y difícil de mover.' },
-    FAST: { name: 'Destello Azul', description: 'Ligera y veloz como un rayo.' },
-    GHOST: { name: 'Entidad Etérea', description: 'Puede volverse intangible.' },
-    ANCHOR: { name: 'Bloqueo Mental', description: 'Inamovible y masiva.' },
-    KING: { name: 'El Rey / Once', description: 'La ficha más poderosa del tablero.' },
-    SWERVE: { name: 'Curva Mental', description: 'Altera su trayectoria en pleno vuelo.' },
-    BOUNCER: { name: 'Rebote Elástico', description: 'Gana energía en cada rebote.' },
-    DAMPENER: { name: 'Absorbente', description: 'Anula la energía de los choques.' },
-    PAWN: { name: 'Peón / Secuaz', description: 'Unidades prescindibles.' },
 };
 
 export const PUCK_SVG_DATA: Record<PuckType, { path: string, designRadius: number, pathLength?: number }> = {

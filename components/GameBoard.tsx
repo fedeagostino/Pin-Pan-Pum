@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { GameState, Vector, Puck, PuckType, SynergyType, SpecialShotStatus } from '../types';
-import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG } from '../constants';
+import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG, Language, TRANSLATIONS } from '../constants';
 import InfoPanel from './InfoPanel';
 import PuckShape from './PuckShape';
 
@@ -9,17 +9,15 @@ interface GameBoardProps {
   gameState: GameState;
   onMouseDown: (puckId: number, pos: Vector) => void;
   onBoardMouseDown: () => void;
+  lang: Language;
 }
 
 const subtractVectors = (v1: Vector, v2: Vector): Vector => ({ x: v1.x - v2.x, y: v1.y - v2.y });
 const getVectorMagnitude = (v: Vector): number => Math.sqrt(v.x * v.x + v.y * v.y);
 
-const getDurabilityColor = (percentage: number): string => {
-    const p = Math.max(0, Math.min(1, percentage));
-    return p > 0.5 ? '#ffffff' : '#ff0000';
-};
-
-const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, onMouseDown, onBoardMouseDown }, ref) => {
+const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, onMouseDown, onBoardMouseDown, lang }, ref) => {
+  const t = TRANSLATIONS[lang];
+  
   const getSVGCoordinatesFromEvent = (e: React.MouseEvent | React.TouchEvent): Vector => {
     const svg = ref && typeof ref !== 'function' && ref.current 
       ? ref.current 
@@ -63,21 +61,21 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
     ? gameState.pucks.find(p => p.id === gameState.infoCardPuckId)
     : null;
 
-    const goalGlowState = React.useMemo(() => {
-        if (!gameState.isSimulating) return { top: { intensity: 0, type: 'none' }, bottom: { intensity: 0, type: 'none' } };
-        return { top: { intensity: 0.1, type: 'positive' }, bottom: { intensity: 0.1, type: 'positive' } };
-    }, [gameState.isSimulating]);
+  const goalGlowState = React.useMemo(() => {
+      if (!gameState.isSimulating) return { top: { intensity: 0, type: 'none' }, bottom: { intensity: 0, type: 'none' } };
+      return { top: { intensity: 0.1, type: 'positive' }, bottom: { intensity: 0.1, type: 'positive' } };
+  }, [gameState.isSimulating]);
 
-    const createGlowStyle = (glowState: { intensity: number, type: string }, positiveColor: string): React.CSSProperties => {
-        return {
-            '--glow-color': positiveColor,
-            '--glow-intensity-blur': '15px',
-            animation: 'light-flicker 4s infinite'
-        } as React.CSSProperties;
-    };
+  const createGlowStyle = (glowState: { intensity: number, type: string }, positiveColor: string): React.CSSProperties => {
+      return {
+          '--glow-color': positiveColor,
+          '--glow-intensity-blur': '15px',
+          animation: 'light-flicker 4s infinite'
+      } as React.CSSProperties;
+  };
 
-    const topGoalStyle = createGlowStyle(goalGlowState.top, TEAM_COLORS.BLUE);
-    const bottomGoalStyle = createGlowStyle(goalGlowState.bottom, TEAM_COLORS.RED);
+  const topGoalStyle = createGlowStyle(goalGlowState.top, TEAM_COLORS.BLUE);
+  const bottomGoalStyle = createGlowStyle(goalGlowState.bottom, TEAM_COLORS.RED);
 
   const INFO_PANEL_WIDTH = 320;
   const INFO_PANEL_PUCK_OFFSET = 45;
@@ -127,7 +125,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
     : 'cursor-default';
 
   const isAiming = gameState.shotPreview !== null && !gameState.shotPreview.isCancelZone;
-  const isAimingSpecialShot = gameState.shotPreview?.specialShotType === 'ROYAL' || gameState.shotPreview?.specialShotType === 'ULTIMATE';
   
   const focusPucks = React.useMemo(() => {
     if (!isAiming) return [];
@@ -173,13 +170,19 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 <circle key={`focus-mask-${puck.id}`} cx={puck.position.x} cy={puck.position.y} r={puck.radius + 20} fill="black" />
             ))}
         </mask>
+        <linearGradient id="rainbow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ff0000" />
+            <stop offset="33%" stopColor="#ffff00" />
+            <stop offset="66%" stopColor="#00ffff" />
+            <stop offset="100%" stopColor="#ff0000" />
+        </linearGradient>
       </defs>
 
       {/* Board Background */}
       <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill={UI_COLORS.BACKGROUND_DARK} />
       <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="url(#grid)" />
       
-      {/* Board Border con parpadeo */}
+      {/* Board Border */}
       <rect x="0" y="0" width={BOARD_WIDTH} height={BOARD_HEIGHT} fill="none" stroke={TEAM_COLORS[gameState.currentTurn]} strokeWidth="2" style={{animation: 'light-flicker 5s infinite'}} />
 
       {/* Porterías */}
@@ -192,30 +195,14 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         <line x1={goalX} y1={BOARD_HEIGHT} x2={goalX+GOAL_WIDTH} y2={BOARD_HEIGHT} stroke={TEAM_COLORS.RED} strokeWidth="5" filter="url(#pulsar-glow)" />
       </g>
 
-      <circle cx={BOARD_WIDTH/2} cy={BOARD_HEIGHT/2} r="100" fill="none" stroke="rgba(255, 0, 0, 0.1)" strokeWidth="1" />
-
-      {/* Partículas de ambiente (Ceniza) */}
+      {/* Partículas de ambiente */}
       <g className="particles" style={{ pointerEvents: 'none' }}>
         {gameState.particles.map(p => (
             <circle key={p.id} cx={p.position.x} cy={p.position.y} r={p.radius} fill={p.color} style={{ opacity: p.opacity, filter: 'blur(1px)' }} />
         ))}
       </g>
 
-      {/* Preview Trajectories */}
-      <g className="preview-trajectories" style={{ pointerEvents: 'none' }}>
-          {gameState.previewState?.trajectories.map(traj => (
-            <path
-              key={traj.puckId}
-              d={`M ${traj.path.map(p => `${p.x} ${p.y}`).join(' L ')}`}
-              fill="none"
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
-              strokeDasharray="4 4"
-            />
-          ))}
-      </g>
-
-      {/* Aiming Focus - DEBE TENER pointer-events: none PARA NO BLOQUEAR LAS FICHAS */}
+      {/* Aiming Focus Overlay */}
       <rect 
         x={-1} y={-1} 
         width={BOARD_WIDTH+2} height={BOARD_HEIGHT+2} 
@@ -228,29 +215,71 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         }} 
       />
 
-      {/* Imaginary Lines */}
-      <g className="imaginary-lines" style={{ pointerEvents: 'none' }}>
-          {gameState.imaginaryLine && !gameState.imaginaryLine.isConfirmed && gameState.imaginaryLine.lines.map((line, index) => {
-              const isHighlighted = index === gameState.imaginaryLine!.highlightedLineIndex;
-              const hasSynergy = !!line.synergyType;
-              const strokeColor = isHighlighted
-                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType!].color : 'white')
-                  : 'rgba(255, 0, 0, 0.2)';
-              return (
-                  <line
-                      key={index}
-                      x1={line.start.x} y1={line.start.y}
-                      x2={line.end.x} y2={line.end.y}
-                      stroke={strokeColor}
-                      strokeWidth={isHighlighted ? 4 : 2}
-                      strokeDasharray="4 6"
-                      style={{ transition: 'stroke 0.2s ease' }}
-                  />
-              );
-          })}
+      {/* Shot Preview (Trajectory Line) */}
+      <g className="shot-preview" style={{ pointerEvents: 'none' }}>
+        {gameState.shotPreview && (() => {
+            const { start, end, power, isCancelZone, specialShotType } = gameState.shotPreview;
+            const puck = gameState.pucks.find(p => p.id === gameState.selectedPuckId);
+            if (!puck) return null;
+
+            const shotVector = subtractVectors(start, end);
+            const distance = getVectorMagnitude(shotVector);
+            
+            if (distance < MIN_DRAG_DISTANCE / 2) return null;
+
+            const cappedDistance = Math.min(distance, MAX_DRAG_FOR_POWER);
+            const angle = Math.atan2(shotVector.y, shotVector.x);
+
+            const beamStart = {
+                x: start.x + Math.cos(angle) * puck.radius,
+                y: start.y + Math.sin(angle) * puck.radius,
+            };
+            const beamEnd = {
+                x: start.x + Math.cos(angle) * (puck.radius + cappedDistance),
+                y: start.y + Math.sin(angle) * (puck.radius + cappedDistance),
+            };
+
+            let color = TEAM_COLORS[gameState.currentTurn];
+            if (specialShotType === 'ULTIMATE') color = 'url(#rainbow-gradient)';
+            else if (specialShotType === 'ROYAL') color = UI_COLORS.GOLD;
+
+            if (isCancelZone) color = 'rgba(100, 116, 139, 0.3)';
+
+            const beamWidth = 4 + power * 12;
+
+            return (
+                <g opacity={isAiming ? 1 : 0.4}>
+                    {/* Glow exterior */}
+                    <line 
+                        x1={beamStart.x} y1={beamStart.y} 
+                        x2={beamEnd.x} y2={beamEnd.y} 
+                        stroke={color} 
+                        strokeWidth={beamWidth + 4} 
+                        strokeLinecap="round" 
+                        opacity="0.3" 
+                        filter="url(#pulsar-glow)"
+                    />
+                    {/* Línea principal */}
+                    <line 
+                        x1={beamStart.x} y1={beamStart.y} 
+                        x2={beamEnd.x} y2={beamEnd.y} 
+                        stroke={color} 
+                        strokeWidth={beamWidth} 
+                        strokeLinecap="round" 
+                        strokeDasharray={isCancelZone ? "5 5" : "none"}
+                    />
+                    {/* Punta de flecha */}
+                    <path 
+                        d="M 10 0 L -5 -6 L -5 6 Z" 
+                        fill={isCancelZone ? "gray" : "white"} 
+                        transform={`translate(${beamEnd.x}, ${beamEnd.y}) rotate(${angle * 180 / Math.PI})`}
+                    />
+                </g>
+            );
+        })()}
       </g>
 
-      {/* Fichas - Renderizadas al final para estar "arriba" en el stack de eventos */}
+      {/* Fichas */}
       <g className="pucks" filter="url(#shadow)">
         {gameState.pucks.map((puck) => {
           const isSelected = gameState.selectedPuckId === puck.id;
@@ -270,8 +299,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               className={isPhased ? 'phased-puck' : ''}
               style={{ cursor: isShootable ? 'pointer' : 'default', pointerEvents: 'auto' }}
             >
-              {/* Hitbox invisible para facilitar la selección táctil */}
-              <circle r={puck.radius + 10} fill="transparent" />
+              <circle r={puck.radius + 15} fill="transparent" />
               <g filter={glowFilter}>
                 <g transform={`rotate(${puck.rotation})`}>
                   <PuckShape puck={puck} />
@@ -280,23 +308,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             </g>
           );
         })}
-      </g>
-      
-      {/* Shot Preview */}
-      <g className="shot-preview" style={{ pointerEvents: 'none' }}>
-        {gameState.shotPreview && (() => {
-            const { start, end, power, isCancelZone } = gameState.shotPreview;
-            const shotVector = subtractVectors(start, end);
-            const distance = getVectorMagnitude(shotVector);
-            if (distance < MIN_DRAG_DISTANCE) return null;
-            const cappedDistance = Math.min(distance, MAX_DRAG_FOR_POWER);
-            const angle = Math.atan2(shotVector.y, shotVector.x);
-            return (
-                <g transform={`translate(${start.x}, ${start.y}) rotate(${angle * 180 / Math.PI})`}>
-                    <line x1="0" y1="0" x2={cappedDistance} y2="0" stroke={isCancelZone ? '#444' : TEAM_COLORS[gameState.currentTurn]} strokeWidth={4 + power * 10} strokeDasharray="5 5" opacity="0.6" />
-                </g>
-            );
-        })()}
       </g>
 
       <foreignObject x="0" y="0" width={BOARD_WIDTH} height={BOARD_HEIGHT} style={{ pointerEvents: 'none' }}>
@@ -307,6 +318,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                         specialShotStatus={infoCardPuck.puckType === 'KING' ? gameState.specialShotStatus[infoCardPuck.team] : 'NONE'}
                         renderDirection={infoPanelProps.renderDirection}
                         pointerHorizontalOffset={infoPanelProps.pointerHorizontalOffset}
+                        lang={lang}
                     />
                 )}
             </div>

@@ -1,18 +1,19 @@
 
 import React from 'react';
 import { Puck, SpecialShotStatus } from '../types';
-import { PUCK_TYPE_INFO, PUCK_TYPE_PROPERTIES, TEAM_COLORS, PAWN_DURABILITY, PUCK_GOAL_POINTS, UI_COLORS } from '../constants';
-import PuckTypeIcon from './PuckTypeIcon';
+import { TRANSLATIONS, PUCK_TYPE_PROPERTIES, TEAM_COLORS, PUCK_GOAL_POINTS, Language } from '../constants';
 
 interface InfoPanelProps {
     puck: Puck;
     specialShotStatus: SpecialShotStatus;
     renderDirection?: 'up' | 'down';
     pointerHorizontalOffset?: number;
+    lang: Language;
 }
 
-const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE', renderDirection = 'up', pointerHorizontalOffset = 0 }) => {
-    const info = PUCK_TYPE_INFO[puck.puckType];
+const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE', renderDirection = 'up', pointerHorizontalOffset = 0, lang }) => {
+    const t = TRANSLATIONS[lang];
+    const info = t.PUCK_INFO[puck.puckType];
     const props = PUCK_TYPE_PROPERTIES[puck.puckType];
     const teamColor = TEAM_COLORS[puck.team];
 
@@ -53,13 +54,13 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
             .stat-item .label { font-size: 0.7rem; color: #666; text-transform: uppercase; }
             .stat-item .value { font-weight: 700; color: #fff; }
         `}</style>
-        <div style={cardStyle} className={`puck-info-card ${renderDirection === 'down' ? 'render-down' : ''}`}>
+        <div style={cardStyle} className="puck-info-card">
             <div className="card-content">
                 <h3 className="puck-name">{info.name}</h3>
-                <p className="puck-description">{info.description}</p>
+                <p className="puck-description">{info.desc}</p>
                 <div className="puck-stats" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem'}}>
-                    <div className="stat-item"><span className="label">Puntos</span><span className="value">{PUCK_GOAL_POINTS[puck.puckType]}</span></div>
-                    <div className="stat-item"><span className="label">Peso</span><span className="value">{props.mass}</span></div>
+                    <div className="stat-item"><span className="label">{lang === 'es' ? 'Puntos' : 'Points'}</span><span className="value">{PUCK_GOAL_POINTS[puck.puckType]}</span></div>
+                    <div className="stat-item"><span className="label">{lang === 'es' ? 'Peso' : 'Mass'}</span><span className="value">{props.mass}</span></div>
                 </div>
             </div>
         </div>

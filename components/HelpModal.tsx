@@ -1,279 +1,270 @@
+
 import React, { useState } from 'react';
-import { PuckType, SynergyType, Team } from '../types';
-import { PUCK_TYPE_INFO, SYNERGY_DESCRIPTIONS, SYNERGY_COMBOS, SCORE_TO_WIN, PUCK_TYPE_PROPERTIES, PUCK_GOAL_POINTS } from '../constants';
+import { Team, PuckType, SynergyType } from '../types';
+import { TRANSLATIONS, Language, SCORE_TO_WIN, PUCK_TYPE_PROPERTIES, PUCK_GOAL_POINTS, SYNERGY_EFFECTS, UI_COLORS } from '../constants';
 import PuckTypeIcon from './PuckTypeIcon';
 
-type HelpTab = 'objetivo' | 'controles' | 'reglas' | 'fichas' | 'sinergias';
+interface HelpModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    playSound: (sound: string) => void;
+    team: Team | null;
+    lang: Language;
+}
 
-// --- SVG ICONS ---
-const GoalIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" /><circle cx="12" cy="10" r="3" /></svg>;
-const LinesIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20M2 6h20M2 18h20" /></svg>;
-const RoyalShotIcon = () => <svg viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17.5 13.5l-3.5 3.5l-3.5 -3.5" /><path d="M17.5 8.5l-3.5 3.5l-3.5 -3.5" /><path d="M14 17h-4" /><path d="M14 5h-4" /><path d="M6 17v-10l-2 2" /></svg>;
-const BonusTurnIcon = () => <svg viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" /></svg>;
-const PulsarIcon = () => <svg viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3.634 19.366a9 9 0 1 1 11.366 -16.366l-2 15l-3 -6l-4 4l3 6z" /></svg>;
-const OrbIcon = () => <svg viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /></svg>;
-const TurnLossIcon = () => <svg viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>;
-
-// --- Tab Button Icons ---
-const TabIconObjetivo = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" /></svg>;
-const TabIconControles = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.75a2 2 0 100 4 2 2 0 000-4zM4 3.75a2 2 0 100 4 2 2 0 000-4zM16 3.75a2 2 0 100 4 2 2 0 000-4zM10 9.75a2 2 0 100 4 2 2 0 000-4zM4 9.75a2 2 0 100 4 2 2 0 000-4zM16 9.75a2 2 0 100 4 2 2 0 000-4z" /></svg>;
-const TabIconReglas = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v11.5A2.25 2.25 0 004.25 18h11.5A2.25 2.25 0 0018 15.75V4.25A2.25 2.25 0 0015.75 2H4.25zm5.75 4a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0V6zM10 10.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0v-.01a.75.75 0 01.75-.75zM8.5 10.25a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0v-.01zM11.5 10.25a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0v-.01zM8.5 12.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0v-.01a.75.75 0 01.75-.75zM10 14a.75.75 0 00-1.5 0v.01a.75.75 0 001.5 0V14zM11.5 12.25a.75.75 0 01.75.75v.01a.75.75 0 01-1.5 0v-.01a.75.75 0 01.75-.75z" clipRule="evenodd" /></svg>;
-const TabIconFichas = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM10 11a6 6 0 016 6H4a6 6 0 016-6z" /></svg>;
-const TabIconSinergias = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.216 2.457l-1.128 1.127a.75.75 0 01-1.06-1.06l1.127-1.128a5.5 5.5 0 018.472-8.472l1.128-1.127a.75.75 0 011.061 1.06l-1.127 1.128a5.501 5.501 0 01-.228 6.453z" clipRule="evenodd" /><path fillRule="evenodd" d="M4.688 8.576a5.5 5.5 0 019.216-2.457l1.128-1.127a.75.75 0 011.06 1.06l-1.127 1.128a5.5 5.5 0 01-8.472 8.472l-1.128 1.127a.75.75 0 01-1.06-1.06l1.127-1.128a5.501 5.501 0 01.228-6.453z" clipRule="evenodd" /></svg>;
-
-
-// --- TAB CONTENT COMPONENTS ---
-const ObjetivoTab: React.FC = () => (
-    <div className="help-section">
-        <h3>Objetivo del Juego</h3>
-        <p>El objetivo es ser el primer jugador en anotar <strong>{SCORE_TO_WIN}</strong> puntos. Para anotar un gol, una de tus fichas <strong>cargadas</strong> debe entrar completamente en la portería rival.</p>
-        <p>Si el marcador llega a {SCORE_TO_WIN - 1}-{SCORE_TO_WIN - 1} (empate), se activa la regla de "muerte súbita": el primer jugador en conseguir una ventaja de 2 puntos gana la partida.</p>
-    </div>
-);
-
-const ControlesTab: React.FC = () => (
-    <>
-        <div className="help-section">
-            <h3>Arrastrar y Soltar</h3>
-            <p>Selecciona una de tus fichas activas. Arrastra en la dirección opuesta a donde quieres disparar. ¡Cuanto más arrastres, más potente será el tiro!</p>
-            <div className="animation-container">
-                <svg viewBox="0 0 300 150">
-                    <style>{`
-                        @keyframes help-drag-anim { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-80px, 0); } }
-                        @keyframes help-shoot-anim { 0%, 40% { transform: translate(0, 0); opacity: 1; } 90% { transform: translate(120px, 0); opacity: 1; } 100% { transform: translate(120px, 0); opacity: 0; } }
-                        #help-drag-line, #help-arrow-tip { animation: help-drag-anim 4s infinite ease-in-out; }
-                        #help-puck-shot { animation: help-shoot-anim 4s infinite ease-in-out; }
-                    `}</style>
-                    <g id="help-puck-shot"><circle cx="100" cy="75" r="20" fill="var(--color-blue-neon)" filter="url(#pulsar-glow)"/><circle cx="100" cy="75" r="20" fill="var(--color-blue-neon)" stroke="#010409" strokeWidth="2"/></g>
-                    <line id="help-drag-line" x1="100" y1="75" x2="180" y2="75" stroke="white" strokeWidth="3" strokeDasharray="5 5" /><path id="help-arrow-tip" d="M180 75 l-10 -6 v12 z" fill="white" />
-                </svg>
-            </div>
-        </div>
-        <div className="help-section">
-            <h3>Cargar Fichas</h3>
-            <p>Una ficha debe estar <strong>cargada</strong> para poder marcar un gol. Para cargarla, dispárala de forma que su trayectoria cruce las "líneas imaginarias" que se forman entre tus otras fichas.</p>
-            <div className="animation-container">
-                 <svg viewBox="0 0 300 150">
-                     <defs><filter id="help-charged-glow"><feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#fde047" floodOpacity="1" /></filter></defs>
-                     <style>{`
-                        @keyframes help-line-cross-anim { 0% { transform: translate(0, 40px); } 60% { transform: translate(0, -40px); } 100% { transform: translate(0, -40px); } }
-                        @keyframes help-line-flash-anim { 0%, 100%, 45% { stroke: rgba(255,255,255,0.4); } 50% { stroke: var(--color-accent-yellow); stroke-width: 4px; } }
-                        @keyframes help-puck-charge-anim { 0%, 49% { filter: none; } 50%, 100% { filter: url(#help-charged-glow); } }
-                        @keyframes help-text-pop-in { 0%, 49% { opacity: 0; transform: scale(0.5) translateY(10px); } 50% { opacity: 1; transform: scale(1); } 70% { opacity: 1; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(1.2) translateY(0); } }
-                        #help-crossing-puck { animation: help-line-cross-anim 4s infinite cubic-bezier(0.5, 0, 0.5, 1); }
-                        #help-imaginary-line { animation: help-line-flash-anim 4s infinite ease-in-out; }
-                        #help-crossing-puck-visuals { animation: help-puck-charge-anim 4s infinite ease-in-out; }
-                        #help-charged-text { font-size: 1.2rem; font-weight: 800; fill: #fde047; text-anchor: middle; paint-order: stroke; stroke: black; stroke-width: 4px; animation: help-text-pop-in 4s infinite ease-in-out; }
-                     `}</style>
-                    <circle cx="80" cy="75" r="15" fill="#6b7280" /><circle cx="220" cy="75" r="15" fill="#6b7280" />
-                    <line id="help-imaginary-line" x1="80" y1="75" x2="220" y2="75" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeDasharray="4 4" />
-                    <g id="help-crossing-puck"><g id="help-crossing-puck-visuals"><circle cx="150" cy="75" r="18" fill="var(--color-blue-neon)" stroke="#010409" strokeWidth="2"/></g></g>
-                    <text x="150" y="45" id="help-charged-text">¡CARGADO!</text>
-                </svg>
-            </div>
-        </div>
-    </>
-);
-
-const ReglasTab: React.FC = () => (
-    <div className="help-section">
-        <h3>Reglas Clave</h3>
-        <div className="rules-list">
-            <div className="rule-item"><div className="rule-icon"><RoyalShotIcon /></div><div className="rule-details"><h4>Tiro Real y Definitivo</h4><p>Cuando todas tus fichas especiales (no peones) están cargadas, tu ficha Rey desbloquea un <strong>Tiro Real</strong>, un disparo superpotente. Si además cargas a todos tus peones, el Rey desata un <strong>Tiro Definitivo</strong>, aún más devastador y capaz de destruir fichas rivales.</p></div></div>
-            <div className="rule-item"><div className="rule-icon"><BonusTurnIcon /></div><div className="rule-details"><h4>Turno Extra (Tiro en Cadena)</h4><p>Al cargar una ficha, obtienes un <strong>turno extra inmediato</strong>. Puedes seleccionar otra ficha y disparar de nuevo mientras las demás aún están en movimiento, permitiendo combos espectaculares.</p></div></div>
-            <div className="rule-item"><div className="rule-icon"><PulsarIcon /></div><div className="rule-details"><h4>Poder Pulsar</h4><p>Ganas poder al cruzar líneas y golpear orbes. Cuando la barra de Poder Pulsar se llena, puedes activarla antes de tu disparo para lanzar un <strong>Tiro Pulsar</strong> con una potencia descomunal.</p></div></div>
-            <div className="rule-item"><div className="rule-icon"><OrbIcon /></div><div className="rule-details"><h4>Orbes y Sobrecarga</h4><p>Periódicamente, aparecen orbes de poder en los bordes. Golpéalos para ganar mucho Poder Pulsar. Al recolectar 3 orbes, tu equipo entra en estado de <strong>Sobrecarga</strong> durante un turno, repeliendo a las fichas enemigas cercanas.</p></div></div>
-            <div className="rule-item"><div className="rule-icon"><TurnLossIcon /></div><div className="rule-details"><h4>Pérdida de Turno</h4><p>Pierdes tu turno instantáneamente si cometes una de las siguientes faltas:</p><ul><li><strong>Autogol:</strong> Marcar en tu propia portería.</li><li><strong>Gol Ilegal:</strong> Marcar con una ficha que no estaba cargada.</li><li><strong>Gol Fantasma:</strong> Marcar con una ficha mientras es intangible (efecto Fantasma o Sinergia).</li><li><strong>Fallo Especial:</strong> Realizar un Tiro Real o Definitivo sin marcar un gol.</li></ul></div></div>
-        </div>
-    </div>
-);
-
-const FichasTab: React.FC = () => (
-    <div className="help-section">
-        <h3>Tipos de Ficha</h3>
-        <div className="puck-list">
-            {Object.entries(PUCK_TYPE_INFO).map(([puckType, info]) => {
-                const props = PUCK_TYPE_PROPERTIES[puckType as PuckType];
-                return (
-                    <div key={puckType} className="puck-info-item">
-                        <PuckTypeIcon puckType={puckType as PuckType} className="puck-info-icon" />
-                        <div className="puck-info-details">
-                            <h4>{info.name}</h4>
-                            <p>{info.description}</p>
-                            <div className="puck-stats-icons">
-                                <div className="stat-icon-item" title="Puntos de Gol"><GoalIcon /><span>{PUCK_GOAL_POINTS[puckType as PuckType]}</span></div>
-                                <div className="stat-icon-item" title="Líneas para Cargar"><LinesIcon /><span>{props.linesToCrossForBonus}</span></div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    </div>
-);
-
-const SinergiasTab: React.FC = () => (
-    <div className="help-section">
-        <h3>Sinergias</h3>
-        <p>Apunta sobre una línea imaginaria entre dos fichas especiales compatibles durante <strong>1.2 segundos</strong> para activar una poderosa habilidad de un solo uso para ese disparo.</p>
-        <div className="puck-list">
-            {Object.entries(SYNERGY_DESCRIPTIONS).map(([synergyType, info]) => {
-                const comboKey = Object.keys(SYNERGY_COMBOS).find(k => SYNERGY_COMBOS[k] === synergyType);
-                if (!comboKey) return null;
-                const [puck1, puck2] = comboKey.split('-') as [PuckType, PuckType];
-
-                return (
-                    <div key={synergyType} className="puck-info-item synergy-item">
-                        <div className="synergy-combo-icons"><PuckTypeIcon puckType={puck1} className="puck-info-icon" /><span>+</span><PuckTypeIcon puckType={puck2} className="puck-info-icon" /></div>
-                        <div className="puck-info-details"><h4>{info.name}</h4><p>{info.description}</p></div>
-                    </div>
-                );
-            })}
-        </div>
-    </div>
-);
-
-
-const HelpModal: React.FC<{ isOpen: boolean; onClose: () => void; playSound: (sound: string) => void; team: Team | null; }> = ({ isOpen, onClose, playSound, team }) => {
-    const [activeTab, setActiveTab] = useState<HelpTab>('objetivo');
+const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, playSound, team, lang }) => {
+    const t = TRANSLATIONS[lang];
+    const [activeTab, setActiveTab] = useState<keyof typeof t.TABS>('GOAL');
 
     if (!isOpen) return null;
 
-    const handleClose = () => { playSound('UI_CLICK_2'); onClose(); };
-    const handleTabClick = (tab: HelpTab) => { playSound('UI_CLICK_1'); setActiveTab(tab); };
+    const handleClose = () => {
+        playSound('UI_CLICK_2');
+        onClose();
+    };
 
-    const containerStyle: React.CSSProperties = team === 'BLUE' ? { transform: 'rotate(180deg)' } : {};
-    const TABS: { id: HelpTab, label: string, icon: React.FC }[] = [
-        { id: 'objetivo', label: 'Objetivo', icon: TabIconObjetivo },
-        { id: 'controles', label: 'Controles', icon: TabIconControles },
-        { id: 'reglas', label: 'Reglas', icon: TabIconReglas },
-        { id: 'fichas', label: 'Fichas', icon: TabIconFichas },
-        { id: 'sinergias', label: 'Sinergias', icon: TabIconSinergias }
-    ];
+    const handleTabClick = (tab: keyof typeof t.TABS) => {
+        playSound('UI_CLICK_1');
+        setActiveTab(tab);
+    };
 
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'objetivo': return <ObjetivoTab />;
-            case 'controles': return <ControlesTab />;
-            case 'reglas': return <ReglasTab />;
-            case 'fichas': return <FichasTab />;
-            case 'sinergias': return <SinergiasTab />;
-            default: return null;
+            case 'GOAL':
+                return (
+                    <div className="tab-pane">
+                        <p className="help-p">
+                            {lang === 'es' 
+                                ? `El objetivo principal es ser el primero en anotar ${SCORE_TO_WIN} puntos en la portería rival.` 
+                                : `The main objective is to be the first to score ${SCORE_TO_WIN} points in the opponent's goal.`}
+                        </p>
+                        <div className="info-box">
+                            <h4 style={{ color: UI_COLORS.GOLD }}>{lang === 'es' ? 'COMO MARCAR' : 'HOW TO SCORE'}</h4>
+                            <p>{lang === 'es' 
+                                ? 'Solo puedes marcar goles con fichas que estén CARGADAS (brillo amarillo). Las fichas se cargan al cruzar las líneas imaginarias entre tus otras piezas.' 
+                                : 'You can only score goals with CHARGED pucks (yellow glow). Pucks are charged by crossing the imaginary lines between your other pieces.'}</p>
+                        </div>
+                        <div className="info-box" style={{ borderLeftColor: UI_COLORS.GOLD }}>
+                            <h4 style={{ color: UI_COLORS.GOLD }}>{lang === 'es' ? 'VALOR DEL REY' : 'KING VALUE'}</h4>
+                            <p>{lang === 'es'
+                                ? '¡El Rey vale 2 PUNTOS! Úsalo con sabiduría para remontar o sentenciar la partida.'
+                                : 'The King is worth 2 POINTS! Use it wisely to come back or end the match.'}</p>
+                        </div>
+                    </div>
+                );
+            case 'CONTROLS':
+                return (
+                    <div className="tab-pane">
+                        <ul className="help-list">
+                            <li><strong>{lang === 'es' ? 'Disparar:' : 'Shoot:'}</strong> {lang === 'es' ? 'Arrastra una ficha hacia atrás y suelta.' : 'Drag a puck backwards and release.'}</li>
+                            <li><strong>{lang === 'es' ? 'Cancelar:' : 'Cancel:'}</strong> {lang === 'es' ? 'Suelta la ficha cerca de su posición original.' : 'Release the puck near its original position.'}</li>
+                            <li><strong>{lang === 'es' ? 'Información:' : 'Info:'}</strong> {lang === 'es' ? 'Mantén pulsada una ficha para ver sus estadísticas.' : 'Hold a puck to see its statistics.'}</li>
+                            <li><strong>{lang === 'es' ? 'Pulsar:' : 'Pulsar:'}</strong> {lang === 'es' ? 'Activa el botón de Pulsar cuando esté lleno para un tiro devastador.' : 'Activate the Pulsar button when full for a devastating shot.'}</li>
+                        </ul>
+                    </div>
+                );
+            case 'RULES':
+                return (
+                    <div className="tab-pane scrollable">
+                        <div className="rules-list">
+                            {(t as any).RULES_CONTENT.map((rule: any, index: number) => (
+                                <div key={index} className="rule-item">
+                                    <div className="rule-number">{index + 1}</div>
+                                    <div className="rule-body">
+                                        <h5 className="rule-title">{rule.title}</h5>
+                                        <p className="rule-desc">{rule.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'PUCKS':
+                return (
+                    <div className="tab-pane scrollable">
+                        <div className="puck-grid">
+                            {(Object.keys(t.PUCK_INFO) as PuckType[]).map(type => (
+                                <div key={type} className="puck-help-item">
+                                    <div className="puck-help-icon">
+                                        <PuckTypeIcon puckType={type} teamColor="#ff0000" />
+                                    </div>
+                                    <div className="puck-help-details">
+                                        <h5>{t.PUCK_INFO[type].name}</h5>
+                                        <p>{t.PUCK_INFO[type].desc}</p>
+                                        <small>{lang === 'es' ? 'Puntos:' : 'Points:'} {PUCK_GOAL_POINTS[type]} | {lang === 'es' ? 'Masa:' : 'Mass:'} {PUCK_TYPE_PROPERTIES[type].mass}</small>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'SYNERGIES':
+                return (
+                    <div className="tab-pane scrollable">
+                        <p className="help-p" style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                            {lang === 'es' 
+                                ? 'Las sinergias se activan al apuntar a través de una línea formada por dos fichas específicas.' 
+                                : 'Synergies are activated by aiming through a line formed by two specific pucks.'}
+                        </p>
+                        <div className="synergy-list">
+                            {(Object.keys(t.SYNERGY_INFO) as SynergyType[]).map(type => (
+                                <div key={type} className="synergy-help-item" style={{ borderColor: SYNERGY_EFFECTS[type].color }}>
+                                    <h5 style={{ color: SYNERGY_EFFECTS[type].color }}>{t.SYNERGY_INFO[type].name}</h5>
+                                    <p>{t.SYNERGY_INFO[type].desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
         }
     };
 
     return (
         <div className="modal-overlay" onMouseDown={handleClose}>
             <style>{`
-                .help-modal-container {
-                    width: 90%; max-width: 800px;
-                    height: 90vh; max-height: 850px;
-                    animation: modal-content-pop-in 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-                    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+                .help-card {
+                    background: #000;
+                    border: 2px solid #ff0000;
+                    padding: 0;
+                    max-width: 650px;
+                    width: 95%;
+                    height: 80vh;
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 0 40px rgba(255, 0, 0, 0.5);
+                    color: white;
+                    overflow: hidden;
+                    animation: card-fade-in-up 0.4s ease-out;
                 }
-                .help-modal {
-                    background: var(--color-bg-glass);
-                    border: 1px solid var(--color-border-glass);
-                    border-radius: 16px; box-shadow: 0 0 40px rgba(0,0,0,0.7);
-                    width: 100%; height: 100%; display: flex;
-                    overflow: hidden; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+                .help-header {
+                    padding: 1.5rem;
+                    text-align: center;
+                    border-bottom: 1px solid #333;
                 }
-                .help-modal-close-btn {
-                    position: absolute; top: 12px; right: 12px;
-                    background: var(--color-bg-dark); border: 1px solid var(--color-border);
-                    color: var(--color-text-medium); font-size: 1.5rem; cursor: pointer;
-                    line-height: 1; width: 36px; height: 36px; border-radius: 50%;
-                    display: flex; align-items: center; justify-content: center;
-                    transition: all 0.2s ease; z-index: 20;
+                .help-title { 
+                    font-family: var(--font-family-title); 
+                    color: #ff0000; 
+                    font-size: 2.2rem; 
+                    margin: 0;
+                    text-shadow: 0 0 10px #ff0000;
                 }
-                .help-modal-close-btn:hover { color: white; transform: scale(1.1); border-color: white; }
-                
-                .help-modal-sidebar {
-                    width: 200px; background: rgba(0,0,0,0.2);
-                    padding: 1rem; flex-shrink: 0;
-                    border-right: 1px solid var(--color-border-glass);
-                    display: flex; flex-direction: column; gap: 0.5rem;
+                .tabs-nav {
+                    display: flex;
+                    background: #111;
+                    overflow-x: auto;
+                    scrollbar-width: none;
                 }
-                .help-tab-btn {
-                    width: 100%; padding: 0.75rem 1rem; background: transparent;
-                    border: 1px solid transparent; border-radius: 8px;
-                    color: var(--color-text-medium); font-size: 1rem; font-weight: 600;
-                    cursor: pointer; transition: all 0.2s ease; text-align: left;
-                    display: flex; align-items: center; gap: 0.75rem;
+                .tab-btn {
+                    flex: 1;
+                    padding: 1rem;
+                    background: transparent;
+                    border: none;
+                    border-bottom: 3px solid transparent;
+                    color: #666;
+                    font-family: var(--font-family-title);
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    transition: all 0.3s;
                 }
-                .help-tab-btn svg { width: 20px; height: 20px; }
-                .help-tab-btn:hover { background: var(--color-bg-light); color: white; }
-                .help-tab-btn.active { 
-                    background: var(--color-bg-medium); color: var(--color-accent-green);
-                    border-color: var(--color-border);
-                    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+                .tab-btn.active {
+                    color: #ff0000;
+                    border-bottom-color: #ff0000;
+                    background: rgba(255,0,0,0.1);
                 }
+                .help-content-area {
+                    flex: 1;
+                    padding: 1.5rem;
+                    overflow-y: auto;
+                }
+                .tab-pane.scrollable {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+                .help-p { line-height: 1.6; color: #ccc; margin-bottom: 1.5rem; }
+                .info-box {
+                    background: #0a0a0a;
+                    border: 1px solid #333;
+                    padding: 1rem;
+                    border-left: 4px solid var(--color-red-neon);
+                    margin-bottom: 1rem;
+                }
+                .help-list { list-style: none; padding: 0; }
+                .help-list li { margin-bottom: 1rem; border-bottom: 1px solid #1a1a1a; padding-bottom: 0.5rem; }
+                .help-list strong { color: #ff0000; display: block; font-size: 0.8rem; text-transform: uppercase; }
 
-                .help-modal-main { flex-grow: 1; display: flex; flex-direction: column; }
-                .help-modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border-glass); flex-shrink: 0; }
-                .help-modal-title { font-size: 1.75rem; font-weight: 800; color: white; }
+                .rules-list { display: flex; flex-direction: column; gap: 1.5rem; }
+                .rule-item { display: flex; gap: 1.2rem; align-items: flex-start; }
+                .rule-number { 
+                    width: 32px; height: 32px; background: #ff0000; color: black; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-weight: 900; border-radius: 4px; flex-shrink: 0;
+                    font-family: var(--font-family-title);
+                }
+                .rule-title { margin: 0 0 0.3rem 0; color: #ff0000; font-size: 1.1rem; text-transform: uppercase; }
+                .rule-desc { margin: 0; font-size: 0.9rem; color: #ccc; line-height: 1.4; }
 
-                .help-modal-content { padding: 1.5rem; overflow-y: auto; }
-                .help-modal-content::-webkit-scrollbar { width: 8px; }
-                .help-modal-content::-webkit-scrollbar-track { background: transparent; }
-                .help-modal-content::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+                .puck-grid { display: grid; gap: 1rem; }
+                .puck-help-item {
+                    display: flex;
+                    gap: 1rem;
+                    background: #0a0a0a;
+                    padding: 0.75rem;
+                    border: 1px solid #222;
+                    align-items: center;
+                }
+                .puck-help-icon { width: 50px; height: 50px; flex-shrink: 0; }
+                .puck-help-details h5 { margin: 0; color: #fff; font-size: 1.1rem; }
+                .puck-help-details p { margin: 0.2rem 0; font-size: 0.8rem; color: #aaa; }
+                .puck-help-details small { color: #ff0000; font-weight: bold; }
 
-                .help-section { margin-bottom: 2rem; } .help-section:last-child { margin-bottom: 0; }
-                .help-section h3 { font-size: 1.3rem; font-weight: 700; color: var(--color-accent-green); margin-bottom: 1rem; }
-                .help-section p { font-size: 0.95rem; color: var(--color-text-light); line-height: 1.6; margin-bottom: 1rem; }
-                .animation-container { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 1rem; margin-top: 1rem; border: 1px solid var(--color-border-glass); }
-                
-                .puck-list, .rules-list { display: flex; flex-direction: column; gap: 1rem; }
-                .puck-info-item, .rule-item { background-color: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--color-border-glass); }
-                .puck-info-item { display: grid; grid-template-columns: 48px 1fr; gap: 1rem; align-items: flex-start; }
-                .puck-info-icon { flex-shrink: 0; width: 48px; height: 48px; }
-                .puck-info-details h4, .rule-details h4 { font-size: 1.1rem; font-weight: 700; color: white; margin: 0 0 0.25rem 0; }
-                .puck-info-details p, .rule-details p { font-size: 0.85rem; color: var(--color-text-medium); line-height: 1.5; margin: 0; }
-                
-                .puck-stats-icons { display: flex; gap: 1rem; margin-top: 0.5rem; }
-                .stat-icon-item { display: flex; align-items: center; gap: 0.35rem; color: var(--color-text-medium); }
-                .stat-icon-item svg { width: 16px; height: 16px; }
-                .stat-icon-item span { font-size: 0.9rem; font-weight: 600; color: white; }
+                .synergy-list { display: flex; flex-direction: column; gap: 1rem; }
+                .synergy-help-item {
+                    border-left: 4px solid;
+                    background: #0a0a0a;
+                    padding: 1rem;
+                }
+                .synergy-help-item h5 { margin: 0 0 0.5rem 0; font-size: 1.1rem; text-transform: uppercase; }
+                .synergy-help-item p { margin: 0; font-size: 0.85rem; color: #ccc; }
 
-                .synergy-item { grid-template-columns: 120px 1fr; }
-                .synergy-combo-icons { display: flex; align-items: center; justify-content: center; gap: 0.25rem; height: 48px; }
-                .synergy-combo-icons > span { font-size: 1.5rem; font-weight: 700; color: var(--color-text-medium); }
-                .synergy-combo-icons .puck-info-icon { width: 40px; height: 40px; }
-
-                .rule-item { display: grid; grid-template-columns: 32px 1fr; gap: 1rem; align-items: flex-start; }
-                .rule-icon { width: 32px; height: 32px; color: var(--color-accent-purple); }
-                .rule-details ul { list-style: none; padding-left: 1rem; margin-top: 0.5rem; }
-                .rule-details li { position: relative; padding-left: 1rem; font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--color-text-medium); }
-                .rule-details li::before { content: '•'; position: absolute; left: 0; color: var(--color-accent-purple); }
-
-                 @media (max-width: 768px) {
-                    .help-modal-sidebar { display: none; }
-                    .help-modal { flex-direction: column; }
-                    .help-modal-header { display: none; }
-                    .help-modal-main { border-top: 1px solid var(--color-border-glass); }
-                 }
+                .help-footer {
+                    padding: 1rem;
+                    border-top: 1px solid #333;
+                }
+                .close-btn { 
+                    width: 100%; padding: 0.8rem; background: #ff0000; color: black; 
+                    border: none; font-family: var(--font-family-title); font-size: 1.2rem; cursor: pointer;
+                    transition: transform 0.2s;
+                }
+                .close-btn:hover { transform: scale(1.02); }
             `}</style>
-            <div className="help-modal-container" onMouseDown={(e) => e.stopPropagation()} style={containerStyle}>
-                <div className="help-modal">
-                    <aside className="help-modal-sidebar">
-                        <h2 className="help-modal-title" style={{padding: '0.75rem 0.5rem', marginBottom: '0.5rem', fontSize: '1.5rem'}}>AYUDA</h2>
-                        {TABS.map(tab => (
-                            <button key={tab.id} className={`help-tab-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => handleTabClick(tab.id)}>
-                                <tab.icon />
-                                <span>{tab.label}</span>
-                            </button>
-                        ))}
-                    </aside>
-                     <main className="help-modal-main">
-                        <header className="help-modal-header">
-                            <h2 className="help-modal-title">{TABS.find(t => t.id === activeTab)?.label}</h2>
-                        </header>
-                        <div className="help-modal-content">
-                            {renderTabContent()}
-                        </div>
-                    </main>
+            <div className="help-card" onMouseDown={e => e.stopPropagation()}>
+                <div className="help-header">
+                    <h2 className="help-title">{t.HELP}</h2>
                 </div>
-                <button className="help-modal-close-btn" onClick={handleClose} aria-label="Cerrar">&times;</button>
+                
+                <nav className="tabs-nav">
+                    {(Object.keys(t.TABS) as (keyof typeof t.TABS)[]).map(tabKey => (
+                        <button 
+                            key={tabKey}
+                            className={`tab-btn ${activeTab === tabKey ? 'active' : ''}`}
+                            onClick={() => handleTabClick(tabKey)}
+                        >
+                            {t.TABS[tabKey]}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="help-content-area">
+                    {renderTabContent()}
+                </div>
+
+                <div className="help-footer">
+                    <button className="close-btn" onClick={handleClose}>{t.BACK}</button>
+                </div>
             </div>
         </div>
     );
