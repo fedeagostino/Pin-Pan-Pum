@@ -194,7 +194,18 @@ function App() {
 
   const handleGameEventRef = useRef<(eventDesc: string) => Promise<void>>();
 
-  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn } = useGameEngine({ 
+  const { 
+    gameState, 
+    handleMouseDown, 
+    handleMouseMove, 
+    handleMouseUp, 
+    resetGame, 
+    handleBoardMouseDown, 
+    handleActivatePulsar, 
+    clearTurnLossReason, 
+    clearBonusTurn,
+    clearGoalInfo
+  } = useGameEngine({ 
       playSound, 
       lang, 
       onGameEvent: (eventDesc) => {
@@ -236,6 +247,18 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [gameState.bonusTurnForTeam, clearBonusTurn]);
+
+  // Manejo del reinicio automático tras un gol
+  useEffect(() => {
+    if (gameState.goalScoredInfo && !gameState.winner) {
+      const timer = setTimeout(() => {
+        clearGoalInfo();
+        // Reset del ref del turno anterior para forzar la animación de cambio de turno si aplica
+        prevTurnRef.current = null;
+      }, 3500); // 3.5 segundos de gloria para el gol
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.goalScoredInfo, gameState.winner, clearGoalInfo]);
 
   const getSVGCoordinates = useCallback((clientX: number, clientY: number): Vector | null => {
     const svg = svgRef.current;

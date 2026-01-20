@@ -6,21 +6,25 @@ export const BOARD_HEIGHT = 960;
 export const PUCK_RADIUS = 25; 
 export const PAWN_PUCK_RADIUS = 15;
 export const KING_PUCK_RADIUS = 35;
-export const GOAL_WIDTH = 300; // Escalado de 250
+export const GOAL_WIDTH = 300; 
 export const GOAL_DEPTH = 50; 
 export const MIN_DRAG_DISTANCE = 10;
-export const MAX_DRAG_FOR_POWER = 150; // Aumentado ligeramente para la nueva escala
+export const MAX_DRAG_FOR_POWER = 160; 
 export const CANCEL_SHOT_THRESHOLD = PUCK_RADIUS * 1.5;
 export const SCORE_TO_WIN = 3;
 export const PAWN_DURABILITY = 5;
 
+// Physics Simulation Quality
+export const SUB_STEPS = 4; // Number of physics updates per frame for stability
+
 // Portal (Pulsar) Config
 export const MAX_PULSAR_POWER = 1000;
-export const PULSAR_POWER_PER_LINE = 150; 
-export const PULSAR_ORB_CHARGE_AMOUNT = 250; // 25% de 1000
-export const PULSAR_ORB_RADIUS = 20;
-export const PULSAR_ORB_SPEED = 8; // Pixeles por frame
-export const PULSAR_ORB_SYNC_THRESHOLD = 80; // Distancia para detectar golpe sincronizado
+export const PULSAR_POWER_PER_LINE = 120; 
+export const PULSAR_ORB_CHARGE_AMOUNT = 250; 
+export const PULSAR_ORB_RADIUS = 22;
+export const PULSAR_ORB_SPEED = 12; 
+export const PULSAR_ORB_LINE_LENGTH = 140; 
+export const PULSAR_ORB_SYNC_THRESHOLD = 80; 
 
 export const PUCK_GOAL_POINTS: Record<PuckType, number> = {
   STANDARD: 1,
@@ -39,7 +43,7 @@ export type Language = 'en' | 'es';
 
 export const TRANSLATIONS = {
     en: {
-        TITLE: 'WHAM BAM BOOM',
+        TITLE: 'STRANGER ARENA',
         PLAY_FRIEND: 'Play vs Friend',
         PLAY_AI: 'Play vs AI',
         SETTINGS: 'Settings',
@@ -108,7 +112,7 @@ export const TRANSLATIONS = {
         }
     },
     es: {
-        TITLE: 'PIN PAN PUM',
+        TITLE: 'STRANGER ARENA',
         PLAY_FRIEND: 'Jugar vs Amigo',
         PLAY_AI: 'Jugar vs IA',
         SETTINGS: 'Configuración',
@@ -197,26 +201,22 @@ export const UI_COLORS = {
   RAINBOW_GRADIENT: 'linear-gradient(90deg, #ff0000, #990000, #ff0000)',
 };
 
-// Physics
-export const MIN_VELOCITY_TO_STOP = 0.1;
-export const MAX_VELOCITY_FOR_TURN_END = 0.4;
-// Reducido un 30%: 0.0441 * 0.7 = 0.03087
-export const LAUNCH_POWER_MULTIPLIER = 0.03087; 
-
-// Reducido un 30%: 0.063 * 0.7 = 0.0441
-export const PREVIEW_SHOT_POWER = 0.0441; 
-export const PREVIEW_SIMULATION_FRAMES = 120;
+// Physics Engine Values
+export const MIN_VELOCITY_TO_STOP = 0.05;
+export const MAX_VELOCITY_FOR_TURN_END = 0.15;
+export const LAUNCH_POWER_MULTIPLIER = 0.032; 
+export const WALL_BOUNCE_ELASTICITY = 0.8;
 
 export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
   STANDARD: { mass: 1, friction: 0.985, linesToCrossForBonus: 1 },
-  HEAVY: { mass: 1.7, friction: 0.9877, linesToCrossForBonus: 2 },
-  FAST: { mass: 0.75, friction: 0.987, linesToCrossForBonus: 1 },
+  HEAVY: { mass: 2.2, friction: 0.988, linesToCrossForBonus: 2 },
+  FAST: { mass: 0.7, friction: 0.986, linesToCrossForBonus: 1 },
   GHOST: { mass: 0.6, friction: 0.989, linesToCrossForBonus: 1 },
-  ANCHOR: { mass: 2.5, friction: 0.9831, linesToCrossForBonus: 2 },
-  KING: { mass: 4.5, friction: 0.980, linesToCrossForBonus: 1, powerFactor: 2.2 },
+  ANCHOR: { mass: 3.5, friction: 0.982, linesToCrossForBonus: 2 },
+  KING: { mass: 5.0, friction: 0.980, linesToCrossForBonus: 1, powerFactor: 2.2 },
   SWERVE: { mass: 0.8, friction: 0.986, swerveFactor: 0.03, linesToCrossForBonus: 1 },
-  BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.05, linesToCrossForBonus: 1 },
-  DAMPENER: { mass: 1.9, friction: 0.9862, elasticity: 0.4, linesToCrossForBonus: 2 },
+  BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.1, linesToCrossForBonus: 1 },
+  DAMPENER: { mass: 1.9, friction: 0.986, elasticity: 0.3, linesToCrossForBonus: 2 },
   PAWN: { mass: 0.5, friction: 0.980, elasticity: 0.9, linesToCrossForBonus: 1 },
 };
 
@@ -271,7 +271,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 100 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.22, y: yBase + 160 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.78, y: yBase + 160 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 340 * direction } }, // Alejado del Rey (antes 190)
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 340 * direction } }, 
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 45 * direction } },
             ];
         case 'OFFENSIVE':
@@ -280,7 +280,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 300 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 380 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 380 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 420 * direction } }, // Adelantado (antes 350)
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 420 * direction } }, 
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 180 * direction } },
             ];
         case 'BALANCED':
@@ -290,7 +290,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 210 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 260 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 260 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 330 * direction } }, // Movido al frente (antes 130)
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 330 * direction } }, 
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 75 * direction } },
             ];
     }
@@ -301,16 +301,5 @@ export const INITIAL_PUCK_CONFIG = [
   { team: 'BLUE' as Team, formation: 'BALANCED' as FormationType }
 ];
 
-// Re-exports/Constants for consistency
 export const GHOST_PHASE_DURATION = 180;
-export const EMP_BURST_RADIUS = 120;
-export const EMP_BURST_FORCE = 0.8;
-export const SPECIAL_PUCKS_FOR_ROYAL_SHOT: PuckType[] = ['HEAVY', 'FAST', 'GHOST', 'ANCHOR', 'SWERVE', 'BOUNCER', 'DAMPENER'];
-export const ROYAL_SHOT_POWER_MULTIPLIER = 2.0;
-export const ULTIMATE_SHOT_POWER_MULTIPLIER = 3.5;
-export const SYNERGY_GOAL_PULSAR_BONUS = 250;
-export const TURNS_PER_ORB_SPAWN = 2;
-export const ORBS_FOR_OVERCHARGE = 3;
-export const PULSAR_BAR_HEIGHT = 80;
-export const PULSAR_ORB_HIT_SCORE = 150;
 export const FLOATING_TEXT_CONFIG = { LIFE: 90 };
