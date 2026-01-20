@@ -19,24 +19,30 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
         vectorEffect: "non-scaling-stroke" as const,
     };
 
-    const renderSteveHair = (scale: number = 1) => (
-        <g transform={`scale(${scale}) translate(0, -5)`}>
-            <path 
-                d="M -15 0 C -15 -15, -10 -22, 0 -22 C 10 -22, 15 -15, 15 0 C 15 5, 10 8, 0 8 C -10 8, -15 5, -15 0" 
-                fill="#5d4037" 
-                stroke="#3e2723" 
-                strokeWidth="1"
-            />
-            <path 
-                d="M -8 -15 Q 0 -18 8 -15" 
-                fill="none" 
-                stroke="#8d6e63" 
-                strokeWidth="2" 
-                strokeLinecap="round"
-                opacity="0.6"
-            />
-        </g>
-    );
+    const renderSteveProfile = (scale: number = 1) => {
+        const nailAngles = [0, 60, 120, 180, 240, 300];
+        return (
+            <g transform={`scale(${scale})`}>
+                <circle r="19" fill="#5d4037" stroke="#3e2723" strokeWidth="2" />
+                <g>
+                    {nailAngles.map(a => (
+                        <g key={a} transform={`rotate(${a})`}>
+                            <line x1="0" y1="-18" x2="0" y2="-24" stroke="#94a3b8" strokeWidth="2.5" />
+                            <circle cx="0" cy="-24" r="1.5" fill="#cbd5e1" />
+                        </g>
+                    ))}
+                </g>
+                <g transform="translate(0, -5)">
+                    <path 
+                        d="M -15 0 C -15 -15, -10 -22, 0 -22 C 10 -22, 15 -15, 15 0 C 15 5, 10 8, 0 8 C -10 8, -15 5, -15 0" 
+                        fill="#4e342e" 
+                        stroke="#2d1d19" 
+                        strokeWidth="1"
+                    />
+                </g>
+            </g>
+        );
+    };
 
     const renderMaxine = (scale: number = 1) => (
         <g transform={`scale(${scale})`}>
@@ -49,7 +55,6 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
             <path d="M -14 -5 A 14 14 0 0 1 14 -5" fill="none" stroke="#2c3e50" strokeWidth="3" />
             <rect x="-18" y="-8" width="6" height="12" rx="2" fill="#2c3e50" />
             <rect x="12" y="-8" width="6" height="12" rx="2" fill="#2c3e50" />
-            <circle cx="0" cy="0" r="10" fill="#fcd9cc" opacity="0.4" />
         </g>
     );
 
@@ -57,12 +62,6 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
         <g transform={`scale(${scale})`}>
             <rect x="-10" y="-14" width="20" height="28" rx="2" fill="#2d3748" stroke="#1a202c" strokeWidth="1.5" />
             <rect x="-7" y="-24" width="3" height="11" fill="#1a202c" rx="1" />
-            <g transform="translate(0, 2)">
-                <line x1="-6" y1="-6" x2="6" y2="-6" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="-6" y1="-3" x2="6" y2="-3" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="-6" y1="0" x2="6" y2="0" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="-6" y1="3" x2="6" y2="3" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
-            </g>
             <circle cx="6" cy="-14" r="2.5" fill="#111" />
             <circle cx="6" cy="-8" r="1" fill="#ff0000" opacity="0.8" />
         </g>
@@ -76,91 +75,53 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
                 if (effectiveTeam === 'BLUE') {
                     return (
                         <g>
-                            <circle r="20" fill="#fff5ee" stroke="#d9b8ad" strokeWidth="2" />
-                            {/* Shaved Hair effect */}
-                            <path d="M -18 -5 A 18 18 0 0 1 18 -5 Q 0 -22 -18 -5 Z" fill="#5d4037" opacity="0.3" />
-                            {/* Eyes */}
-                            <circle cx="-6" cy="-4" r="1.5" fill="#333" />
-                            <circle cx="6" cy="-4" r="1.5" fill="#333" />
-                            {/* Nosebleed */}
-                            <path d="M 0 3 L 0 10" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" />
-                            <circle cx="0" cy="11" r="1.5" fill="#ff0000" />
-                            {/* Head Glow */}
-                            <circle r="18" fill="#e0c2b8" opacity="0.1" />
+                            {/* Cuerpo Tono Piel */}
+                            <circle r="20" fill="#e0ac69" stroke="#b08d57" strokeWidth="2" />
+                            {/* Cabello Rapado con Flequillo */}
+                            <path d="M -19 0 A 19 19 0 0 1 19 0 L 19 -8 Q 0 -25 -19 -8 Z" fill="#4e342e" />
+                            <path d="M -18 0 Q -14 3 -10 0 Q -5 3 0 0 Q 5 3 10 0 Q 14 3 18 0" fill="#4e342e" />
+                            {/* Ojos */}
+                            <circle cx="-6" cy="1" r="2.5" fill="#333" />
+                            <circle cx="6" cy="1" r="2.5" fill="#333" />
+                            {/* Sangre Nariz Descentrada */}
+                            <path d="M -2.5 5 L -2.5 12" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" />
+                            <circle cx="-2.5" cy="12.5" r="1.5" fill="#ff0000" />
                         </g>
                     );
                 } else {
                     return (
                         <g>
                             <path d="M 0 -20 L 14.1 -14.1 L 20 0 L 14.1 14.1 L 0 20 L -14.1 14.1 L -20 0 L -14.1 -14.1 Z" fill="#2a0505" stroke="#000" {...pathProps} />
-                            {/* Vines */}
-                            <path d="M -10 -10 L 10 10 M 10 -10 L -10 10" stroke="#4a0000" strokeWidth="1.5" opacity="0.5" />
-                            {/* White Eyes */}
                             <circle cx="-7" cy="-5" r="3" fill="#ffffff" />
                             <circle cx="7" cy="-5" r="3" fill="#ffffff" />
-                            {/* Evil Smile */}
-                            <path d="M -5 10 Q 0 15 5 10" fill="none" stroke="#000" strokeWidth="2" />
                         </g>
                     );
                 }
             case 'HEAVY':
-                return (
-                    <g>
-                        <path d="M 20 0 L 10 17.32 L -10 17.32 L -20 0 L -10 -17.32 L 10 -17.32 Z" fill="#4b5563" stroke="#1f2937" {...pathProps} />
-                        {isSteveType && renderSteveHair(0.85)}
-                    </g>
-                );
-            case 'ANCHOR':
-                return <path d="M 0 -20 L 20 0 L 0 20 L -20 0 Z" fill="#4b5563" stroke="#1f2937" {...pathProps} />;
-            case 'DAMPENER':
-                return <path d="M 0 -20 L 19.02 -6.18 L 11.76 16.18 L -11.76 16.18 L -19.02 -6.18 Z" fill="#4b5563" stroke="#1f2937" {...pathProps} />;
+                return isSteveType ? renderSteveProfile(0.9) : <path d="M 20 0 L 10 17.32 L -10 17.32 L -20 0 L -10 -17.32 L 10 -17.32 Z" fill="#4b5563" stroke="#1f2937" {...pathProps} />;
             case 'FAST':
                 if (effectiveTeam === 'RED') {
                     return (
                         <g>
                             <path d="M 0 -22 L 6 -12 L 20 -15 L 12 -4 L 18 10 L 0 5 L -18 10 L -12 -4 L -20 -15 L -6 -12 Z" fill="#5c0000" stroke="#2a0000" strokeWidth="2" />
-                            <rect x="-4" y="-4" width="8" height="8" fill="#ff0000" opacity="0.8" />
-                            <rect x="-1" y="-10" width="2" height="2" fill="white" />
-                            <rect x="-1" y="8" width="2" height="2" fill="white" />
-                            <rect x="-10" y="-1" width="2" height="2" fill="white" />
-                            <rect x="8" y="-1" width="2" height="2" fill="white" />
                         </g>
                     );
                 } else {
-                    return (
-                        <g>
-                            <circle r="20" fill="#9ca3af" stroke="#4b5563" strokeWidth="2" />
-                            {renderSteveHair(1)}
-                        </g>
-                    );
+                    return renderSteveProfile(0.9);
                 }
             case 'GHOST':
-                if (effectiveTeam === 'BLUE') {
-                    return renderMaxine(1.1);
-                }
+                if (effectiveTeam === 'BLUE') return renderMaxine(1.1);
                 return <path d="M 0 -20 C 14.4 -24.8, 24.8 0, 10 18 S -20 24.8, -15 -10 S 10 10, 0 -20 Z" fill="#dbeafe" stroke="#93c5fd" {...pathProps} />;
-            case 'SWERVE':
-                return <path d="M 0 -18 A 9 9 0 0 1 0 0 A 9 9 0 0 0 0 18 A 18 18 0 0 1 0 -18 Z" fill="#c084fc" stroke="#a855f7" {...pathProps} />;
-            case 'BOUNCER':
-                return <circle r="20" fill="#fde047" stroke="#facc15" strokeWidth="2" />;
             case 'PAWN':
-                 if (effectiveTeam === 'BLUE') {
-                     return renderWalkieTalkie(1.2);
-                 }
-                 return <path d="M 0 -15 L 14.25 -6.3 L 8.8 12.15 L -8.8 12.15 L -14.25 -6.3 Z" fill="#6b7280" stroke="#374151" {...pathProps} transform="scale(1.2)"/>;
+                 return effectiveTeam === 'BLUE' ? renderWalkieTalkie(1.2) : <path d="M 0 -15 L 14.25 -6.3 L 8.8 12.15 L -8.8 12.15 L -14.25 -6.3 Z" fill="#6b7280" stroke="#374151" {...pathProps} transform="scale(1.2)"/>;
             case 'STANDARD':
             default:
-                return (
-                    <g>
-                        <circle r="20" fill="#9ca3af" stroke="#4b5563" strokeWidth="2" />
-                        {isSteveType && renderSteveHair(1)}
-                    </g>
-                );
+                return isSteveType ? renderSteveProfile(0.9) : <circle r="20" fill="#9ca3af" stroke="#4b5563" strokeWidth="2" />;
         }
     })();
 
     return (
-        <svg viewBox="-25 -25 50 50" className={className}>
+        <svg viewBox="-28 -28 56 56" className={className}>
             {shape}
         </svg>
     );

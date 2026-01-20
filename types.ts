@@ -60,13 +60,9 @@ export type Particle = {
   opacity: number;
   life: number; // Ticks to live
   lifeSpan: number; // The initial life value, for percentage calculations
-  decay: number; // How fast life and opacity decrease. Can be negative for special effects.
-  renderType?: 'shockwave' | 'ring' | 'emp_burst' | 'orbiting' | 'heartbeat' | 'goal_shard' | 'idle_pulse' | 'power_beam' | 'royal_aura' | 'synergy_charge' | 'synergy_aura' | 'gravity_well' | 'repulsor_aura' | 'aim_streak';
-  isPerfect?: boolean;
-  progress?: number; // For orbiting particles
-  speed?: number; // For orbiting particles
-  puckType?: PuckType; // For idle_pulse to match shape
-  rotation?: number; // For idle_pulse to match orientation
+  decay: number; // How fast life and opacity decrease
+  renderType?: 'shockwave' | 'ring' | 'emp_burst' | 'orbiting' | 'heartbeat' | 'goal_shard' | 'idle_pulse' | 'power_beam' | 'royal_aura' | 'synergy_charge' | 'synergy_aura' | 'gravity_well' | 'repulsor_aura' | 'aim_streak' | 'line_impact';
+  rotation?: number;
 };
 
 export type FloatingText = {
@@ -85,33 +81,16 @@ export type ImaginaryLine = {
     end: Vector;
     sourcePuckIds: [number, number];
     synergyType: SynergyType | null;
-    passivelyCrossedBy: Set<number>; // Holds GHOST puck IDs this line passes over
 };
 
 export type ImaginaryLineState = {
   lines: ImaginaryLine[];
   isConfirmed: boolean;
   crossedLineIndices: Set<number>;
-  pawnPawnLinesCrossed: Set<number>;
-  pawnSpecialLinesCrossed: Set<number>;
+  highlightedLines: Record<number, number>; // index -> remaining frames (life)
   shotPuckId: number;
   comboCount: number;
-  highlightedLineIndex: number | null;
 } | null;
-
-export type PuckTrajectory = {
-  puckId: number;
-  path: Vector[];
-};
-
-export type PreviewState = {
-  leadPuckId: number;
-  trajectories: PuckTrajectory[];
-  potentialLines: ImaginaryLine[];
-  linesToCrossForBonus: number;
-} | null;
-
-export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_CHARGE';
 
 export type GameStatus = 'PRE_GAME' | 'PLAYING' | 'GOAL' | 'GAME_OVER';
 
@@ -143,6 +122,7 @@ export type GameState = {
   pulsarPower: { RED: number; BLUE: number; };
   specialShotStatus: { RED: SpecialShotStatus; BLUE: SpecialShotStatus; };
   pulsarShotArmed: Team | null;
+  isPulsarShotActive: boolean;
   goalScoredInfo: {
     scoringTeam: Team;
     pointsScored: number;
@@ -151,12 +131,14 @@ export type GameState = {
   gameMessage: { text: string; type: 'royal' | 'ultimate' | 'synergy' | 'powerup'; synergyType?: SynergyType; } | null;
   bonusTurnForTeam: Team | null;
   screenShake: number;
-  previewState: PreviewState | null;
-  lastShotWasSpecial: SpecialShotStatus;
-  orbHitsThisShot: number;
   turnLossReason: TurnLossReason | null;
   turnCount: number;
-  orbCollection: { RED: number; BLUE: number; };
-  overchargedTeam: Team | null;
   formations: { RED: FormationType; BLUE: FormationType };
+  pulsarOrb: {
+    position: Vector;
+    angle: number;
+    radius: number;
+  } | null;
 };
+
+export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_CHARGE';

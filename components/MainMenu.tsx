@@ -31,6 +31,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onLanguageChange, curr
                     align-items: center;
                     z-index: 500;
                     overflow: hidden;
+                    padding: 2rem;
                 }
 
                 .ash-container {
@@ -41,102 +42,105 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onLanguageChange, curr
 
                 .st-logo-container {
                     position: relative;
-                    margin-bottom: 5rem;
+                    margin-bottom: clamp(2rem, 10vh, 5rem);
                     text-align: center;
                     animation: light-flicker 8s infinite step-end;
                     transition: all 0.5s ease;
+                    width: 100%;
+                    max-width: 800px;
                 }
 
                 .st-logo-bar {
-                    height: 4px;
+                    height: clamp(2px, 0.5vw, 4px);
                     background: #ff0000;
-                    box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+                    box-shadow: 0 0 15px #ff0000;
                     width: 100%;
                     margin: 0.5rem 0;
                 }
 
                 .st-logo-text {
                     font-family: var(--font-family-title);
-                    font-size: clamp(3rem, 12vw, 8rem);
+                    font-size: clamp(2.5rem, 14vw, 8rem);
                     color: transparent;
-                    -webkit-text-stroke: 2px #ff0000;
+                    -webkit-text-stroke: clamp(1px, 0.3vw, 2px) #ff0000;
                     filter: drop-shadow(0 0 10px #ff0000);
                     line-height: 0.9;
                     margin: 0;
-                    padding: 0 1rem;
+                    padding: 0.5rem;
                     animation: logo-pulse 4s infinite ease-in-out;
-                    letter-spacing: -2px;
+                    letter-spacing: -1px;
                 }
 
                 .menu-buttons {
                     display: flex;
                     flex-direction: column;
-                    gap: 1.5rem;
+                    gap: 1rem;
                     width: 100%;
-                    max-width: 380px;
+                    max-width: 340px;
                     z-index: 10;
                     animation: card-fade-in-up 0.8s ease-out;
                 }
+                @media (min-width: 768px) { .menu-buttons { gap: 1.5rem; max-width: 380px; } }
 
                 .menu-btn {
                     background: transparent;
-                    border: 2px solid rgba(255, 0, 0, 0.4);
-                    color: rgba(255, 255, 255, 0.8);
-                    padding: 1.2rem 2rem;
+                    border: 2px solid rgba(255, 0, 0, 0.3);
+                    color: rgba(255, 255, 255, 0.7);
+                    padding: clamp(0.8rem, 3vw, 1.2rem) 1.5rem;
                     font-family: var(--font-family-title);
-                    font-size: 1.4rem;
+                    font-size: clamp(1.1rem, 5vw, 1.4rem);
                     text-transform: uppercase;
-                    letter-spacing: 3px;
+                    letter-spacing: 2px;
                     cursor: pointer;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     position: relative;
-                    overflow: hidden;
                     border-radius: 4px;
+                    min-height: 50px;
                 }
 
                 .menu-btn:hover {
                     border-color: #ff0000;
                     color: #fff;
-                    box-shadow: 0 0 20px rgba(255, 0, 0, 0.6), inset 0 0 10px rgba(255, 0, 0, 0.3);
-                    transform: scale(1.05);
+                    box-shadow: 0 0 15px rgba(255, 0, 0, 0.4), inset 0 0 5px rgba(255, 0, 0, 0.2);
+                    transform: scale(1.02);
                 }
 
                 .menu-btn.active-lang {
                     border-color: white;
                     color: white;
-                    background: rgba(255,255,255,0.1);
-                    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+                    background: rgba(255,255,255,0.05);
                 }
 
                 .settings-header {
                     font-family: var(--font-family-title);
                     color: #ff0000;
-                    font-size: 2rem;
-                    margin-bottom: 2rem;
+                    font-size: clamp(1.5rem, 6vw, 2rem);
+                    margin-bottom: 1.5rem;
+                    text-align: center;
                     text-shadow: 0 0 10px #ff0000;
                 }
 
                 .version-tag {
                     position: absolute;
-                    bottom: 2rem;
-                    font-size: 0.8rem;
-                    color: #555;
-                    letter-spacing: 2px;
+                    bottom: 1rem;
+                    font-size: 0.65rem;
+                    color: #333;
+                    letter-spacing: 1px;
                     font-family: var(--font-family-main);
                     text-transform: uppercase;
                 }
             `}</style>
 
             <div className="ash-container">
-                {Array.from({ length: 20 }).map((_, i) => (
+                {Array.from({ length: 15 }).map((_, i) => (
                     <div 
                         key={i} 
                         className="ash-particle" 
                         style={{
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
-                            width: `${Math.random() * 5 + 2}px`,
-                            height: `${Math.random() * 5 + 2}px`,
+                            width: `${Math.random() * 4 + 1}px`,
+                            height: `${Math.random() * 4 + 1}px`,
                             animation: `ash-float ${Math.random() * 10 + 5}s infinite linear`,
                             animationDelay: `${Math.random() * 5}s`
                         }}
@@ -144,7 +148,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onLanguageChange, curr
                 ))}
             </div>
 
-            <div className="st-logo-container" style={{ transform: view === 'settings' ? 'scale(0.7) translateY(-20px)' : 'none' }}>
+            <div className="st-logo-container" style={{ transform: view === 'settings' ? 'scale(0.8) translateY(-10px)' : 'none' }}>
                 <div className="st-logo-bar" />
                 <h1 className="st-logo-text">
                     {t.TITLE}
@@ -167,20 +171,20 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onLanguageChange, curr
             ) : (
                 <div className="menu-buttons">
                     <h2 className="settings-header">{t.SETTINGS}</h2>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                         <button 
                             className={`menu-btn ${currentLanguage === 'en' ? 'active-lang' : ''}`} 
-                            style={{ flex: 1, fontSize: '1rem' }}
+                            style={{ flex: 1, fontSize: '0.9rem', padding: '0.8rem 0.5rem' }}
                             onClick={() => onLanguageChange('en')}
                         >
-                            English
+                            EN
                         </button>
                         <button 
                             className={`menu-btn ${currentLanguage === 'es' ? 'active-lang' : ''}`} 
-                            style={{ flex: 1, fontSize: '1rem' }}
+                            style={{ flex: 1, fontSize: '0.9rem', padding: '0.8rem 0.5rem' }}
                             onClick={() => onLanguageChange('es')}
                         >
-                            Español
+                            ES
                         </button>
                     </div>
                     <button className="menu-btn" onClick={() => handleAction(() => setView('main'))}>

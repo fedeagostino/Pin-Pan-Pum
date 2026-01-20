@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerUI from './components/PlayerUI';
@@ -34,7 +35,7 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
           }
           @keyframes text-zoom {
             0% { transform: scale(0.5); opacity: 0; }
-            30% { transform: scale(1.2); opacity: 1; }
+            30% { transform: scale(1.1); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
           }
           .goal-transition-overlay { 
@@ -49,18 +50,37 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
             background: radial-gradient(circle, ${teamColor}33 0%, transparent 60%);
             animation: glitch-shake 0.1s infinite;
           }
-          .goal-transition-content { text-align: center; position: relative; animation: text-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-          .goal-puck-icon { width: 140px; height: 140px; margin: 0 auto 1.5rem; filter: drop-shadow(0 0 20px ${teamColor}); }
+          .goal-transition-content { 
+            text-align: center; 
+            position: relative; 
+            animation: text-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            width: 90%;
+          }
+          .goal-puck-icon { 
+            width: clamp(80px, 20vw, 140px); 
+            height: clamp(80px, 20vw, 140px); 
+            margin: 0 auto 1rem; 
+            filter: drop-shadow(0 0 20px ${teamColor}); 
+          }
           .goal-transition-text { 
-            font-family: var(--font-family-title); font-size: 8rem; color: #fff; margin: 0; 
+            font-family: var(--font-family-title); 
+            font-size: clamp(3.5rem, 15vw, 8rem); 
+            color: #fff; margin: 0; 
             text-shadow: 0 0 30px ${teamColor}, 0 0 60px ${teamColor};
-            letter-spacing: 10px;
+            letter-spacing: clamp(2px, 2vw, 10px);
+            line-height: 1;
           }
           .goal-info-banner { 
-            background: #000; border: 2px solid ${teamColor}; padding: 1rem 4rem; margin-top: 2rem;
+            background: #000; border: 2px solid ${teamColor}; 
+            padding: 0.8rem 2rem; margin-top: 1.5rem;
             box-shadow: 0 0 20px ${teamColor}66;
+            display: inline-block;
           }
-          .goal-team-name { font-family: var(--font-family-title); font-size: 2.5rem; color: ${teamColor}; margin: 0; }
+          .goal-team-name { 
+            font-family: var(--font-family-title); 
+            font-size: clamp(1.5rem, 6vw, 2.5rem); 
+            color: ${teamColor}; margin: 0; 
+          }
        `}</style>
        <div className="goal-impact-bg" />
        <div className="goal-transition-content">
@@ -93,10 +113,10 @@ const WinnerModal: React.FC<{
           .winner-modal {
             background: #000;
             border: 4px solid ${teamColor};
-            padding: 3rem;
+            padding: clamp(1.5rem, 5vw, 3rem);
             text-align: center;
             box-shadow: 0 0 50px ${teamColor}88;
-            max-width: 500px;
+            max-width: 450px;
             width: 90%;
             animation: card-fade-in-up 0.5s ease-out;
             position: relative;
@@ -104,16 +124,24 @@ const WinnerModal: React.FC<{
           }
           .winner-title {
             font-family: var(--font-family-title);
-            font-size: 4rem;
+            font-size: clamp(2.5rem, 10vw, 4rem);
             color: ${teamColor};
             text-shadow: 0 0 20px ${teamColor};
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
+          }
+          .winner-team-label {
+            font-family: var(--font-family-title);
+            color: ${teamColor};
+            margin-bottom: 1.5rem;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            letter-spacing: 2px;
           }
           .final-score {
-            font-size: 3rem;
+            font-size: clamp(2rem, 8vw, 3rem);
             font-weight: 900;
             margin-bottom: 2rem;
             color: #fff;
+            letter-spacing: 5px;
           }
           .winner-actions {
             display: flex;
@@ -126,30 +154,21 @@ const WinnerModal: React.FC<{
             color: #fff;
             padding: 1rem;
             font-family: var(--font-family-title);
-            font-size: 1.5rem;
+            font-size: clamp(1.1rem, 4vw, 1.5rem);
             cursor: pointer;
             transition: all 0.3s;
+            border-radius: 4px;
           }
           .winner-btn:hover {
             background: ${teamColor};
             color: #000;
           }
-          .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2500;
-          }
        `}</style>
        <div className="winner-modal">
           <h1 className="winner-title">{t.VICTORY}</h1>
-          <h2 style={{ color: teamColor, marginBottom: '2rem' }}>
+          <div className="winner-team-label">
             {winner === 'RED' ? (lang === 'es' ? 'EQUIPO ROJO' : 'RED TEAM') : (lang === 'es' ? 'EQUIPO AZUL' : 'BLUE TEAM')}
-          </h2>
+          </div>
           <div className="final-score">
             {score.RED} - {score.BLUE}
           </div>
@@ -157,7 +176,7 @@ const WinnerModal: React.FC<{
             <button className="winner-btn" onClick={() => { playSound('UI_CLICK_1'); onRestart(); }}>
               {t.RESTART}
             </button>
-            <button className="winner-btn" style={{ opacity: 0.7, fontSize: '1.1rem' }} onClick={() => { playSound('UI_CLICK_2'); onGoMenu(); }}>
+            <button className="winner-btn" style={{ opacity: 0.7 }} onClick={() => { playSound('UI_CLICK_2'); onGoMenu(); }}>
               {t.MENU}
             </button>
           </div>
@@ -172,8 +191,25 @@ function App() {
 
   const [currentScreen, setCurrentScreen] = useState<Screen>('MENU');
   const [lang, setLang] = useState<Language>('en'); 
+
+  const handleGameEventRef = useRef<(eventDesc: string) => Promise<void>>();
+
+  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn } = useGameEngine({ 
+      playSound, 
+      lang, 
+      onGameEvent: (eventDesc) => {
+        handleGameEventRef.current?.(eventDesc);
+      }
+  });
+
+  const handleGameEvent = useCallback(async (eventDesc: string) => {
+    console.debug("Game Event:", eventDesc);
+  }, []);
+
+  useEffect(() => {
+    handleGameEventRef.current = handleGameEvent;
+  }, [handleGameEvent]);
   
-  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn } = useGameEngine({ playSound, lang });
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [helpModalTeam, setHelpModalTeam] = useState<Team | null>(null);
@@ -206,7 +242,9 @@ function App() {
     if (!svg) return null;
     const pt = svg.createSVGPoint();
     pt.x = clientX; pt.y = clientY;
-    return pt.matrixTransform(svg.getScreenCTM()!.inverse());
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    return pt.matrixTransform(ctm.inverse());
   }, []);
 
   useEffect(() => {
@@ -233,8 +271,9 @@ function App() {
     };
   }, [handleMouseMove, handleMouseUp, getSVGCoordinates, currentScreen]);
 
-  // ViewBox total height used for aspect ratio: BOARD_HEIGHT + GOAL_DEPTH * 2 + padding
-  const totalViewHeight = BOARD_HEIGHT + GOAL_DEPTH * 2 + 20;
+  // Dimensiones exactas del viewBox para eliminar espacios extra
+  const VIEWBOX_OFFSET_Y = -GOAL_DEPTH;
+  const totalViewHeight = BOARD_HEIGHT + GOAL_DEPTH * 2;
 
   if (currentScreen === 'MENU') {
       return <MainMenu onStartGame={() => { resetGame(); prevTurnRef.current = null; setCurrentScreen('GAME'); }} onLanguageChange={setLang} currentLanguage={lang} playSound={playSound} />;
@@ -243,23 +282,41 @@ function App() {
   return (
     <div className={`app-container ${gameState.goalScoredInfo ? 'goal-flash-active' : ''}`}>
         <style>{`
-            .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; position: relative; background: #000; }
-            .main-content-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 0.5rem; position: relative; overflow: hidden; }
+            .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; height: 100svh; overflow: hidden; position: relative; background: #000; }
+            .main-content-area { 
+                flex-grow: 1; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                padding: 0; /* Padding eliminado para contacto total con barras */
+                position: relative; 
+                overflow: hidden; 
+            }
             .game-board-wrapper { 
                 height: 100%; 
-                max-height: calc(100vh - 128px); 
+                width: auto;
+                max-width: 100%;
                 aspect-ratio: ${BOARD_WIDTH} / ${totalViewHeight}; 
                 position: relative; 
-                box-shadow: 0 0 100px rgba(255,0,0,0.15); 
-                border-radius: 8px;
+                background: #020406;
                 overflow: hidden;
-                border: 1px solid rgba(255,255,255,0.05);
             }
+            /* Optimizaciones para asegurar contacto visual con las interfaces */
+            .player-ui-container { position: relative; z-index: 20; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         `}</style>
         <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={false} lang={lang} />
         <main className="main-content-area">
           <div className="game-board-wrapper">
-            <GameBoard ref={svgRef} gameState={gameState} onMouseDown={handleMouseDown} onBoardMouseDown={handleBoardMouseDown} lang={lang} />
+            <GameBoard 
+              ref={svgRef} 
+              gameState={{
+                ...gameState,
+                viewBox: `0 ${VIEWBOX_OFFSET_Y} ${BOARD_WIDTH} ${totalViewHeight}`
+              }} 
+              onMouseDown={handleMouseDown} 
+              onBoardMouseDown={handleBoardMouseDown} 
+              lang={lang} 
+            />
             {gameState.goalScoredInfo && <GoalTransition info={gameState.goalScoredInfo} lang={lang} />}
             {turnChangeInfo && <TurnChangeIndicator key={turnChangeInfo.key} team={turnChangeInfo.team} previousTeam={turnChangeInfo.previousTeam} reason={turnChangeInfo.reason} lang={lang} />}
             <GameMessageDisplay message={gameState.gameMessage} lang={lang} />

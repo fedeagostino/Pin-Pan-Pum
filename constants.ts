@@ -17,6 +17,10 @@ export const PAWN_DURABILITY = 5;
 // Portal (Pulsar) Config
 export const MAX_PULSAR_POWER = 1000;
 export const PULSAR_POWER_PER_LINE = 150; 
+export const PULSAR_ORB_CHARGE_AMOUNT = 250; // 25% de 1000
+export const PULSAR_ORB_RADIUS = 20;
+export const PULSAR_ORB_SPEED = 8; // Pixeles por frame
+export const PULSAR_ORB_SYNC_THRESHOLD = 80; // Distancia para detectar golpe sincronizado
 
 export const PUCK_GOAL_POINTS: Record<PuckType, number> = {
   STANDARD: 1,
@@ -48,7 +52,7 @@ export const TRANSLATIONS = {
         GOALAZO: 'BIG GOAL!',
         POINTS: 'POINTS',
         TURN_OF: 'Turn of',
-        EXTRA_TURN: 'EXTRA TURN!',
+        EXTRA_TURN: 'KEEP SHOOTING!',
         CHARGED: 'CHARGED!',
         UNCHARGED: 'NOT CHARGED!',
         OWN_GOAL: 'OWN GOAL!',
@@ -71,11 +75,11 @@ export const TRANSLATIONS = {
             SYNERGIES: 'Synergies'
         },
         RULES_CONTENT: [
-            { title: 'THE GOLDEN RULE', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Once charged, a puck STAYS charged until a goal is scored.' },
-            { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines between your other pucks to charge a piece permanently.' },
-            { title: 'EXTRA TURNS', desc: 'Successfully crossing the required lines with your shot grants an immediate extra turn.' },
-            { title: 'THE PORTAL', desc: 'Crossing lines charges the Portal bar. Activate it to empower Eleven or Vecna with x2 Shot Power.' },
-            { title: 'KING POWER', desc: 'The King (Eleven/Vecna) can execute Special Shots. Royal: when specialists are charged. Ultimate: when all are charged.' }
+            { title: 'THE FLOW RULE', desc: 'If your shot successfully CROSSES imaginary lines, you KEEP your turn. You can shoot again and again as long as you keep charging!' },
+            { title: 'LOSING THE TURN', desc: 'You lose your turn if your shot fails to cross the required number of lines or if the piece cannot be charged further.' },
+            { title: 'THE GOLDEN GOAL', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Once charged, it stays charged until a goal is scored.' },
+            { title: 'THE PORTAL', desc: 'Crossing lines also charges the Portal bar. Activate it for x2 Shot Power on your King.' },
+            { title: 'KING POWER', desc: 'The King (Eleven/Vecna) is worth 2 points and has access to devastating special shots.' }
         ],
         PUCK_INFO: {
             KING: { name: 'King / Vecna', desc: 'The ultimate power on the board.' },
@@ -117,7 +121,7 @@ export const TRANSLATIONS = {
         GOALAZO: '¡GOLAZO!',
         POINTS: '¡PUNTOS!',
         TURN_OF: 'Turno de',
-        EXTRA_TURN: '¡TURNO EXTRA!',
+        EXTRA_TURN: '¡SIGUE TIRANDO!',
         CHARGED: '¡CARGADO!',
         UNCHARGED: '¡NO CARGADA!',
         OWN_GOAL: '¡AUTOGOL!',
@@ -140,11 +144,11 @@ export const TRANSLATIONS = {
             SYNERGIES: 'Sinergias'
         },
         RULES_CONTENT: [
+            { title: 'LA REGLA DEL FLUJO', desc: 'Si tu ficha se CARGA al cruzar líneas imaginarias, ¡SIGUES TIRANDO sin perder el turno! Puedes disparar infinitamente mientras sigas cargando piezas.' },
+            { title: 'PERDER EL TURNO', desc: 'El turno se pierde si la pieza lanzada NO cruza una línea imaginaria o si ya no puede ser cargada en ese tiro.' },
             { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo). ¡Una vez cargada, la ficha NO se descarga hasta que haya un gol!' },
-            { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas para activar su carga permanente.' },
-            { title: 'TIROS EXTRA', desc: 'Cruzar con éxito las líneas requeridas en tu lanzamiento te otorga un tiro extra inmediato.' },
-            { title: 'EL PORTAL', desc: 'Cruzar líneas carga la barra de Portal. Actívala para potenciar a Eleven o Vecna con x2 de Fuerza de Disparo.' },
-            { title: 'EL PODER DEL REY', desc: 'El Rey puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }
+            { title: 'EL PORTAL', desc: 'Cruzar líneas carga la barra de Portal. Actívala para potenciar a tu Rey con x2 de Fuerza de Disparo.' },
+            { title: 'EL PODER DEL REY', desc: 'El Rey vale 2 PUNTOS y puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }
         ],
         PUCK_INFO: {
             KING: { name: 'Rey / Vecna', desc: 'El poder supremo del tablero.' },
@@ -196,9 +200,11 @@ export const UI_COLORS = {
 // Physics
 export const MIN_VELOCITY_TO_STOP = 0.1;
 export const MAX_VELOCITY_FOR_TURN_END = 0.4;
-export const LAUNCH_POWER_MULTIPLIER = 0.0441; 
+// Reducido un 30%: 0.0441 * 0.7 = 0.03087
+export const LAUNCH_POWER_MULTIPLIER = 0.03087; 
 
-export const PREVIEW_SHOT_POWER = 0.063; 
+// Reducido un 30%: 0.063 * 0.7 = 0.0441
+export const PREVIEW_SHOT_POWER = 0.0441; 
 export const PREVIEW_SIMULATION_FRAMES = 120;
 
 export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
@@ -265,7 +271,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 100 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.22, y: yBase + 160 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.78, y: yBase + 160 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 190 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 340 * direction } }, // Alejado del Rey (antes 190)
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 45 * direction } },
             ];
         case 'OFFENSIVE':
@@ -274,7 +280,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 300 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 380 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 380 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 350 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 420 * direction } }, // Adelantado (antes 350)
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 180 * direction } },
             ];
         case 'BALANCED':
@@ -284,7 +290,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 210 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 260 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 260 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 130 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 330 * direction } }, // Movido al frente (antes 130)
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 75 * direction } },
             ];
     }
