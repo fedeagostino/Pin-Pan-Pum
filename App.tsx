@@ -20,7 +20,11 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
   const t = TRANSLATIONS[lang];
   const { scoringTeam, pointsScored, scoringPuckType } = info;
   const teamColor = TEAM_COLORS[scoringTeam];
-  const goalText = pointsScored > 1 ? t.GOALAZO : t.GOAL;
+  
+  // Si los puntos son negativos es un autogol
+  const isOwnGoal = pointsScored < 0;
+  const goalText = isOwnGoal ? t.OWN_GOAL : (pointsScored > 1 ? t.GOALAZO : t.GOAL);
+  const scoreLabel = isOwnGoal ? `${pointsScored} ${t.POINTS}` : `+${pointsScored} ${t.POINTS}`;
 
   return (
     <div key={Date.now()} className="goal-transition-overlay">
@@ -64,7 +68,7 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
           }
           .goal-transition-text { 
             font-family: var(--font-family-title); 
-            font-size: clamp(3.5rem, 15vw, 8rem); 
+            font-size: clamp(2.5rem, 12vw, 8rem); 
             color: #fff; margin: 0; 
             text-shadow: 0 0 30px ${teamColor}, 0 0 60px ${teamColor};
             letter-spacing: clamp(2px, 2vw, 10px);
@@ -89,7 +93,7 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
             {goalText}
            </h1>
            <div className="goal-info-banner">
-              <h2 className="goal-team-name">+{pointsScored} {t.POINTS}</h2>
+              <h2 className="goal-team-name">{scoreLabel}</h2>
            </div>
        </div>
     </div>

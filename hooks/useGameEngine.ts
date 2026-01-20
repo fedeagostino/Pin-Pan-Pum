@@ -54,6 +54,20 @@ const checkLineIntersection = (a: Vector, b: Vector, c: Vector, d: Vector): Vect
   return null;
 };
 
+// Helper to get distance along the perimeter [0, 2*(W+H)]
+const getDistAlongPerimeter = (pos: Vector): number => {
+    const W = BOARD_WIDTH;
+    const H = BOARD_HEIGHT;
+    // Top: 0 to W
+    if (pos.y <= 5) return pos.x;
+    // Right: W to W+H
+    if (pos.x >= W - 5) return W + pos.y;
+    // Bottom: W+H to 2W+H
+    if (pos.y >= H - 5) return W + H + (W - pos.x);
+    // Left: 2W+H to 2W+2H
+    return W + H + W + (H - pos.y);
+};
+
 interface GameEngineProps {
     playSound: (s: string, o?: any) => void;
     lang: Language;
@@ -199,7 +213,7 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
       const W = BOARD_WIDTH;
       const H = BOARD_HEIGHT;
       const total = 2 * (W + H);
-      const dist = d % total;
+      const dist = ((d % total) + total) % total;
       if (dist < W) return { x: dist, y: 0 };
       if (dist < W + H) return { x: W, y: dist - W };
       if (dist < 2 * W + H) return { x: W - (dist - (W + H)), y: H };
@@ -210,18 +224,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
     setGameState(prev => {
       if (prev.status !== 'PLAYING' || prev.goalScoredInfo) return prev;
       
-      const currentTurnCount = prev.turnCount + 1;
-
-      // Update Pulsar Orb animation
-      const nextPulsarOrbAngle = (prev.pulsarOrb?.angle || 0) + PULSAR_ORB_SPEED;
-      const nextPulsarOrbPos = getOrbPositionFromDistance(nextPulsarOrbAngle);
-      const nextPulsarOrb = {
-          position: nextPulsarOrbPos,
-          angle: nextPulsarOrbAngle,
-          radius: PULSAR_ORB_RADIUS
-      };
-
-      // Particles and Floating texts logic
       const nextFloatingTexts = prev.floatingTexts
         .map(ft => ({
           ...ft,
@@ -238,20 +240,29 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
         opacity: p.opacity - p.decay
       })).filter(p => p.life > 0 && p.opacity > 0);
 
-      // Physics loop
+      // Pulsar Orb Logic - Now a moving Line
+      const totalPerimeter = 2 * (BOARD_WIDTH + BOARD_HEIGHT);
+      const nextPulsarOrbAngle = (prev.pulsarOrb?.angle || 0) + PULSAR_ORB_SPEED;
+      const nextPulsarOrbPos = getOrbPositionFromDistance(nextPulsarOrbAngle);
+      const nextPulsarOrb = {
+          position: nextPulsarOrbPos,
+          angle: nextPulsarOrbAngle,
+          radius: PULSAR_ORB_RADIUS
+      };
+
       let nextPucks = [...prev.pucks];
       let nextImaginaryLine = prev.imaginaryLine ? { ...prev.imaginaryLine, crossedLineIndices: new Set(prev.imaginaryLine.crossedLineIndices) } : null;
       let nextScore = { ...prev.score };
       let nextGoalInfo = prev.goalScoredInfo;
       let nextPulsarPower = { ...prev.pulsarPower };
       let turnLossReason: TurnLossReason | null = null;
+      let newFloatingTexts = [...nextFloatingTexts];
 
       for (let step = 0; step < SUB_STEPS; step++) {
           nextPucks = nextPucks.map(p => {
               const prevPos = { ...p.position };
               const nextPos = { x: p.position.x + p.velocity.x / SUB_STEPS, y: p.position.y + p.velocity.y / SUB_STEPS };
 
-              // Check line crossing
               if (nextImaginaryLine && p.id === nextImaginaryLine.shotPuckId) {
                 nextImaginaryLine.lines.forEach((line, idx) => {
                   const intersectPoint = checkLineIntersection(prevPos, nextPos, line.start, line.end);
@@ -267,38 +278,73 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
 
               let nextVel = { x: p.velocity.x, y: p.velocity.y };
               const inGoalX = nextPos.x > GOAL_X_MIN && nextPos.x < GOAL_X_MAX;
+              let isHittingWall = false;
 
-              // Collision with walls & Goals
               if (inGoalX && (nextPos.y < 0 || nextPos.y > BOARD_HEIGHT)) {
                   if (p.isCharged && !nextGoalInfo) {
                       const entersTop = nextPos.y < 0;
                       let scorer: Team;
+                      let points = PUCK_GOAL_POINTS[p.puckType];
                       if (entersTop) {
-                          scorer = 'RED'; 
-                          if (p.team === 'BLUE') { turnLossReason = 'OWN_GOAL'; }
+                          if (p.team === 'BLUE') { scorer = 'BLUE'; } 
+                          else { scorer = 'RED'; points = -1; turnLossReason = 'OWN_GOAL'; }
                       } else {
-                          scorer = 'BLUE';
-                          if (p.team === 'RED') { turnLossReason = 'OWN_GOAL'; }
+                          if (p.team === 'RED') { scorer = 'RED'; } 
+                          else { scorer = 'BLUE'; points = -1; turnLossReason = 'OWN_GOAL'; }
                       }
-                      const points = PUCK_GOAL_POINTS[p.puckType];
-                      nextScore[scorer] += points;
+                      nextScore[scorer] = Math.max(0, nextScore[scorer] + points);
                       nextGoalInfo = { scoringTeam: scorer, pointsScored: points, scoringPuckType: p.puckType };
-                      playSound('GOAL_SCORE');
+                      playSound(points > 0 ? 'GOAL_SCORE' : 'PAWN_SHATTER');
                       nextVel = { x: 0, y: 0 };
                   } else if (!nextGoalInfo) {
-                      if (nextPos.y < 0) { nextPos.y = 1; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); }
-                      if (nextPos.y > BOARD_HEIGHT) { nextPos.y = BOARD_HEIGHT - 1; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); }
+                      if (nextPos.y < 0) { nextPos.y = 1; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
+                      if (nextPos.y > BOARD_HEIGHT) { nextPos.y = BOARD_HEIGHT - 1; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
                   }
               } else {
-                  if (nextPos.x < p.radius) { nextPos.x = p.radius; nextVel.x *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); }
-                  if (nextPos.x > BOARD_WIDTH - p.radius) { nextPos.x = BOARD_WIDTH - p.radius; nextVel.x *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); }
-                  if (nextPos.y < p.radius && !inGoalX) { nextPos.y = p.radius; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); }
-                  if (nextPos.y > BOARD_HEIGHT - p.radius && !inGoalX) { nextPos.y = BOARD_HEIGHT - p.radius; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); }
+                  if (nextPos.x < p.radius) { nextPos.x = p.radius; nextVel.x *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
+                  if (nextPos.x > BOARD_WIDTH - p.radius) { nextPos.x = BOARD_WIDTH - p.radius; nextVel.x *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
+                  if (nextPos.y < p.radius && !inGoalX) { nextPos.y = p.radius; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
+                  if (nextPos.y > BOARD_HEIGHT - p.radius && !inGoalX) { nextPos.y = BOARD_HEIGHT - p.radius; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
               }
+
+              // PULSAR LINE BONUS DETECTION
+              if (isHittingWall && getVectorMagnitude(p.velocity) > 0.5) {
+                  const puckEdgeDist = getDistAlongPerimeter(nextPos);
+                  const lineCenter = nextPulsarOrbAngle % totalPerimeter;
+                  const lineHalf = PULSAR_ORB_LINE_LENGTH / 2;
+                  
+                  // Check if puck is within the energy line segment (with wrap-around)
+                  let isInsideLine = false;
+                  const start = (lineCenter - lineHalf + totalPerimeter) % totalPerimeter;
+                  const end = (lineCenter + lineHalf + totalPerimeter) % totalPerimeter;
+                  if (start < end) {
+                      isInsideLine = puckEdgeDist >= start && puckEdgeDist <= end;
+                  } else {
+                      isInsideLine = puckEdgeDist >= start || puckEdgeDist <= end;
+                  }
+
+                  if (isInsideLine) {
+                      const prevPower = nextPulsarPower[p.team];
+                      nextPulsarPower[p.team] = Math.min(MAX_PULSAR_POWER, nextPulsarPower[p.team] + PULSAR_ORB_CHARGE_AMOUNT);
+                      if (nextPulsarPower[p.team] > prevPower) {
+                          playSound('ORBITING_HIT');
+                          newFloatingTexts.push({
+                              id: Date.now() + Math.random(),
+                              text: lang === 'es' ? '+25% PULSAR' : '+25% PULSAR',
+                              position: { ...nextPos },
+                              color: '#f1c40f',
+                              opacity: 1,
+                              life: FLOATING_TEXT_CONFIG.LIFE,
+                              decay: 0.02,
+                              velocity: { x: 0, y: -1 }
+                          });
+                      }
+                  }
+              }
+
               return { ...p, position: nextPos, velocity: nextVel };
           });
 
-          // Pucks collisions
           for (let i = 0; i < nextPucks.length; i++) {
               for (let j = i + 1; j < nextPucks.length; j++) {
                   const p1 = nextPucks[i]; const p2 = nextPucks[j];
@@ -345,24 +391,20 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
       let pucksShotThisTurn = prev.pucksShotThisTurn;
       let finalTurnLossReason = turnLossReason || prev.turnLossReason;
 
-      // TURN END LOGIC: TRIGGER ONLY WHEN PIECES JUST STOPPED
       if (prev.isSimulating && !currentlyMoving) {
           if (pucksShotThisTurn.length > 0) {
               const crossedThisTurn = (nextImaginaryLine?.crossedLineIndices.size || 0) > 0;
               const teamPucks = nextPucks.filter(p => p.team === currentTurn);
               const allCharged = teamPucks.every(p => p.isCharged);
 
-              // Condition to KEEP turn: crossed a line AND not all pieces are charged.
               if ((crossedThisTurn || prev.isPulsarShotActive) && !allCharged) {
                   playSound('BONUS_TURN');
                   bonusTurnForTeam = currentTurn;
               } else {
-                  // TURN LOST
                   const lossReason: TurnLossReason = allCharged && crossedThisTurn ? 'ALL_CHARGED' : 'NO_CHARGE';
                   finalTurnLossReason = lossReason;
                   currentTurn = currentTurn === 'RED' ? 'BLUE' : 'RED';
               }
-              // Always clear shots list when settling
               pucksShotThisTurn = [];
               nextImaginaryLine = null;
           }
@@ -377,7 +419,7 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
         score: nextScore,
         winner,
         goalScoredInfo: nextGoalInfo,
-        floatingTexts: nextFloatingTexts,
+        floatingTexts: newFloatingTexts,
         isSimulating,
         canShoot: canShoot && !winner,
         currentTurn,
@@ -386,18 +428,20 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
         turnLossReason: finalTurnLossReason,
         bonusTurnForTeam,
         pucksShotThisTurn,
-        turnCount: currentTurnCount,
+        turnCount: prev.turnCount + 1,
         pulsarOrb: nextPulsarOrb
       };
     });
     requestRef.current = requestAnimationFrame(updatePhysics);
-  }, [playSound]);
+  }, [playSound, lang]);
 
   const handleMouseDown = useCallback((puckId: number, pos: Vector) => {
     setGameState(prev => {
-      // Robust check: don't allow selection if simulating or pieces are still moving
       const currentlyMoving = prev.pucks.some(p => getVectorMagnitude(p.velocity) > MAX_VELOCITY_FOR_TURN_END);
-      if (prev.winner || !prev.canShoot || currentlyMoving || prev.goalScoredInfo || prev.status !== 'PLAYING') return prev;
+      
+      if (prev.isSimulating || currentlyMoving || !prev.canShoot || prev.goalScoredInfo || prev.status !== 'PLAYING' || (prev.imaginaryLine && prev.imaginaryLine.isConfirmed)) {
+          return prev;
+      }
       
       const puck = prev.pucks.find(p => p.id === puckId);
       if (!puck || puck.team !== prev.currentTurn || prev.pucksShotThisTurn.includes(puckId)) return prev;
@@ -445,7 +489,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
       const shotVector = subtractVectors(puck.position, prev.shotPreview.end);
       const isPulsarActive = prev.pulsarShotArmed === prev.currentTurn;
       
-      // Get individual puck power factor from constants
       const props = PUCK_TYPE_PROPERTIES[puck.puckType];
       const pFactor = props.powerFactor || 1.0;
 

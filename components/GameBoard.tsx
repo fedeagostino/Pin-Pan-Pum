@@ -27,7 +27,7 @@ const GameBoardComponent = React.forwardRef<SVGSVGElement, GameBoardProps>(({ ga
   const getOrbPositionFromDistance = (d: number): Vector => {
       const W = BOARD_WIDTH; const H = BOARD_HEIGHT;
       const total = 2 * (W + H);
-      const dist = d % total;
+      const dist = ((d % total) + total) % total;
       if (dist < W) return { x: dist, y: 0 };
       if (dist < W + H) return { x: W, y: dist - W };
       if (dist < 2 * W + H) return { x: W - (dist - (W + H)), y: H };
@@ -38,7 +38,7 @@ const GameBoardComponent = React.forwardRef<SVGSVGElement, GameBoardProps>(({ ga
       if (!gameState.pulsarOrb) return null;
       const startDist = gameState.pulsarOrb.angle - PULSAR_ORB_LINE_LENGTH / 2;
       const endDist = gameState.pulsarOrb.angle + PULSAR_ORB_LINE_LENGTH / 2;
-      const segments = 12; 
+      const segments = 16; 
       const points: string[] = [];
       for (let i = 0; i <= segments; i++) {
           const d = startDist + (endDist - startDist) * (i / segments);
@@ -47,8 +47,25 @@ const GameBoardComponent = React.forwardRef<SVGSVGElement, GameBoardProps>(({ ga
       }
       return (
           <g>
-            <polyline points={points.join(' ')} fill="none" stroke="#f1c40f" strokeWidth="6" strokeLinecap="round" filter="url(#orb-glow)" opacity="0.8" />
-            <circle cx={gameState.pulsarOrb.position.x} cy={gameState.pulsarOrb.position.y} r={gameState.pulsarOrb.radius} fill="#f1c40f" filter="url(#orb-glow)" />
+            <polyline 
+                points={points.join(' ')} 
+                fill="none" 
+                stroke="#f1c40f" 
+                strokeWidth="8" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                filter="url(#orb-glow)" 
+                opacity="0.9" 
+            />
+            {/* Energy Core highlights */}
+            <polyline 
+                points={points.join(' ')} 
+                fill="none" 
+                stroke="#fff" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                opacity="0.8" 
+            />
           </g>
       );
   };
@@ -77,9 +94,9 @@ const GameBoardComponent = React.forwardRef<SVGSVGElement, GameBoardProps>(({ ga
           <feDropShadow dx="0" dy="0" stdDeviation="12" floodColor="#00d4ff" floodOpacity="0.8" />
         </filter>
         <filter id="orb-glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feGaussianBlur stdDeviation="4" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="#f1c40f" floodOpacity="1" />
+          <feDropShadow dx="0" dy="0" stdDeviation="10" floodColor="#f1c40f" floodOpacity="1" />
         </filter>
         <pattern id="hex-grid" width="60" height="60" patternUnits="userSpaceOnUse">
             <path d="M 30 0 L 60 15 L 60 45 L 30 60 L 0 45 L 0 15 Z" fill="none" stroke="rgba(255, 0, 0, 0.05)" strokeWidth="1"/>
@@ -163,6 +180,28 @@ const GameBoardComponent = React.forwardRef<SVGSVGElement, GameBoardProps>(({ ga
                 </g>
             );
         })}
+      </g>
+
+      <g className="floating-texts">
+        {gameState.floatingTexts.map(ft => (
+          <text
+            key={ft.id}
+            x={ft.position.x}
+            y={ft.position.y}
+            fill={ft.color}
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{ 
+                opacity: ft.opacity, 
+                fontSize: '1.2rem', 
+                fontWeight: 'bold', 
+                fontFamily: 'var(--font-family-title)',
+                pointerEvents: 'none'
+            }}
+          >
+            {ft.text}
+          </text>
+        ))}
       </g>
     </svg>
   );

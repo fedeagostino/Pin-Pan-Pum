@@ -203,7 +203,7 @@ export const UI_COLORS = {
 
 // Physics Engine Values
 export const MIN_VELOCITY_TO_STOP = 0.05;
-export const MAX_VELOCITY_FOR_TURN_END = 0.15;
+export const MAX_VELOCITY_FOR_TURN_END = 0.04; // Lowered from 0.15 to ensure total stillness
 export const LAUNCH_POWER_MULTIPLIER = 0.032; 
 export const WALL_BOUNCE_ELASTICITY = 0.8;
 
