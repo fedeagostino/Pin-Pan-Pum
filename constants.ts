@@ -208,16 +208,16 @@ export const LAUNCH_POWER_MULTIPLIER = 0.032;
 export const WALL_BOUNCE_ELASTICITY = 0.8;
 
 export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
-  STANDARD: { mass: 1, friction: 0.985, linesToCrossForBonus: 1 },
-  HEAVY: { mass: 2.2, friction: 0.988, linesToCrossForBonus: 2 },
-  FAST: { mass: 0.7, friction: 0.986, linesToCrossForBonus: 1 },
-  GHOST: { mass: 0.6, friction: 0.989, linesToCrossForBonus: 1 },
-  ANCHOR: { mass: 3.5, friction: 0.982, linesToCrossForBonus: 2 },
-  KING: { mass: 5.0, friction: 0.980, linesToCrossForBonus: 1, powerFactor: 2.2 },
-  SWERVE: { mass: 0.8, friction: 0.986, swerveFactor: 0.03, linesToCrossForBonus: 1 },
-  BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.1, linesToCrossForBonus: 1 },
-  DAMPENER: { mass: 1.9, friction: 0.986, elasticity: 0.3, linesToCrossForBonus: 2 },
-  PAWN: { mass: 0.5, friction: 0.980, elasticity: 0.9, linesToCrossForBonus: 1 },
+  STANDARD: { mass: 1, friction: 0.985, linesToCrossForBonus: 1, powerFactor: 1.0 },
+  HEAVY: { mass: 2.2, friction: 0.988, linesToCrossForBonus: 2, powerFactor: 0.7 }, // Especial: -30%
+  FAST: { mass: 0.7, friction: 0.986, linesToCrossForBonus: 1, powerFactor: 0.7 }, // Especial: -30%
+  GHOST: { mass: 0.6, friction: 0.989, linesToCrossForBonus: 1, powerFactor: 0.9 }, // Fantasma: -10%
+  ANCHOR: { mass: 3.5, friction: 0.982, linesToCrossForBonus: 2, powerFactor: 0.7 }, // Especial: -30%
+  KING: { mass: 5.0, friction: 0.980, linesToCrossForBonus: 1, powerFactor: 1.1 }, // Rey: -50% (Original era 2.2)
+  SWERVE: { mass: 0.8, friction: 0.986, swerveFactor: 0.03, linesToCrossForBonus: 1, powerFactor: 0.7 }, // Especial: -30%
+  BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.1, linesToCrossForBonus: 1, powerFactor: 0.7 }, // Especial: -30%
+  DAMPENER: { mass: 1.9, friction: 0.986, elasticity: 0.3, linesToCrossForBonus: 2, powerFactor: 0.7 }, // Especial: -30%
+  PAWN: { mass: 0.5, friction: 0.980, elasticity: 0.9, linesToCrossForBonus: 1, powerFactor: 1.0 },
 };
 
 export const PUCK_SVG_DATA: Record<PuckType, { path: string, designRadius: number, pathLength?: number }> = {

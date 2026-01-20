@@ -24,6 +24,7 @@ import {
   PULSAR_ORB_CHARGE_AMOUNT,
   PULSAR_ORB_RADIUS,
   PULSAR_ORB_SPEED,
+  PULSAR_ORB_LINE_LENGTH,
   PULSAR_ORB_SYNC_THRESHOLD,
   TRANSLATIONS,
   Language,
@@ -443,9 +444,14 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
       
       const shotVector = subtractVectors(puck.position, prev.shotPreview.end);
       const isPulsarActive = prev.pulsarShotArmed === prev.currentTurn;
+      
+      // Get individual puck power factor from constants
+      const props = PUCK_TYPE_PROPERTIES[puck.puckType];
+      const pFactor = props.powerFactor || 1.0;
+
       const velocity = { 
-          x: shotVector.x * LAUNCH_POWER_MULTIPLIER * (isPulsarActive ? 1.6 : 1), 
-          y: shotVector.y * LAUNCH_POWER_MULTIPLIER * (isPulsarActive ? 1.6 : 1) 
+          x: shotVector.x * LAUNCH_POWER_MULTIPLIER * pFactor * (isPulsarActive ? 1.6 : 1), 
+          y: shotVector.y * LAUNCH_POWER_MULTIPLIER * pFactor * (isPulsarActive ? 1.6 : 1) 
       };
       
       if (isPulsarActive) {
