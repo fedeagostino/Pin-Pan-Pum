@@ -14,7 +14,7 @@ export const CANCEL_SHOT_THRESHOLD = PUCK_RADIUS * 1.5;
 export const SCORE_TO_WIN = 3;
 export const PAWN_DURABILITY = 5;
 
-// Pulsar Config
+// Portal (Pulsar) Config
 export const MAX_PULSAR_POWER = 1000;
 export const PULSAR_POWER_PER_LINE = 150; 
 
@@ -61,6 +61,8 @@ export const TRANSLATIONS = {
         HELP: 'HELP',
         CHOOSE_FORMATION: 'Choose Your Formation',
         START_MATCH: 'Ready!',
+        PORTAL_OPEN: 'PORTAL OPEN!',
+        PORTAL_DISCHARGE: 'PORTAL DISCHARGE!',
         TABS: {
             GOAL: 'Objective',
             CONTROLS: 'Controls',
@@ -72,7 +74,7 @@ export const TRANSLATIONS = {
             { title: 'THE GOLDEN RULE', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Once charged, a puck STAYS charged until a goal is scored.' },
             { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines between your other pucks to charge a piece permanently.' },
             { title: 'EXTRA TURNS', desc: 'Successfully crossing the required lines with your shot grants an immediate extra turn.' },
-            { title: 'TURN LOSS', desc: 'Your turn ends if you miss crossing lines, score an own goal, or attempt to score with an uncharged puck.' },
+            { title: 'THE PORTAL', desc: 'Crossing lines charges the Portal bar. Activate it to empower Eleven or Vecna with x2 Shot Power.' },
             { title: 'KING POWER', desc: 'The King (Eleven/Vecna) can execute Special Shots. Royal: when specialists are charged. Ultimate: when all are charged.' }
         ],
         PUCK_INFO: {
@@ -128,6 +130,8 @@ export const TRANSLATIONS = {
         HELP: 'AYUDA',
         CHOOSE_FORMATION: 'Elige tu formación',
         START_MATCH: '¡Listo!',
+        PORTAL_OPEN: '¡PORTAL ABIERTO!',
+        PORTAL_DISCHARGE: '¡DESCARGA PORTAL!',
         TABS: {
             GOAL: 'Objetivo',
             CONTROLS: 'Controles',
@@ -139,7 +143,7 @@ export const TRANSLATIONS = {
             { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo). ¡Una vez cargada, la ficha NO se descarga hasta que haya un gol!' },
             { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas para activar su carga permanente.' },
             { title: 'TIROS EXTRA', desc: 'Cruzar con éxito las líneas requeridas en tu lanzamiento te otorga un tiro extra inmediato.' },
-            { title: 'PÉRDIDA DE TURNO', desc: 'Tu turno termina si no cruzas líneas, marcas un autogol o intentas marcar sin estar cargado.' },
+            { title: 'EL PORTAL', desc: 'Cruzar líneas carga la barra de Portal. Actívala para potenciar a Eleven o Vecna con x2 de Fuerza de Disparo.' },
             { title: 'EL PODER DEL REY', desc: 'El Rey puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }
         ],
         PUCK_INFO: {
@@ -301,7 +305,6 @@ export const ULTIMATE_SHOT_POWER_MULTIPLIER = 3.5;
 export const SYNERGY_GOAL_PULSAR_BONUS = 250;
 export const TURNS_PER_ORB_SPAWN = 2;
 export const ORBS_FOR_OVERCHARGE = 3;
-// Fix: Removed duplicate MAX_PULSAR_POWER declaration. It is already declared on line 18.
 export const PULSAR_BAR_HEIGHT = 80;
 export const PULSAR_ORB_HIT_SCORE = 150;
 export const FLOATING_TEXT_CONFIG = { LIFE: 90 };

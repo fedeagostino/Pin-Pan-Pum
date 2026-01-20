@@ -99,6 +99,11 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
           <feDropShadow dx="0" dy="0" stdDeviation="12" floodColor="#00d4ff" floodOpacity="0.8" />
         </filter>
+        <filter id="portal-glow-armed">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          <feDropShadow dx="0" dy="0" stdDeviation="15" floodColor="#f1c40f" floodOpacity="1" />
+        </filter>
         <pattern id="hex-grid" width="60" height="60" patternUnits="userSpaceOnUse">
             <path d="M 30 0 L 60 15 L 60 45 L 30 60 L 0 45 L 0 15 Z" fill="none" stroke="rgba(255, 0, 0, 0.05)" strokeWidth="1"/>
         </pattern>
@@ -147,13 +152,14 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             const cappedDist = Math.min(dist, MAX_DRAG_FOR_POWER);
             const angle = Math.atan2(shotVector.y, shotVector.x);
             
+            const isPortalArmed = gameState.pulsarShotArmed === puck.team;
             const beamX2 = start.x + Math.cos(angle) * (puck.radius + cappedDist);
             const beamY2 = start.y + Math.sin(angle) * (puck.radius + cappedDist);
 
             return (
                 <g>
-                  <line x1={start.x} y1={start.y} x2={beamX2} y2={beamY2} stroke="white" strokeWidth={2 + power * 4} strokeDasharray="8 4" opacity="0.8" />
-                  <circle cx={beamX2} cy={beamY2} r={4 + power * 6} fill="white" filter="url(#neon-glow-red)" />
+                  <line x1={start.x} y1={start.y} x2={beamX2} y2={beamY2} stroke={isPortalArmed ? "#f1c40f" : "white"} strokeWidth={2 + power * (isPortalArmed ? 12 : 4)} strokeDasharray={isPortalArmed ? "none" : "8 4"} opacity="0.8" />
+                  <circle cx={beamX2} cy={beamY2} r={4 + power * (isPortalArmed ? 10 : 6)} fill={isPortalArmed ? "#f1c40f" : "white"} filter={isPortalArmed ? "url(#portal-glow-armed)" : "url(#neon-glow-red)"} />
                 </g>
             );
         })()}
@@ -165,6 +171,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
           const isShootable = puck.team === gameState.currentTurn && !gameState.pucksShotThisTurn.includes(puck.id);
           const isMoving = getVectorMagnitude(puck.velocity) > MAX_VELOCITY_FOR_TURN_END;
           const teamColor = TEAM_COLORS[puck.team];
+          const isPortalArmedOnKing = gameState.pulsarShotArmed === puck.team && puck.puckType === 'KING';
 
           return (
             <g
@@ -176,7 +183,15 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             >
               <PuckShape puck={puck} />
               
-              {/* Charged pulse ring - Intermitente entre color de equipo y dorado */}
+              {/* Portal Energy Aura for King when armed */}
+              {isPortalArmedOnKing && (
+                  <circle r={puck.radius + 12} fill="none" stroke="#f1c40f" strokeWidth="6" opacity="0.7" filter="url(#portal-glow-armed)">
+                      <animate attributeName="r" values={`${puck.radius + 8};${puck.radius + 20};${puck.radius + 8}`} dur="0.8s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.8s" repeatCount="indefinite" />
+                  </circle>
+              )}
+
+              {/* Charged pulse ring */}
               {puck.isCharged && (
                   <circle r={puck.radius + 5} fill="none" stroke="#fde047" strokeWidth="3" opacity="0.6">
                       <animate attributeName="r" values={`${puck.radius+3};${puck.radius+14};${puck.radius+3}`} dur="1.2s" repeatCount="indefinite" />
@@ -187,6 +202,30 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             </g>
           );
         })}
+      </g>
+
+      {/* Floating Texts Rendering */}
+      <g className="floating-texts">
+        {gameState.floatingTexts.map(ft => (
+          <text
+            key={ft.id}
+            x={ft.position.x}
+            y={ft.position.y}
+            fill={ft.color}
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{
+              opacity: ft.opacity,
+              fontFamily: 'var(--font-family-title)',
+              fontSize: '1.4rem',
+              fontWeight: 'bold',
+              textShadow: '0 0 10px rgba(0,0,0,0.8)',
+              pointerEvents: 'none'
+            }}
+          >
+            {ft.text}
+          </text>
+        ))}
       </g>
     </svg>
   );

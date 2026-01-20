@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Puck, Team, Vector, GameState, ImaginaryLineState, PuckType, Particle, ImaginaryLine, SynergyType, TemporaryEffect, PreviewState, PuckTrajectory, SpecialShotStatus, TurnLossReason, FormationType, GameStatus } from '../types';
+import { Puck, Team, Vector, GameState, ImaginaryLineState, PuckType, Particle, ImaginaryLine, SynergyType, TemporaryEffect, PreviewState, PuckTrajectory, SpecialShotStatus, TurnLossReason, FormationType, GameStatus, FloatingText } from '../types';
 import {
   BOARD_WIDTH,
   BOARD_HEIGHT,
@@ -20,7 +20,10 @@ import {
   MAX_DRAG_FOR_POWER,
   getPuckConfig,
   MAX_PULSAR_POWER,
-  PULSAR_POWER_PER_LINE
+  PULSAR_POWER_PER_LINE,
+  TRANSLATIONS,
+  TEAM_COLORS,
+  FLOATING_TEXT_CONFIG
 } from '../constants';
 
 const GOAL_X_MIN = (BOARD_WIDTH - GOAL_WIDTH) / 2;
@@ -68,6 +71,9 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     return pucks;
   }, []);
 
+  const VIEWBOX_OFFSET_Y = -GOAL_DEPTH - 20; 
+  const VIEWBOX_TOTAL_HEIGHT = BOARD_HEIGHT + GOAL_DEPTH * 2 + 100;
+
   const [gameState, setGameState] = useState<GameState>({
     status: 'PLAYING',
     pucks: [],
@@ -84,7 +90,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     shotPreview: null,
     imaginaryLine: null,
     pucksShotThisTurn: [],
-    viewBox: `0 ${-GOAL_DEPTH} ${BOARD_WIDTH} ${BOARD_HEIGHT + GOAL_DEPTH * 2}`,
+    viewBox: `0 ${VIEWBOX_OFFSET_Y} ${BOARD_WIDTH} ${VIEWBOX_TOTAL_HEIGHT}`,
     isCameraInTensionMode: false,
     pulsarPower: { RED: 0, BLUE: 0 },
     specialShotStatus: { RED: 'NONE', BLUE: 'NONE' },
@@ -229,7 +235,6 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       if (!puck) return { ...prev, selectedPuckId: null, shotPreview: null, imaginaryLine: null };
       const shotVector = subtractVectors(puck.position, prev.shotPreview.end);
       
-      // Aplicar multiplicador si el Pulsar está activado
       const powerMult = prev.pulsarShotArmed === prev.currentTurn ? 2.0 : 1.0;
       
       const velocity = { 
@@ -237,8 +242,20 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         y: shotVector.y * LAUNCH_POWER_MULTIPLIER * powerMult 
       };
       
+      let nextFloatingTexts = [...prev.floatingTexts];
       if (powerMult > 1) {
           playSound('PULSAR_SHOT');
+          // Añadir texto de descarga narrativa sobre la pieza disparada
+          nextFloatingTexts.push({
+            id: Date.now(),
+            text: TRANSLATIONS.es.PORTAL_DISCHARGE,
+            position: { ...puck.position },
+            color: '#f1c40f',
+            opacity: 1,
+            life: FLOATING_TEXT_CONFIG.LIFE,
+            decay: 0.015,
+            velocity: { x: 0, y: -2 }
+          });
       } else {
           playSound('SHOT');
       }
@@ -249,9 +266,10 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         selectedPuckId: null,
         shotPreview: null,
         isSimulating: true,
+        floatingTexts: nextFloatingTexts,
         pucksShotThisTurn: [...prev.pucksShotThisTurn, puck.id],
         imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, isConfirmed: true, crossedLineIndices: new Set() } : null,
-        pulsarShotArmed: null, // Consumir disparo tras soltar
+        pulsarShotArmed: null,
         pulsarPower: powerMult > 1 ? { ...prev.pulsarPower, [prev.currentTurn]: 0 } : prev.pulsarPower
       };
     });
@@ -261,8 +279,26 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     setGameState(prev => {
         if (prev.pulsarPower[prev.currentTurn] < MAX_PULSAR_POWER) return prev;
         playSound('PULSAR_ACTIVATE');
+        
+        const currentKing = prev.pucks.find(p => p.team === prev.currentTurn && p.puckType === 'KING');
+        let nextFloatingTexts = [...prev.floatingTexts];
+        
+        if (currentKing) {
+            nextFloatingTexts.push({
+                id: Date.now(),
+                text: TRANSLATIONS.es.PORTAL_OPEN,
+                position: { ...currentKing.position },
+                color: '#f1c40f',
+                opacity: 1,
+                life: FLOATING_TEXT_CONFIG.LIFE,
+                decay: 0.015,
+                velocity: { x: 0, y: -2 }
+            });
+        }
+
         return {
             ...prev,
+            floatingTexts: nextFloatingTexts,
             pulsarShotArmed: prev.currentTurn
         };
     });
@@ -271,6 +307,17 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
   const updatePhysics = useCallback(() => {
     setGameState(prev => {
       if (prev.status !== 'PLAYING' || prev.goalScoredInfo) return prev;
+      
+      // Partículas y textos flotantes update
+      const nextFloatingTexts = prev.floatingTexts
+        .map(ft => ({
+          ...ft,
+          position: { x: ft.position.x + ft.velocity.x, y: ft.position.y + ft.velocity.y },
+          life: ft.life - 1,
+          opacity: ft.opacity - ft.decay
+        }))
+        .filter(ft => ft.life > 0 && ft.opacity > 0);
+
       const movingPucks = prev.pucks.filter(p => getVectorMagnitude(p.velocity) > MIN_VELOCITY_TO_STOP);
       
       if (!prev.isSimulating && movingPucks.length === 0) {
@@ -287,6 +334,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
                   playSound('BONUS_TURN');
                   return {
                       ...prev,
+                      floatingTexts: nextFloatingTexts,
                       pucksShotThisTurn: [],
                       isSimulating: false,
                       canShoot: true,
@@ -299,6 +347,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
                   return { 
                       ...prev, 
                       currentTurn: nextTurn, 
+                      floatingTexts: nextFloatingTexts,
                       pucksShotThisTurn: [],
                       isSimulating: false,
                       canShoot: true,
@@ -307,7 +356,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
                   };
               }
           }
-          return { ...prev, isSimulating: false, canShoot: true };
+          return { ...prev, floatingTexts: nextFloatingTexts, isSimulating: false, canShoot: true };
       }
 
       let nextPucks = [...prev.pucks];
@@ -326,8 +375,6 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
               if (checkLineIntersection(prevPos, nextPos, line.start, line.end)) {
                 nextImaginaryLine!.crossedLineIndices.add(idx);
                 playSound('LINE_CROSS');
-                
-                // Cargar energía Pulsar por cada línea cruzada
                 nextPulsarPower[p.team] = Math.min(MAX_PULSAR_POWER, nextPulsarPower[p.team] + PULSAR_POWER_PER_LINE);
                 
                 const teamPucksCount = nextPucks.filter(tp => tp.team === p.team).length;
@@ -419,6 +466,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         score: nextScore,
         winner,
         goalScoredInfo: nextGoalInfo,
+        floatingTexts: nextFloatingTexts,
         isSimulating: anyMoving,
         canShoot: !winner && !anyMoving && !nextGoalInfo && prev.status === 'PLAYING',
         imaginaryLine: nextImaginaryLine,
