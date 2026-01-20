@@ -6,7 +6,7 @@ import TurnChangeIndicator from './components/TurnChangeIndicator';
 import MainMenu from './components/MainMenu';
 import { useGameEngine } from './hooks/useGameEngine';
 import { useSoundManager } from './hooks/useSoundManager';
-import { TEAM_COLORS, BOARD_WIDTH, BOARD_HEIGHT, TRANSLATIONS, Language } from './constants';
+import { TEAM_COLORS, BOARD_WIDTH, BOARD_HEIGHT, TRANSLATIONS, Language, GOAL_DEPTH } from './constants';
 import { Team, Vector, PuckType, TurnLossReason, FormationType } from './types';
 import PuckTypeIcon from './components/PuckTypeIcon';
 import HelpModal from './components/HelpModal';
@@ -234,6 +234,9 @@ function App() {
     };
   }, [handleMouseMove, handleMouseUp, getSVGCoordinates, currentScreen]);
 
+  // ViewBox total height used for aspect ratio: BOARD_HEIGHT + GOAL_DEPTH * 2 + padding
+  const totalViewHeight = BOARD_HEIGHT + GOAL_DEPTH * 2 + 20;
+
   if (currentScreen === 'MENU') {
       return <MainMenu onStartGame={() => { resetGame(); prevTurnRef.current = null; setCurrentScreen('GAME'); }} onLanguageChange={setLang} currentLanguage={lang} playSound={playSound} />;
   }
@@ -242,8 +245,17 @@ function App() {
     <div className={`app-container ${gameState.goalScoredInfo ? 'goal-flash-active' : ''}`}>
         <style>{`
             .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; position: relative; background: #000; }
-            .main-content-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 0.5rem 1rem; position: relative; }
-            .game-board-wrapper { height: 100%; max-height: calc(100vh - 140px); aspect-ratio: ${BOARD_WIDTH} / ${BOARD_HEIGHT}; position: relative; box-shadow: 0 0 100px rgba(255,0,0,0.1); }
+            .main-content-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 0.5rem; position: relative; overflow: hidden; }
+            .game-board-wrapper { 
+                height: 100%; 
+                max-height: calc(100vh - 128px); 
+                aspect-ratio: ${BOARD_WIDTH} / ${totalViewHeight}; 
+                position: relative; 
+                box-shadow: 0 0 100px rgba(255,0,0,0.15); 
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid rgba(255,255,255,0.05);
+            }
         `}</style>
         <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={false} lang={lang} />
         <main className="main-content-area">

@@ -14,26 +14,6 @@ interface GameBoardProps {
 const subtractVectors = (v1: Vector, v2: Vector): Vector => ({ x: v1.x - v2.x, y: v1.y - v2.y });
 const getVectorMagnitude = (v: Vector): number => Math.sqrt(v.x * v.x + v.y * v.y);
 
-const getDurabilityColor = (percentage: number): string => {
-    const p = Math.max(0, Math.min(1, percentage));
-    const red = { r: 255, g: 7, b: 58 };
-    const yellow = { r: 241, g: 224, b: 90 };
-    const green = { r: 57, g: 211, b: 83 };
-    let r, g, b;
-    if (p > 0.5) {
-        const scale = (p - 0.5) * 2;
-        r = Math.round(yellow.r * (1 - scale) + green.r * scale);
-        g = Math.round(yellow.g * (1 - scale) + green.g * scale);
-        b = Math.round(yellow.b * (1 - scale) + green.b * scale);
-    } else {
-        const scale = p * 2;
-        r = Math.round(red.r * (1 - scale) + yellow.r * scale);
-        g = Math.round(red.g * (1 - scale) + yellow.g * scale);
-        b = Math.round(red.b * (1 - scale) + yellow.b * scale);
-    }
-    return `rgb(${r}, ${g}, ${b})`;
-};
-
 const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, onMouseDown, onBoardMouseDown }, ref) => {
   const getSVGCoordinatesFromEvent = (e: React.MouseEvent | React.TouchEvent): Vector => {
     const svg = ref && typeof ref !== 'function' && ref.current 
@@ -69,7 +49,6 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
     : null;
     
   const isAiming = gameState.shotPreview !== null && !gameState.shotPreview.isCancelZone;
-  const isAimingSpecialShot = gameState.shotPreview?.specialShotType === 'ROYAL' || gameState.shotPreview?.specialShotType === 'ULTIMATE';
   
   const focusPucks = React.useMemo(() => {
     if (!isAiming) return [];
@@ -146,27 +125,12 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                 .line-breathe {
                     animation: breathe 2.5s infinite ease-in-out;
                 }
-                @keyframes flow {
-                    to { stroke-dashoffset: 100; }
+                @keyframes goal-pulse {
+                    0%, 100% { opacity: 0.8; }
+                    50% { opacity: 1; }
                 }
-                .line-flow {
-                    stroke-dasharray: 8 12;
-                    stroke-dashoffset: 0;
-                    animation: flow 2s linear infinite;
-                }
-                @keyframes glitch-phase {
-                    0% { opacity: 0.6; transform: translate(0, 0); }
-                    25% { opacity: 0.4; transform: translate(-1px, 1px); }
-                    50% { opacity: 0.7; transform: translate(1px, -1px); }
-                    75% { opacity: 0.5; transform: translate(1px, 1px); }
-                    100% { opacity: 0.6; transform: translate(0, 0); }
-                }
-                .phased-puck {
-                    animation: glitch-phase 0.15s infinite;
-                }
-                @keyframes rise-and-fade {
-                    from { transform: translateY(0); opacity: 1; }
-                    to { transform: translateY(-40px); opacity: 0; }
+                .goal-box-frame {
+                    animation: goal-pulse 2s infinite ease-in-out;
                 }
                 .floating-text {
                     animation: rise-and-fade 1.5s ease-out forwards;
@@ -178,12 +142,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                     stroke-linecap: round;
                     stroke-linejoin: round;
                 }
-                @keyframes goal-pulse {
-                    0%, 100% { opacity: 0.8; }
-                    50% { opacity: 1; }
-                }
-                .goal-box-frame {
-                    animation: goal-pulse 2s infinite ease-in-out;
+                @keyframes rise-and-fade {
+                    from { transform: translateY(0); opacity: 1; }
+                    to { transform: translateY(-40px); opacity: 0; }
                 }
             `}
         </style>
@@ -200,37 +161,24 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
             <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor={TEAM_COLORS.RED} floodOpacity="0.8" />
         </filter>
-        <linearGradient id="rainbow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#ff0000" />
-            <stop offset="16%" stopColor="#ff7700" />
-            <stop offset="33%" stopColor="#ffff00" />
-            <stop offset="50%" stopColor="#00ff00" />
-            <stop offset="66%" stopColor="#0000ff" />
-            <stop offset="83%" stopColor="#ff00ff" />
-            <stop offset="100%" stopColor="#ff0000" />
-        </linearGradient>
         <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
             <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(0, 246, 255, 0.04)" strokeWidth="1"/>
         </pattern>
         <mask id="aim-focus-mask">
-            <rect x="-1" y="-1" width={BOARD_WIDTH+2} height={BOARD_HEIGHT+2} fill="white" />
+            <rect x="-10" y="-100" width={BOARD_WIDTH+20} height={BOARD_HEIGHT+200} fill="white" />
             {focusPucks.map(puck => (
-                <circle key={`focus-mask-${puck.id}`} cx={puck.position.x} cy={puck.position.y} r={puck.radius + 20} fill="black" />
+                <circle key={`focus-mask-${puck.id}`} cx={puck.position.x} cy={puck.position.y} r={puck.radius + 25} fill="black" />
             ))}
         </mask>
       </defs>
 
-      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="#020406" />
-      <rect x="0" y={-GOAL_DEPTH} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2} fill="url(#grid)" opacity="0.5" />
+      <rect x="0" y={-GOAL_DEPTH-20} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2 + 40} fill="#020406" />
+      <rect x="0" y={-GOAL_DEPTH-20} width={BOARD_WIDTH} height={BOARD_HEIGHT + GOAL_DEPTH * 2 + 40} fill="url(#grid)" opacity="0.5" />
 
       {/* Top Goal Area */}
       <g className="goal-area top">
-          {/* Inner Recess */}
           <rect x={goalX} y={-GOAL_DEPTH} width={GOAL_WIDTH} height={GOAL_DEPTH} fill="#000000" />
-          <rect x={goalX} y={-GOAL_DEPTH} width={GOAL_WIDTH} height={GOAL_DEPTH} fill="rgba(0, 212, 255, 0.05)" />
-          {/* Goal Floor Highlight */}
           <rect x={goalX + 5} y={-GOAL_DEPTH + 2} width={GOAL_WIDTH - 10} height={GOAL_DEPTH - 4} fill="rgba(0, 212, 255, 0.1)" />
-          {/* Rectangular Frame (Box Look) */}
           <path 
             d={`M ${goalX} 0 L ${goalX} ${-GOAL_DEPTH} L ${goalX + GOAL_WIDTH} ${-GOAL_DEPTH} L ${goalX + GOAL_WIDTH} 0`} 
             fill="none" 
@@ -240,19 +188,13 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             filter="url(#neon-blue-glow)"
             className="goal-box-frame"
           />
-          {/* Support Line */}
-          <line x1={goalX} y1={0} x2={goalX + GOAL_WIDTH} y2={0} stroke={TEAM_COLORS.BLUE} strokeWidth="2" opacity="0.5" />
       </g>
 
-      {/* Bottom Goal Area (Requested focus) */}
+      {/* Bottom Goal Area Adjusted for new HEIGHT */}
       <g className="goal-area bottom">
-          {/* Inner Recess */}
           <rect x={goalX} y={BOARD_HEIGHT} width={GOAL_WIDTH} height={GOAL_DEPTH} fill="#000000" />
-          <rect x={goalX} y={BOARD_HEIGHT} width={GOAL_WIDTH} height={GOAL_DEPTH} fill="rgba(255, 0, 0, 0.05)" />
-          {/* Goal Floor Highlight */}
           <rect x={goalX + 5} y={BOARD_HEIGHT + 2} width={GOAL_WIDTH - 10} height={GOAL_DEPTH - 4} fill="rgba(255, 0, 0, 0.1)" />
-          {/* The "Blue Box" Frame from drawing (Keeping it Team Red themed unless user specifically wants it Blue) */}
-          {/* I will add a secondary outer border to give it that 'double-line' boxed look from drawing */}
+          {/* Frame Principal (Caja Roja) */}
           <path 
             d={`M ${goalX} ${BOARD_HEIGHT} L ${goalX} ${BOARD_HEIGHT + GOAL_DEPTH} L ${goalX + GOAL_WIDTH} ${BOARD_HEIGHT + GOAL_DEPTH} L ${goalX + GOAL_WIDTH} ${BOARD_HEIGHT}`} 
             fill="none" 
@@ -262,20 +204,18 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             filter="url(#neon-red-glow)"
             className="goal-box-frame"
           />
-          {/* Extra Outline for the 'Box' feel */}
+          {/* Marco exterior extra para sensación de volumen */}
           <path 
             d={`M ${goalX - 4} ${BOARD_HEIGHT} L ${goalX - 4} ${BOARD_HEIGHT + GOAL_DEPTH + 4} L ${goalX + GOAL_WIDTH + 4} ${BOARD_HEIGHT + GOAL_DEPTH + 4} L ${goalX + GOAL_WIDTH + 4} ${BOARD_HEIGHT}`} 
             fill="none" 
             stroke={TEAM_COLORS.RED} 
             strokeWidth="2" 
-            opacity="0.4"
+            opacity="0.3"
           />
-          {/* Entrance Line */}
-          <line x1={goalX} y1={BOARD_HEIGHT} x2={goalX + GOAL_WIDTH} y2={BOARD_HEIGHT} stroke={TEAM_COLORS.RED} strokeWidth="3" opacity="0.6" />
       </g>
 
-      <line x1="0" y1={BOARD_HEIGHT / 2} x2={BOARD_WIDTH} y2={BOARD_HEIGHT / 2} stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="10 10" />
-      <circle cx={BOARD_WIDTH/2} cy={BOARD_HEIGHT/2} r="120" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2" />
+      <line x1="0" y1={BOARD_HEIGHT / 2} x2={BOARD_WIDTH} y2={BOARD_HEIGHT / 2} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="10 10" />
+      <circle cx={BOARD_WIDTH/2} cy={BOARD_HEIGHT/2} r="100" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
 
       <g className="shot-preview">
         {gameState.shotPreview && (() => {
@@ -290,11 +230,9 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
             const beamStart = { x: start.x + Math.cos(angle) * puck.radius, y: start.y + Math.sin(angle) * puck.radius };
             const beamEnd = { x: start.x + Math.cos(angle) * (puck.radius + cappedDistance), y: start.y + Math.sin(angle) * (puck.radius + cappedDistance) };
             let color = isCancelZone ? "#666" : TEAM_COLORS[gameState.currentTurn];
-            if (specialShotType === 'ULTIMATE') color = 'url(#rainbow-gradient)';
-            else if (specialShotType === 'ROYAL') color = UI_COLORS.GOLD;
             return (
                 <g style={{ pointerEvents: 'none' }}>
-                    <line x1={beamStart.x} y1={beamStart.y} x2={beamEnd.x} y2={beamEnd.y} stroke={color} strokeWidth={2 + power * 8} strokeLinecap="round" />
+                    <line x1={beamStart.x} y1={beamStart.y} x2={beamEnd.x} y2={beamEnd.y} stroke={color} strokeWidth={2 + power * 8} strokeLinecap="round" opacity="0.8" />
                     <circle cx={beamEnd.x} cy={beamEnd.y} r={4 + power * 6} fill={color} filter="url(#shadow)" />
                 </g>
             );
@@ -307,13 +245,11 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
         ))}
       </g>
 
-      <rect x={-1} y={-1} width={BOARD_WIDTH+2} height={BOARD_HEIGHT+2} fill="rgba(1, 4, 9, 0.6)" mask="url(#aim-focus-mask)" style={{ opacity: isAiming ? 1 : 0, transition: 'opacity 0.3s ease-out', pointerEvents: 'none' }} />
+      <rect x={-10} y={-100} width={BOARD_WIDTH+20} height={BOARD_HEIGHT+200} fill="rgba(1, 4, 9, 0.7)" mask="url(#aim-focus-mask)" style={{ opacity: isAiming ? 1 : 0, transition: 'opacity 0.4s ease-out', pointerEvents: 'none' }} />
 
       <g className="pucks" filter="url(#shadow)">
         {gameState.pucks.map((puck) => {
-          const isSelected = gameState.selectedPuckId === puck.id;
           const isShootable = gameState.canShoot && puck.team === gameState.currentTurn && !gameState.pucksShotThisTurn.includes(puck.id);
-          const hitboxRadius = puck.radius + 10;
           return (
             <g
               key={puck.id}
@@ -322,7 +258,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               onTouchStart={(e) => handleLocalInteractionStart(e, puck.id)}
               className={isShootable ? 'cursor-pointer' : ''}
             >
-              <circle r={hitboxRadius} fill="transparent" />
+              <circle r={puck.radius + 10} fill="transparent" />
               <PuckShape puck={puck} />
               {puck.isCharged && (
                   <circle r={puck.radius + 4} fill="none" stroke="#fde047" strokeWidth="2.5" className="line-breathe" />

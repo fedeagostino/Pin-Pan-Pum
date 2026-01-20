@@ -71,8 +71,9 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     return pucks;
   }, []);
 
-  const VIEWBOX_OFFSET_Y = -GOAL_DEPTH - 20; 
-  const VIEWBOX_TOTAL_HEIGHT = BOARD_HEIGHT + GOAL_DEPTH * 2 + 100;
+  // Ajustado para que el área visible sea exactamente el tablero + profundidad de arco
+  const VIEWBOX_OFFSET_Y = -GOAL_DEPTH - 10; 
+  const VIEWBOX_TOTAL_HEIGHT = BOARD_HEIGHT + GOAL_DEPTH * 2 + 20;
 
   const [gameState, setGameState] = useState<GameState>({
     status: 'PLAYING',
@@ -245,7 +246,6 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       let nextFloatingTexts = [...prev.floatingTexts];
       if (powerMult > 1) {
           playSound('PULSAR_SHOT');
-          // Añadir texto de descarga narrativa sobre la pieza disparada
           nextFloatingTexts.push({
             id: Date.now(),
             text: TRANSLATIONS.es.PORTAL_DISCHARGE,
@@ -308,7 +308,6 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     setGameState(prev => {
       if (prev.status !== 'PLAYING' || prev.goalScoredInfo) return prev;
       
-      // Partículas y textos flotantes update
       const nextFloatingTexts = prev.floatingTexts
         .map(ft => ({
           ...ft,

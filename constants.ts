@@ -1,15 +1,15 @@
 
 import { PuckType, SpecialShotStatus, SynergyType, Team, FormationType } from './types';
 
-export const BOARD_WIDTH = 800;
-export const BOARD_HEIGHT = 1200;
+export const BOARD_WIDTH = 960;
+export const BOARD_HEIGHT = 960; 
 export const PUCK_RADIUS = 25; 
 export const PAWN_PUCK_RADIUS = 15;
 export const KING_PUCK_RADIUS = 35;
-export const GOAL_WIDTH = 250;
-export const GOAL_DEPTH = 30;
+export const GOAL_WIDTH = 300; // Escalado de 250
+export const GOAL_DEPTH = 50; 
 export const MIN_DRAG_DISTANCE = 10;
-export const MAX_DRAG_FOR_POWER = 125;
+export const MAX_DRAG_FOR_POWER = 150; // Aumentado ligeramente para la nueva escala
 export const CANCEL_SHOT_THRESHOLD = PUCK_RADIUS * 1.5;
 export const SCORE_TO_WIN = 3;
 export const PAWN_DURABILITY = 5;
@@ -161,7 +161,7 @@ export const TRANSLATIONS = {
         SYNERGY_INFO: {
             POWER: { name: 'Poder del Vacío', desc: 'Onda expansiva masiva al impactar.' },
             SPEED: { name: 'Desgarro Dimensional', desc: 'Atraviesa obstáculos en los primeros segundos.' },
-            CONTROL: { name: 'Mente Colmena', desc: 'Rebotes perfectos sin pérdida de energía.' },
+            CONTROL: { name: 'Mente Colmena', desc: 'Mente colmena: rebotes sin pérdida de energía.' },
             GRAVITY_WELL: { name: 'Portal de Gravedad', desc: 'Atrae a las fichas cercanas al punto de impacto.' },
             TELEPORT_STRIKE: { name: 'Paso Sombrío', desc: 'Se teletransporta tras el primer choque.' },
             REPULSOR_ARMOR: { name: 'Escudo Psiónico', desc: 'Repele violentamente a cualquier intruso.' }
@@ -261,31 +261,31 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
     switch (formation) {
         case 'DEFENSIVE':
             return [
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 320 * direction } },
-                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 120 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.25, y: yBase + 220 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 250 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.75, y: yBase + 220 * direction } },
-                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 60 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 280 * direction } },
+                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 100 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.22, y: yBase + 160 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.78, y: yBase + 160 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 190 * direction } },
+                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 45 * direction } },
             ];
         case 'OFFENSIVE':
             return [
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 580 * direction } },
-                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 350 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.3, y: yBase + 450 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 480 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.7, y: yBase + 450 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 460 * direction } },
+                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 300 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 380 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 380 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 350 * direction } },
                 { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 180 * direction } },
             ];
         case 'BALANCED':
         default:
             return [
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.50, y: yBase + 520 * direction } },
-                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 280 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 180 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.50, y: yBase + 150 * direction } },
-                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 180 * direction } },
-                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 80 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 420 * direction } },
+                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 210 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 260 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 260 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 130 * direction } },
+                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 75 * direction } },
             ];
     }
 };
