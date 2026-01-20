@@ -21,7 +21,6 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
   const { scoringTeam, pointsScored, scoringPuckType } = info;
   const teamColor = TEAM_COLORS[scoringTeam];
   
-  // Si los puntos son negativos es un autogol
   const isOwnGoal = pointsScored < 0;
   const goalText = isOwnGoal ? t.OWN_GOAL : (pointsScored > 1 ? t.GOALAZO : t.GOAL);
   const scoreLabel = isOwnGoal ? `${pointsScored} ${t.POINTS}` : `+${pointsScored} ${t.POINTS}`;
@@ -252,14 +251,12 @@ function App() {
     }
   }, [gameState.bonusTurnForTeam, clearBonusTurn]);
 
-  // Manejo del reinicio automático tras un gol
   useEffect(() => {
     if (gameState.goalScoredInfo && !gameState.winner) {
       const timer = setTimeout(() => {
         clearGoalInfo();
-        // Reset del ref del turno anterior para forzar la animación de cambio de turno si aplica
         prevTurnRef.current = null;
-      }, 3500); // 3.5 segundos de gloria para el gol
+      }, 3500);
       return () => clearTimeout(timer);
     }
   }, [gameState.goalScoredInfo, gameState.winner, clearGoalInfo]);
@@ -298,13 +295,15 @@ function App() {
     };
   }, [handleMouseMove, handleMouseUp, getSVGCoordinates, currentScreen]);
 
-  // Dimensiones exactas del viewBox para eliminar espacios extra
   const VIEWBOX_OFFSET_Y = -GOAL_DEPTH;
   const totalViewHeight = BOARD_HEIGHT + GOAL_DEPTH * 2;
 
   if (currentScreen === 'MENU') {
       return <MainMenu onStartGame={() => { resetGame(); prevTurnRef.current = null; setCurrentScreen('GAME'); }} onLanguageChange={setLang} currentLanguage={lang} playSound={playSound} />;
   }
+
+  // INTERACTION BLOCKER: Determine if we should shield the app from inputs
+  const shouldBlockInteraction = gameState.isSimulating || gameState.goalScoredInfo !== null;
 
   return (
     <div className={`app-container ${gameState.goalScoredInfo ? 'goal-flash-active' : ''}`}>
@@ -315,7 +314,7 @@ function App() {
                 display: flex; 
                 justify-content: center; 
                 align-items: center; 
-                padding: 0; /* Padding eliminado para contacto total con barras */
+                padding: 0;
                 position: relative; 
                 overflow: hidden; 
             }
@@ -328,9 +327,22 @@ function App() {
                 background: #020406;
                 overflow: hidden;
             }
-            /* Optimizaciones para asegurar contacto visual con las interfaces */
             .player-ui-container { position: relative; z-index: 20; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+            
+            /* Shield overlay to prevent any interaction during simulation */
+            .interaction-blocker {
+                position: fixed;
+                inset: 0;
+                z-index: 5000;
+                background: transparent;
+                pointer-events: auto;
+                cursor: wait;
+            }
         `}</style>
+        
+        {/* Interaction shield */}
+        {shouldBlockInteraction && <div className="interaction-blocker" />}
+
         <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={false} lang={lang} />
         <main className="main-content-area">
           <div className="game-board-wrapper">

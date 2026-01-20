@@ -54,17 +54,12 @@ const checkLineIntersection = (a: Vector, b: Vector, c: Vector, d: Vector): Vect
   return null;
 };
 
-// Helper to get distance along the perimeter [0, 2*(W+H)]
 const getDistAlongPerimeter = (pos: Vector): number => {
     const W = BOARD_WIDTH;
     const H = BOARD_HEIGHT;
-    // Top: 0 to W
     if (pos.y <= 5) return pos.x;
-    // Right: W to W+H
     if (pos.x >= W - 5) return W + pos.y;
-    // Bottom: W+H to 2W+H
     if (pos.y >= H - 5) return W + H + (W - pos.x);
-    // Left: 2W+H to 2W+2H
     return W + H + W + (H - pos.y);
 };
 
@@ -240,7 +235,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
         opacity: p.opacity - p.decay
       })).filter(p => p.life > 0 && p.opacity > 0);
 
-      // Pulsar Orb Logic - Now a moving Line
       const totalPerimeter = 2 * (BOARD_WIDTH + BOARD_HEIGHT);
       const nextPulsarOrbAngle = (prev.pulsarOrb?.angle || 0) + PULSAR_ORB_SPEED;
       const nextPulsarOrbPos = getOrbPositionFromDistance(nextPulsarOrbAngle);
@@ -307,13 +301,11 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
                   if (nextPos.y > BOARD_HEIGHT - p.radius && !inGoalX) { nextPos.y = BOARD_HEIGHT - p.radius; nextVel.y *= -WALL_BOUNCE_ELASTICITY; playSound('WALL_IMPACT'); isHittingWall = true; }
               }
 
-              // PULSAR LINE BONUS DETECTION
               if (isHittingWall && getVectorMagnitude(p.velocity) > 0.5) {
                   const puckEdgeDist = getDistAlongPerimeter(nextPos);
                   const lineCenter = nextPulsarOrbAngle % totalPerimeter;
                   const lineHalf = PULSAR_ORB_LINE_LENGTH / 2;
                   
-                  // Check if puck is within the energy line segment (with wrap-around)
                   let isInsideLine = false;
                   const start = (lineCenter - lineHalf + totalPerimeter) % totalPerimeter;
                   const end = (lineCenter + lineHalf + totalPerimeter) % totalPerimeter;
@@ -480,7 +472,11 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
 
   const handleMouseUp = useCallback((pos: Vector | null) => {
     setGameState(prev => {
-      if (prev.selectedPuckId === null || !prev.shotPreview || prev.shotPreview.isCancelZone) {
+      // PROTECTIVE EXIT: If no puck is being dragged, exit without clearing imaginaryLine state.
+      // This happens if the user clicks/taps elsewhere during a piece's movement.
+      if (prev.selectedPuckId === null) return prev;
+
+      if (!prev.shotPreview || prev.shotPreview.isCancelZone) {
         return { ...prev, selectedPuckId: null, shotPreview: null, imaginaryLine: null };
       }
       const puck = prev.pucks.find(p => p.id === prev.selectedPuckId);
