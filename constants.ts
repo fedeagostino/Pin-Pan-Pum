@@ -69,26 +69,26 @@ export const TRANSLATIONS = {
             { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines between your other pucks.' },
             { title: 'EXTRA TURNS', desc: 'Successfully charging a puck grants an immediate extra turn.' },
             { title: 'TURN LOSS', desc: 'Your turn ends if you miss, score an own goal, or score with an uncharged puck.' },
-            { title: 'KING POWER', desc: 'The King (Eleven) can execute Special Shots. Royal: when specialists are charged. Ultimate: when all are charged.' }
+            { title: 'KING POWER', desc: 'The King (Eleven/Vecna) can execute Special Shots. Royal: when specialists are charged. Ultimate: when all are charged.' }
         ],
         PUCK_INFO: {
-            KING: { name: 'The King / Eleven', desc: 'The most powerful piece on the board. Scores 2 points.' },
-            PAWN: { name: 'Pawn / Henchman', desc: 'Expendable units with limited durability.' },
-            STANDARD: { name: 'Subject 01', desc: 'Basic experimental piece.' },
-            HEAVY: { name: 'Hawkins Tank', desc: 'Heavy and hard to move.' },
-            FAST: { name: 'Blue Flash', desc: 'Light and fast as lightning.' },
-            GHOST: { name: 'Ethereal Entity', desc: 'Can become intangible.' },
+            KING: { name: 'King / Vecna', desc: 'The ultimate power on the board.' },
+            PAWN: { name: 'Pawn / Demobat', desc: 'Expendable swarm units.' },
+            STANDARD: { name: 'Steve / The Hair', desc: 'The Babysitter with the perfect hair.' },
+            HEAVY: { name: 'Steve / Nail Bat', desc: 'Strong defense and heavy hits.' },
+            FAST: { name: 'Steve / The Hero', desc: 'Quick strikes with legendary style.' },
+            GHOST: { name: 'Mind Flayer', desc: 'Ancient ethereal entity.' },
             ANCHOR: { name: 'Mind Block', desc: 'Immovable and massive.' },
             SWERVE: { name: 'Mind Curve', desc: 'Alters path mid-flight.' },
             BOUNCER: { name: 'Elastic Bounce', desc: 'Gains energy on every bounce.' },
             DAMPENER: { name: 'Absorbent', desc: 'Nullifies collision energy.' }
         },
         SYNERGY_INFO: {
-            POWER: { name: 'Demogorgon Power', desc: 'Massive shockwave on impact.' },
-            SPEED: { name: 'Speedy Void', desc: 'Passes through obstacles at first.' },
-            CONTROL: { name: 'Mental Precision', desc: 'Perfect bounces without energy loss.' },
+            POWER: { name: 'Void Power', desc: 'Massive shockwave on impact.' },
+            SPEED: { name: 'Dimensional Tear', desc: 'Passes through obstacles at first.' },
+            CONTROL: { name: 'Hive Mind', desc: 'Perfect bounces without energy loss.' },
             GRAVITY_WELL: { name: 'Gravity Portal', desc: 'Attracts nearby pieces to impact point.' },
-            TELEPORT_STRIKE: { name: 'Dimension Jump', desc: 'Teleports after the first hit.' },
+            TELEPORT_STRIKE: { name: 'Shadow Step', desc: 'Teleports after the first hit.' },
             REPULSOR_ARMOR: { name: 'Psionic Shield', desc: 'Violently repels intruders.' }
         },
         FORMATIONS: {
@@ -139,23 +139,23 @@ export const TRANSLATIONS = {
             { title: 'EL PODER DEL REY', desc: 'El Rey puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }
         ],
         PUCK_INFO: {
-            KING: { name: 'El Rey / Once', desc: 'La ficha más poderosa. Vale 2 puntos.' },
-            PAWN: { name: 'Peón / Secuaz', desc: 'Unidades prescindibles con durabilidad limitada.' },
-            STANDARD: { name: 'Sujeto 01', desc: 'Ficha básica experimental.' },
-            HEAVY: { name: 'Tanque Hawkins', desc: 'Pesada y difícil de mover.' },
-            FAST: { name: 'Destello Azul', desc: 'Ligera y veloz como un rayo.' },
-            GHOST: { name: 'Entidad Etérea', desc: 'Puede volverse intangible.' },
+            KING: { name: 'Rey / Vecna', desc: 'El poder supremo del tablero.' },
+            PAWN: { name: 'Peón / Demobat', desc: 'Unidades de enjambre prescindibles.' },
+            STANDARD: { name: 'Steve / Pelazo', desc: 'La niñera con el peinado perfecto.' },
+            HEAVY: { name: 'Steve / Bate', desc: 'Defensa sólida y golpes pesados.' },
+            FAST: { name: 'Steve / Héroe', desc: 'Ataques rápidos con estilo legendario.' },
+            GHOST: { name: 'Deshuellamentes', desc: 'Entidad etérea ancestral.' },
             ANCHOR: { name: 'Bloqueo Mental', desc: 'Inamovible y masiva.' },
             SWERVE: { name: 'Curva Mental', desc: 'Altera su trayectoria en pleno vuelo.' },
             BOUNCER: { name: 'Rebote Elástico', desc: 'Gana energía en cada rebote.' },
             DAMPENER: { name: 'Absorbente', desc: 'Anula la energía de los choques.' }
         },
         SYNERGY_INFO: {
-            POWER: { name: 'Poder Demogorgon', desc: 'Onda expansiva masiva al impactar.' },
-            SPEED: { name: 'Vacío Veloz', desc: 'Atraviesa obstáculos en los primeros segundos.' },
-            CONTROL: { name: 'Precisión Mental', desc: 'Rebotes perfectos sin pérdida de energía.' },
+            POWER: { name: 'Poder del Vacío', desc: 'Onda expansiva masiva al impactar.' },
+            SPEED: { name: 'Desgarro Dimensional', desc: 'Atraviesa obstáculos en los primeros segundos.' },
+            CONTROL: { name: 'Mente Colmena', desc: 'Rebotes perfectos sin pérdida de energía.' },
             GRAVITY_WELL: { name: 'Portal de Gravedad', desc: 'Atrae a las fichas cercanas al punto de impacto.' },
-            TELEPORT_STRIKE: { name: 'Salto Entre Dimensiones', desc: 'Se teletransporta tras el primer choque.' },
+            TELEPORT_STRIKE: { name: 'Paso Sombrío', desc: 'Se teletransporta tras el primer choque.' },
             REPULSOR_ARMOR: { name: 'Escudo Psiónico', desc: 'Repele violentamente a cualquier intruso.' }
         },
         FORMATIONS: {
@@ -188,9 +188,9 @@ export const UI_COLORS = {
 // Physics
 export const MIN_VELOCITY_TO_STOP = 0.1;
 export const MAX_VELOCITY_FOR_TURN_END = 0.4;
-export const LAUNCH_POWER_MULTIPLIER = 0.0441; // Reduced to 70% of 0.063
+export const LAUNCH_POWER_MULTIPLIER = 0.0441; 
 
-export const PREVIEW_SHOT_POWER = 0.063; // Reduced to 70% of 0.09
+export const PREVIEW_SHOT_POWER = 0.063; 
 export const PREVIEW_SIMULATION_FRAMES = 120;
 
 export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
@@ -209,7 +209,7 @@ export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
 export const PUCK_SVG_DATA: Record<PuckType, { path: string, designRadius: number, pathLength?: number }> = {
     STANDARD: { path: '', designRadius: 20 },
     HEAVY: { path: 'M 20 0 L 10 17.32 L -10 17.32 L -20 0 L -10 -17.32 L 10 -17.32 Z', designRadius: 20 },
-    FAST: { path: 'M 0 -20 L 17.32 10 L -17.32 10 Z', designRadius: 20 },
+    FAST: { path: 'M 0 -22 L 6 -12 L 20 -15 L 12 -4 L 18 10 L 0 5 L -18 10 L -12 -4 L -20 -15 L -6 -12 Z', designRadius: 22 },
     GHOST: { path: 'M 0 -20 C 14.4 -24.8, 24.8 0, 10 18 S -20 24.8, -15 -10 S 10 10, 0 -20 Z', designRadius: 20 },
     ANCHOR: { path: 'M 0 -20 L 20 0 L 0 20 L -20 0 Z', designRadius: 20 },
     KING: { path: 'M 0 -20 L 14.1 -14.1 L 20 0 L 14.1 14.1 L 0 20 L -14.1 14.1 L -20 0 L -14.1 -14.1 Z', designRadius: 20 },
@@ -219,7 +219,6 @@ export const PUCK_SVG_DATA: Record<PuckType, { path: string, designRadius: numbe
     PAWN: { path: 'M 0 -15 L 14.25 -6.3 L 8.8 12.15 L -8.8 12.15 L -14.25 -6.3 Z', designRadius: 15, pathLength: 90 },
 };
 
-// Added missing synergy and effect constants
 export const SYNERGY_EFFECTS: Record<SynergyType, { color: string }> = {
   POWER: { color: '#ff3e3e' },
   SPEED: { color: '#00f6ff' },
@@ -246,7 +245,6 @@ export const PARTICLE_CONFIG = {
   DEFAULT_LIFE: 60,
 };
 
-// Fixed formations to be more spaced out and further from goals
 export const getPuckConfig = (team: Team, formation: FormationType) => {
     const isTop = team === 'RED';
     const yBase = isTop ? 0 : BOARD_HEIGHT;

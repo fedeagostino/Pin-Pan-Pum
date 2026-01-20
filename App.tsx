@@ -190,7 +190,7 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
           .goal-points-badge { display: inline-block; background: var(--text-color); color: #000; padding: 0.2rem 1rem; font-weight: 900; margin-top: 1rem; font-size: 1.4rem; }
        `}</style>
        <div className="goal-transition-content">
-            <PuckTypeIcon puckType={scoringPuckType} teamColor={teamColor} className="goal-puck-icon" />
+            <PuckTypeIcon puckType={scoringPuckType} team={scoringTeam} teamColor={teamColor} className="goal-puck-icon" />
            <h1 className="goal-transition-text" style={{'--text-color': teamColor} as React.CSSProperties}>
             {goalText}
            </h1>
