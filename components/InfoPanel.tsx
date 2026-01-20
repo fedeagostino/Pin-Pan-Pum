@@ -29,18 +29,19 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
                 position: relative;
                 width: 320px;
                 background: #000;
-                border: 2px solid #ff0000;
+                border: 2px solid var(--team-color);
                 border-radius: 4px;
-                box-shadow: 0 0 20px #ff0000, inset 0 0 10px rgba(255,0,0,0.3);
+                box-shadow: 0 0 20px rgba(0,0,0,0.5), 0 0 10px var(--team-color);
                 z-index: 20;
                 color: #fff;
                 padding: 1rem;
+                animation: card-fade-in-up 0.3s ease-out;
             }
             .puck-name { 
                 font-family: var(--font-family-title);
                 font-size: 1.8rem;
-                color: #ff0000;
-                text-shadow: 0 0 10px #ff0000;
+                color: var(--team-color);
+                text-shadow: 0 0 10px var(--team-color);
                 margin-bottom: 0.5rem;
                 border-bottom: 1px solid #333;
             }
@@ -50,17 +51,65 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ puck, specialShotStatus = 'NONE',
                 color: #ccc;
                 margin-bottom: 1rem;
             }
-            .stat-item { background: #111; border: 1px solid #222; padding: 0.4rem; border-radius: 2px; }
-            .stat-item .label { font-size: 0.7rem; color: #666; text-transform: uppercase; }
-            .stat-item .value { font-weight: 700; color: #fff; }
+            .stat-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            .stat-item { 
+                background: #111; 
+                border: 1px solid #222; 
+                padding: 0.4rem; 
+                border-radius: 2px;
+                display: flex;
+                flex-direction: column;
+            }
+            .stat-item .label { font-size: 0.65rem; color: #666; text-transform: uppercase; }
+            .stat-item .value { font-weight: 700; color: #fff; font-size: 0.9rem; }
+            
+            .ability-box {
+                border-top: 1px solid #333;
+                padding-top: 0.5rem;
+            }
+            .ability-title {
+                font-family: var(--font-family-title);
+                color: var(--team-color);
+                font-size: 0.9rem;
+                margin-bottom: 0.2rem;
+            }
+            .ability-desc {
+                font-size: 0.8rem;
+                color: #888;
+                line-height: 1.3;
+            }
         `}</style>
         <div style={cardStyle} className="puck-info-card">
             <div className="card-content">
                 <h3 className="puck-name">{info.name}</h3>
                 <p className="puck-description">{info.desc}</p>
-                <div className="puck-stats" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem'}}>
-                    <div className="stat-item"><span className="label">{lang === 'es' ? 'Puntos' : 'Points'}</span><span className="value">{PUCK_GOAL_POINTS[puck.puckType]}</span></div>
-                    <div className="stat-item"><span className="label">{lang === 'es' ? 'Peso' : 'Mass'}</span><span className="value">{props.mass}</span></div>
+                <div className="stat-grid">
+                    <div className="stat-item">
+                        <span className="label">{lang === 'es' ? 'Puntos' : 'Points'}</span>
+                        <span className="value">{PUCK_GOAL_POINTS[puck.puckType]}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="label">{lang === 'es' ? 'Peso' : 'Mass'}</span>
+                        <span className="value">{props.mass}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="label">{lang === 'es' ? 'Fricción' : 'Friction'}</span>
+                        <span className="value">{props.friction}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="label">{lang === 'es' ? 'Carga (Líneas)' : 'Charge (Lines)'}</span>
+                        <span className="value">{props.linesToCrossForBonus}</span>
+                    </div>
+                </div>
+                
+                <div className="ability-box">
+                    <h4 className="ability-title">{lang === 'es' ? 'ESPECIAL' : 'SPECIAL'}</h4>
+                    <p className="ability-desc">{info.desc}</p>
                 </div>
             </div>
         </div>

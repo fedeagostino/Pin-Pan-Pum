@@ -1,3 +1,4 @@
+
 export type Vector = {
   x: number;
   y: number;
@@ -18,6 +19,8 @@ export type TemporaryEffect = {
   duration: number; // Ticks to live
   destroyedCount?: number;
 };
+
+export type FormationType = 'BALANCED' | 'DEFENSIVE' | 'OFFENSIVE';
 
 export type Puck = {
   id: number;
@@ -110,7 +113,11 @@ export type PreviewState = {
 
 export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL';
 
+export type GameStatus = 'PRE_GAME' | 'PLAYING' | 'GOAL' | 'GAME_OVER';
+
 export type GameState = {
+  status: GameStatus;
+  preGameCountdown: number;
   pucks: Puck[];
   particles: Particle[];
   orbitingParticles: Particle[];
@@ -152,4 +159,5 @@ export type GameState = {
   turnCount: number;
   orbCollection: { RED: number; BLUE: number; };
   overchargedTeam: Team | null;
+  formations: { RED: FormationType; BLUE: FormationType };
 };

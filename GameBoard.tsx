@@ -1,8 +1,9 @@
+
 import React from 'react';
-import { GameState, Vector, Puck, PuckType, SynergyType, SpecialShotStatus } from '../types';
-import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG } from '../constants';
-import InfoPanel from './InfoPanel';
-import PuckShape from './PuckShape';
+import { GameState, Vector, Puck, PuckType, SynergyType, SpecialShotStatus } from './types';
+import { BOARD_WIDTH, BOARD_HEIGHT, PUCK_RADIUS, GOAL_WIDTH, GOAL_DEPTH, TEAM_COLORS, SYNERGY_EFFECTS, PARTICLE_CONFIG, SHOCKWAVE_COLORS, EMP_BURST_RADIUS, PAWN_DURABILITY, UI_COLORS, MAX_PULSAR_POWER, PULSAR_BAR_HEIGHT, MAX_DRAG_FOR_POWER, CANCEL_SHOT_THRESHOLD, KING_PUCK_RADIUS, PAWN_PUCK_RADIUS, SYNERGY_DESCRIPTIONS, PUCK_TYPE_PROPERTIES, PUCK_SVG_DATA, SPECIAL_PUCKS_FOR_ROYAL_SHOT, GRAVITY_WELL_RADIUS, REPULSOR_ARMOR_RADIUS, MIN_DRAG_DISTANCE, FLOATING_TEXT_CONFIG, MAX_VELOCITY_FOR_TURN_END } from './constants';
+import InfoPanel from './components/InfoPanel';
+import PuckShape from './components/PuckShape';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -868,7 +869,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
               
               const strokeWidth = isHighlighted ? highlightedStrokeWidth : baseStrokeWidth;
               const strokeColor = isHighlighted
-                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType].color : 'white')
+                  ? (hasSynergy ? SYNERGY_EFFECTS[line.synergyType as SynergyType].color : 'white')
                   : (isAiming ? (isPawnStyleLine ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.45)') : (isPawnStyleLine ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.3)'));
 
               const strokeDasharray = isHighlighted ? "8 8" : (isPawnStyleLine ? "2 8" : "4 6");
@@ -918,6 +919,7 @@ const GameBoard = React.forwardRef<SVGSVGElement, GameBoardProps>(({ gameState, 
                         specialShotStatus={infoCardPuck.puckType === 'KING' ? gameState.specialShotStatus[infoCardPuck.team] : 'NONE'}
                         renderDirection={infoPanelProps.renderDirection}
                         pointerHorizontalOffset={infoPanelProps.pointerHorizontalOffset}
+                        lang="es"
                     />
                 )}
             </div>

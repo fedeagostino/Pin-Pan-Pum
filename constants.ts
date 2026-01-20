@@ -1,5 +1,5 @@
 
-import { PuckType, SpecialShotStatus, SynergyType, Team } from './types';
+import { PuckType, SpecialShotStatus, SynergyType, Team, FormationType } from './types';
 
 export const BOARD_WIDTH = 800;
 export const BOARD_HEIGHT = 1200;
@@ -31,9 +31,9 @@ export type Language = 'en' | 'es';
 
 export const TRANSLATIONS = {
     en: {
-        TITLE: 'WHAM BAM BOOM',
+        TITLE: 'PIN PAN PUM',
         PLAY_FRIEND: 'Play vs Friend',
-        PLAY_AI: 'Play vs IA',
+        PLAY_AI: 'Play vs AI',
         SETTINGS: 'Settings',
         LANGUAGE: 'Language',
         BACK: 'Back',
@@ -55,6 +55,8 @@ export const TRANSLATIONS = {
         OVERCHARGE: 'OVERCHARGE!',
         SYNERGY_ACT: 'Activated!',
         HELP: 'HELP',
+        CHOOSE_FORMATION: 'Choose Your Formation',
+        START_MATCH: 'Ready!',
         TABS: {
             GOAL: 'Objective',
             CONTROLS: 'Controls',
@@ -63,11 +65,11 @@ export const TRANSLATIONS = {
             SYNERGIES: 'Synergies'
         },
         RULES_CONTENT: [
-            { title: 'THE CORE RULE', desc: 'You can ONLY score a goal with a CHARGED puck (glowing yellow). Normal pucks will be returned to their start position if they enter the goal.' },
-            { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines formed between your other pucks. Each puck type requires crossing a different number of lines to power up.' },
-            { title: 'EXTRA TURNS', desc: 'Successfully charging a puck grants you an IMMEDIATE extra shot with any available unit.' },
-            { title: 'TURN LOSS', desc: 'Your turn ends if you miss, score an own goal, or use an uncharged puck in the opponent\'s goal.' },
-            { title: 'THE KING\'S POWER', desc: 'The King (Eleven) can unleash devastating Special Shots. Royal Shot: Unlocked when all special units are charged. Ultimate Shot: Unlocked when every single unit is charged.' }
+            { title: 'THE GOLDEN RULE', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Standard pucks will reset if they enter the goal.' },
+            { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines between your other pucks.' },
+            { title: 'EXTRA TURNS', desc: 'Successfully charging a puck grants an immediate extra turn.' },
+            { title: 'TURN LOSS', desc: 'Your turn ends if you miss, score an own goal, or score with an uncharged puck.' },
+            { title: 'KING POWER', desc: 'The King (Eleven) can execute Special Shots. Royal: when specialists are charged. Ultimate: when all are charged.' }
         ],
         PUCK_INFO: {
             KING: { name: 'The King / Eleven', desc: 'The most powerful piece on the board. Scores 2 points.' },
@@ -88,6 +90,11 @@ export const TRANSLATIONS = {
             GRAVITY_WELL: { name: 'Gravity Portal', desc: 'Attracts nearby pieces to impact point.' },
             TELEPORT_STRIKE: { name: 'Dimension Jump', desc: 'Teleports after the first hit.' },
             REPULSOR_ARMOR: { name: 'Psionic Shield', desc: 'Violently repels intruders.' }
+        },
+        FORMATIONS: {
+            BALANCED: 'Balanced',
+            DEFENSIVE: 'Defensive',
+            OFFENSIVE: 'Offensive'
         }
     },
     es: {
@@ -102,7 +109,7 @@ export const TRANSLATIONS = {
         MENU: 'Menú',
         GOAL: '¡GOL!',
         GOALAZO: '¡GOLAZO!',
-        POINTS: 'PUNTOS',
+        POINTS: '¡PUNTOS!',
         TURN_OF: 'Turno de',
         EXTRA_TURN: '¡TURNO EXTRA!',
         CHARGED: '¡CARGADO!',
@@ -115,6 +122,8 @@ export const TRANSLATIONS = {
         OVERCHARGE: '¡SOBRECARGA!',
         SYNERGY_ACT: '¡Activada!',
         HELP: 'AYUDA',
+        CHOOSE_FORMATION: 'Elige tu formación',
+        START_MATCH: '¡Listo!',
         TABS: {
             GOAL: 'Objetivo',
             CONTROLS: 'Controles',
@@ -123,11 +132,11 @@ export const TRANSLATIONS = {
             SYNERGIES: 'Sinergias'
         },
         RULES_CONTENT: [
-            { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo). Las fichas normales volverán a su sitio si entran en la portería.' },
-            { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas. Cada tipo de ficha necesita cruzar un número distinto de líneas para activarse.' },
-            { title: 'TIROS EXTRA', desc: 'Cargar con éxito una ficha te otorga un tiro extra INMEDIATO con cualquier unidad disponible.' },
-            { title: 'PÉRDIDA DE TURNO', desc: 'Tu turno termina si fallas el tiro, marcas un autogol o intentas marcar con una ficha sin carga.' },
-            { title: 'EL PODER DEL REY', desc: 'El Rey (Once) puede ejecutar Tiros Especiales. Tiro Real: Se desbloquea cuando todos los especialistas están cargados. Tiro Definitivo: Requiere que TODAS tus fichas estén cargadas.' }
+            { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo).' },
+            { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas.' },
+            { title: 'TIROS EXTRA', desc: 'Cargar con éxito una ficha te otorga un tiro extra inmediato.' },
+            { title: 'PÉRDIDA DE TURNO', desc: 'Tu turno termina si fallas el tiro, marcas un autogol o marcas sin carga.' },
+            { title: 'EL PODER DEL REY', desc: 'El Rey puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }
         ],
         PUCK_INFO: {
             KING: { name: 'El Rey / Once', desc: 'La ficha más poderosa. Vale 2 puntos.' },
@@ -148,6 +157,11 @@ export const TRANSLATIONS = {
             GRAVITY_WELL: { name: 'Portal de Gravedad', desc: 'Atrae a las fichas cercanas al punto de impacto.' },
             TELEPORT_STRIKE: { name: 'Salto Entre Dimensiones', desc: 'Se teletransporta tras el primer choque.' },
             REPULSOR_ARMOR: { name: 'Escudo Psiónico', desc: 'Repele violentamente a cualquier intruso.' }
+        },
+        FORMATIONS: {
+            BALANCED: 'Equilibrada',
+            DEFENSIVE: 'Defensiva',
+            OFFENSIVE: 'Offensiva'
         }
     }
 };
@@ -174,148 +188,12 @@ export const UI_COLORS = {
 // Physics
 export const MIN_VELOCITY_TO_STOP = 0.1;
 export const MAX_VELOCITY_FOR_TURN_END = 0.4;
-export const LAUNCH_POWER_MULTIPLIER = 0.09;
+export const LAUNCH_POWER_MULTIPLIER = 0.063;
 
 export const PREVIEW_SHOT_POWER = 0.09;
 export const PREVIEW_SIMULATION_FRAMES = 120;
 
-// Pulsar Power
-export const PULSAR_POWER_PER_LINE = 25;
-export const MAX_PULSAR_POWER = 1000;
-export const PERFECT_CROSSING_THRESHOLD = 0.15;
-export const PERFECT_CROSSING_BONUS = 15;
-export const SYNERGY_CROSSING_BONUS = 10;
-export const PULSAR_ORB_HIT_SCORE = 150;
-export const PULSAR_BAR_HEIGHT = 80;
-export const SYNERGY_GOAL_PULSAR_BONUS = 250;
-export const TURNS_PER_ORB_SPAWN = 2;
-export const ORBS_FOR_OVERCHARGE = 3;
-export const OVERCHARGE_REPULSOR_RADIUS = 75;
-export const OVERCHARGE_REPULSOR_FORCE = 0.1;
-
-export const GHOST_PHASE_DURATION = 180;
-export const EMP_BURST_RADIUS = 120;
-export const EMP_BURST_FORCE = 0.8;
-export const SPECIAL_PUCKS_FOR_ROYAL_SHOT: PuckType[] = ['HEAVY', 'FAST', 'GHOST', 'ANCHOR', 'SWERVE', 'BOUNCER', 'DAMPENER'];
-export const ROYAL_SHOT_POWER_MULTIPLIER = 2.0;
-export const ROYAL_SHOT_DESTROY_LIMIT = 1;
-export const ULTIMATE_SHOT_POWER_MULTIPLIER = 3.5;
-export const ULTIMATE_SHOT_DESTROY_LIMIT = 2;
-
-export const COMBO_BONUSES: Record<number, number> = {
-    2: 1.25,
-    3: 1.5,
-    4: 2.0,
-};
-
-export const FLOATING_TEXT_CONFIG = {
-    LIFE: 90,
-    DECAY: 0.015,
-    RISE_SPEED: -0.6,
-};
-
-export const PARTICLE_CONFIG = {
-    SLIDING: { life: 8, decay: 0.1, radius: 1.5, speed: 0.1 },
-    COLLISION: { life: 15, decay: 0.05, minRadius: 1, maxRadius: 3 },
-    WALL_IMPACT: { life: 12, decay: 0.08, radius: 2 },
-    SYNERGY_TRAIL: { life: 12, decay: 0.1, radius: 2.5, speed: 0.2 },
-    GOAL_STANDARD: { count: 30, life: 40, decay: 0.02, minRadius: 1, maxRadius: 4, minSpeed: 1, maxSpeed: 4 },
-    GOAL_HEAVY: { count: 50, life: 50, decay: 0.015, minRadius: 2, maxRadius: 6, minSpeed: 2, maxSpeed: 6 },
-    GOAL_KING: { count: 80, life: 70, decay: 0.01, minRadius: 2, maxRadius: 10, minSpeed: 3, maxSpeed: 10 },
-    GOAL_SHOCKWAVE: { life: 30, decay: 0.04 },
-    GOAL_SHARD: { count: 20, life: 50, decay: 0.02, minSpeed: 5, maxSpeed: 15 },
-    LINE_SHOCKWAVE: { life: 20, decay: 0.05, speed: 6 },
-    PULSAR_LAUNCH: { count: 30, life: 40, decay: 0.04, minRadius: 1, maxRadius: 4, speed: 5 },
-    EMP_BURST: { life: 20, decay: 0.06, speed: 10 },
-    PAWN_SHATTER: { count: 25, life: 30, decay: 0.05, minRadius: 1, maxRadius: 4, minSpeed: 2, maxSpeed: 5 },
-    GHOST_TRAIL: { life: 15, decay: 0.1, radius: 3, speed: 0.05 },
-    PULSAR_CHARGE: { life: 40, decay: 0.02, radius: 3, speed: 4 },
-    PULSAR_ORB_HIT: { count: 35, life: 30, decay: 0.05, minRadius: 1, maxRadius: 5, minSpeed: 3, maxSpeed: 8 },
-    OVERCHARGE_AURA: { life: 20, decay: 0.1, speed: 2 },
-    MAX_POWER_REACHED: { count: 20, life: 20, decay: 0.05, minRadius: 1, maxRadius: 4, speed: 4 },
-    MAX_POWER_IDLE: { life: 20, decay: 0.1, radius: 3, speed: 0.3 },
-    SHOT_BURST: { count: 15, life: 20, decay: 0.06, minRadius: 1, maxRadius: 4, speed: 3 },
-    KING_TRAIL: { life: 25, decay: 0.05, radius: 5, speed: 0.2 },
-    HEAVY_TRAIL: { life: 20, decay: 0.06, radius: 4, speed: 0.1 },
-    FAST_TRAIL: { life: 12, decay: 0.15, radius: 2, speed: 0.6 },
-    SWERVE_TRAIL: { life: 20, decay: 0.08, radius: 3, speed: 1.0 },
-    BOUNCER_TRAIL: { life: 20, decay: 0.08 },
-    ROYAL_POWER_READY: { life: 40, decay: 0.02, radius: 3, speed: 0.4 },
-    ULTIMATE_POWER_READY: { life: 50, decay: 0.015, radius: 4, speed: 0.5 },
-    ROYAL_SHOT_LAUNCH: { count: 60, life: 60, decay: 0.02, minRadius: 2, maxRadius: 8, speed: 10 },
-    ROYAL_RAGE_TRAIL: { life: 60, decay: 0.02, radius: 6, speed: 0.3 },
-    ULTIMATE_SHOT_LAUNCH: { count: 90, life: 80, decay: 0.015, minRadius: 3, maxRadius: 12, speed: 12 },
-    ULTIMATE_RAGE_TRAIL: { life: 70, decay: 0.015, radius: 10, speed: 0.4 },
-    TURN_CHANGE_BURST: { count: 50, life: 50, decay: 0.02, minRadius: 2, maxRadius: 6, minSpeed: 5, maxSpeed: 12 },
-    TURN_DRIFT: { life: 120, decay: 0.005, radius: 2, speed: 0.4 },
-    POWER_BEAM: { life: 30, decay: 0.04, speed: 15 },
-    ROYAL_AURA: { life: 25, decay: 0.05, speed: 1 },
-    ULTIMATE_AURA: { life: 25, decay: 0.04, speed: 1.5 },
-    SYNERGY_CHARGE: { life: 15, radius: 4 },
-    SYNERGY_AURA: { life: 15, decay: 0.15, speed: 0.4 },
-    SYNERGY_CONFIRM: { life: 20, decay: 0.06 },
-    PULSAR_AURA: { life: 12, decay: 0.15, speed: 2, radius: 2 },
-    GRAVITY_WELL: { life: 40, decay: 0.03, radius: 3, count: 10 },
-    TELEPORT_IN: { count: 40, life: 20, decay: 0.05, minSpeed: 6, maxSpeed: 12 },
-    TELEPORT_OUT: { count: 40, life: 20, decay: 0.05, minSpeed: 6, maxSpeed: 12 },
-    REPULSOR_AURA: { life: 15, decay: 0.08, speed: 8 },
-    AIM_FLOW: { life: 20, decay: 0.1, radius: 3, speed: 10 },
-    CHARGED_SPARKS: { life: 30, decay: 0.03, radius: 2, speed: 1.5 },
-};
-
-export const SHOCKWAVE_COLORS: Record<number, string> = {
-    1: '#ff0000',
-    2: '#cc0000',
-    3: '#990000',
-    4: '#660000',
-};
-
-export const SYNERGY_HOLD_DURATION = 1200;
-export const SYNERGY_GHOST_PHASE_DURATION = 120;
-export const GRAVITY_WELL_RADIUS = 200;
-export const GRAVITY_WELL_FORCE = 1.0;
-export const TELEPORT_STRIKE_DISTANCE = 80;
-export const REPULSOR_ARMOR_RADIUS = 150;
-export const REPULSOR_ARMOR_FORCE = 0.6;
-export const REPULSOR_ARMOR_DURATION = 300;
-
-export const SYNERGY_COMBOS: Record<string, SynergyType> = {
-    'HEAVY-ANCHOR': 'POWER',
-    'FAST-SWERVE': 'SPEED',
-    'BOUNCER-DAMPENER': 'CONTROL',
-    'HEAVY-DAMPENER': 'GRAVITY_WELL',
-    'FAST-GHOST': 'TELEPORT_STRIKE',
-    'ANCHOR-BOUNCER': 'REPULSOR_ARMOR',
-};
-
-export type PuckTypeProperties = {
-    mass: number;
-    friction: number;
-    linesToCrossForBonus: number;
-    elasticity?: number;
-    swerveFactor?: number;
-    powerFactor?: number;
-};
-
-export const SYNERGY_EFFECTS: Record<SynergyType, { color: string; ability?: 'EMP_ON_COLLISION' | 'GHOST_ON_LAUNCH' | 'GRAVITY_ON_COLLISION' | 'TELEPORT_ON_COLLISION' | 'REPULSOR_AURA'; statModifiers?: Partial<PuckTypeProperties> }> = {
-    POWER: { color: '#ff0000', ability: 'EMP_ON_COLLISION' },
-    SPEED: { color: '#00d4ff', ability: 'GHOST_ON_LAUNCH' },
-    CONTROL: { color: '#ffffff', statModifiers: { elasticity: 1.0 } },
-    GRAVITY_WELL: { color: '#ff0000', ability: 'GRAVITY_ON_COLLISION' },
-    TELEPORT_STRIKE: { color: '#00d4ff', ability: 'TELEPORT_ON_COLLISION' },
-    REPULSOR_ARMOR: { color: '#ff0000', ability: 'REPULSOR_AURA' }
-};
-
-export const SYNERGY_DESCRIPTIONS: Record<SynergyType, { name: string, description: string }> = {
-    POWER: { name: 'Poder Demogorgon', description: 'Onda expansiva masiva al impactar.' },
-    SPEED: { name: 'Vacío Veloz', description: 'Atraviesa obstáculos en los primeros segundos.' },
-    CONTROL: { name: 'Precisión Mental', description: 'Rebotes perfectos sin pérdida de energía.' },
-    GRAVITY_WELL: { name: 'Portal de Gravedad', description: 'Atrae a las fichas cercanas al punto de impacto.' },
-    TELEPORT_STRIKE: { name: 'Salto Entre Dimensiones', description: 'Se teletransporta tras el primer choque.' },
-    REPULSOR_ARMOR: { name: 'Escudo Psiónico', description: 'Repele violentamente a cualquier intruso.' }
-};
-
-export const PUCK_TYPE_PROPERTIES: Record<PuckType, PuckTypeProperties> = {
+export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
   STANDARD: { mass: 1, friction: 0.985, linesToCrossForBonus: 2 },
   HEAVY: { mass: 1.7, friction: 0.9877, linesToCrossForBonus: 3 },
   FAST: { mass: 0.75, friction: 0.987, linesToCrossForBonus: 2 },
@@ -341,41 +219,93 @@ export const PUCK_SVG_DATA: Record<PuckType, { path: string, designRadius: numbe
     PAWN: { path: 'M 0 -15 L 14.25 -6.3 L 8.8 12.15 L -8.8 12.15 L -14.25 -6.3 Z', designRadius: 15, pathLength: 90 },
 };
 
-const PAWN_X_POSITIONS = [
-  BOARD_WIDTH * 0.15,
-  BOARD_WIDTH * 0.3,
-  BOARD_WIDTH * 0.5,
-  BOARD_WIDTH * 0.7,
-  BOARD_WIDTH * 0.85,
+// Added missing synergy and effect constants
+export const SYNERGY_EFFECTS: Record<SynergyType, { color: string }> = {
+  POWER: { color: '#ff3e3e' },
+  SPEED: { color: '#00f6ff' },
+  CONTROL: { color: '#2ecc71' },
+  GRAVITY_WELL: { color: '#9b59b6' },
+  TELEPORT_STRIKE: { color: '#f1c40f' },
+  REPULSOR_ARMOR: { color: '#e67e22' },
+};
+
+export const SYNERGY_DESCRIPTIONS: Record<SynergyType, string> = {
+  POWER: 'Impacto explosivo',
+  SPEED: 'Atraviesa enemigos',
+  CONTROL: 'Rebote perfecto',
+  GRAVITY_WELL: 'Pozo gravitatorio',
+  TELEPORT_STRIKE: 'Golpe teletransportado',
+  REPULSOR_ARMOR: 'Escudo repulsor',
+};
+
+export const GRAVITY_WELL_RADIUS = 150;
+export const REPULSOR_ARMOR_RADIUS = 100;
+export const SHOCKWAVE_COLORS = ['#ffffff', '#ff0000', '#00d4ff'];
+export const PARTICLE_CONFIG = {
+  MAX_PARTICLES: 100,
+  DEFAULT_LIFE: 60,
+};
+
+// Fixed formations to be more spaced out and further from goals
+export const getPuckConfig = (team: Team, formation: FormationType) => {
+    const isTop = team === 'RED';
+    const yBase = isTop ? 0 : BOARD_HEIGHT;
+    const direction = isTop ? 1 : -1;
+
+    switch (formation) {
+        case 'DEFENSIVE':
+            return [
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 350 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 320 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 350 * direction } },
+                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 120 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.25, y: yBase + 220 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 250 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.75, y: yBase + 220 * direction } },
+                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 60 * direction } },
+            ];
+        case 'OFFENSIVE':
+            return [
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 550 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 580 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 550 * direction } },
+                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 350 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.3, y: yBase + 450 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 480 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.7, y: yBase + 450 * direction } },
+                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 180 * direction } },
+            ];
+        case 'BALANCED':
+        default:
+            return [
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 480 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.50, y: yBase + 520 * direction } },
+                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 480 * direction } },
+                { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 280 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 180 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.50, y: yBase + 150 * direction } },
+                { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 180 * direction } },
+                { type: 'GHOST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 80 * direction } },
+            ];
+    }
+};
+
+export const INITIAL_PUCK_CONFIG = [
+  { team: 'RED' as Team, formation: 'BALANCED' as FormationType },
+  { team: 'BLUE' as Team, formation: 'BALANCED' as FormationType }
 ];
 
-export const INITIAL_PUCK_CONFIG: { team: Team, pucks: { type: PuckType, position: { x: number, y: number } }[] }[] = [
-  {
-    team: 'RED',
-    pucks: [
-      ...PAWN_X_POSITIONS.map(x => ({ type: 'PAWN' as PuckType, position: { x, y: BOARD_HEIGHT * 0.65 } })),
-      { type: 'KING', position: { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT * 0.80 } },
-      { type: 'FAST', position: { x: BOARD_WIDTH * 0.20, y: BOARD_HEIGHT * 0.75 } },
-      { type: 'GHOST', position: { x: BOARD_WIDTH * 0.80, y: BOARD_HEIGHT * 0.75 } },
-      { type: 'HEAVY', position: { x: BOARD_WIDTH * 0.35, y: BOARD_HEIGHT * 0.85 } },
-      { type: 'ANCHOR', position: { x: BOARD_WIDTH * 0.65, y: BOARD_HEIGHT * 0.85 } },
-      { type: 'BOUNCER', position: { x: BOARD_WIDTH * 0.15, y: BOARD_HEIGHT * 0.90 } },
-      { type: 'DAMPENER', position: { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT * 0.92 } },
-      { type: 'SWERVE', position: { x: BOARD_WIDTH * 0.85, y: BOARD_HEIGHT * 0.90 } },
-    ]
-  },
-  {
-    team: 'BLUE',
-    pucks: [
-      ...PAWN_X_POSITIONS.map(x => ({ type: 'PAWN' as PuckType, position: { x, y: BOARD_HEIGHT * 0.35 } })),
-      { type: 'KING', position: { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT * 0.20 } },
-      { type: 'FAST', position: { x: BOARD_WIDTH * 0.20, y: BOARD_HEIGHT * 0.25 } },
-      { type: 'GHOST', position: { x: BOARD_WIDTH * 0.80, y: BOARD_HEIGHT * 0.25 } },
-      { type: 'HEAVY', position: { x: BOARD_WIDTH * 0.35, y: BOARD_HEIGHT * 0.15 } },
-      { type: 'ANCHOR', position: { x: BOARD_WIDTH * 0.65, y: BOARD_HEIGHT * 0.15 } },
-      { type: 'BOUNCER', position: { x: BOARD_WIDTH * 0.15, y: BOARD_HEIGHT * 0.10 } },
-      { type: 'DAMPENER', position: { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT * 0.08 } },
-      { type: 'SWERVE', position: { x: BOARD_WIDTH * 0.85, y: BOARD_HEIGHT * 0.10 } },
-    ]
-  }
-];
+// Re-exports/Constants for consistency
+export const GHOST_PHASE_DURATION = 180;
+export const EMP_BURST_RADIUS = 120;
+export const EMP_BURST_FORCE = 0.8;
+export const SPECIAL_PUCKS_FOR_ROYAL_SHOT: PuckType[] = ['HEAVY', 'FAST', 'GHOST', 'ANCHOR', 'SWERVE', 'BOUNCER', 'DAMPENER'];
+export const ROYAL_SHOT_POWER_MULTIPLIER = 2.0;
+export const ULTIMATE_SHOT_POWER_MULTIPLIER = 3.5;
+export const SYNERGY_GOAL_PULSAR_BONUS = 250;
+export const TURNS_PER_ORB_SPAWN = 2;
+export const ORBS_FOR_OVERCHARGE = 3;
+export const MAX_PULSAR_POWER = 1000;
+export const PULSAR_BAR_HEIGHT = 80;
+export const PULSAR_ORB_HIT_SCORE = 150;
+export const FLOATING_TEXT_CONFIG = { LIFE: 90 };
