@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import GameBoard from './components/GameBoard';
 import PlayerUI from './components/PlayerUI';
@@ -172,9 +171,9 @@ function App() {
   const playSound = audioPlayer ? audioPlayer.playSound : () => {};
 
   const [currentScreen, setCurrentScreen] = useState<Screen>('MENU');
-  const [lang, setLang] = useState<Language>('es'); 
+  const [lang, setLang] = useState<Language>('en'); 
   
-  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn } = useGameEngine({ playSound });
+  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn } = useGameEngine({ playSound, lang });
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [helpModalTeam, setHelpModalTeam] = useState<Team | null>(null);

@@ -35,7 +35,7 @@ export type Language = 'en' | 'es';
 
 export const TRANSLATIONS = {
     en: {
-        TITLE: 'PIN PAN PUM',
+        TITLE: 'WHAM BAM BOOM',
         PLAY_FRIEND: 'Play vs Friend',
         PLAY_AI: 'Play vs AI',
         SETTINGS: 'Settings',

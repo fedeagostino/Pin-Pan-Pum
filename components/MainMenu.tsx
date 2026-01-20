@@ -120,8 +120,10 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onLanguageChange, curr
                     position: absolute;
                     bottom: 2rem;
                     font-size: 0.8rem;
-                    color: #333;
+                    color: #555;
                     letter-spacing: 2px;
+                    font-family: var(--font-family-main);
+                    text-transform: uppercase;
                 }
             `}</style>
 
@@ -187,7 +189,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onLanguageChange, curr
                 </div>
             )}
 
-            <div className="version-tag">ST-ARENA EDITION v3.1</div>
+            <div className="version-tag">pin-pan-pum3.0 by viejocapo</div>
         </div>
     );
 };

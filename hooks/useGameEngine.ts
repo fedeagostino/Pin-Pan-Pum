@@ -22,6 +22,7 @@ import {
   MAX_PULSAR_POWER,
   PULSAR_POWER_PER_LINE,
   TRANSLATIONS,
+  Language,
   TEAM_COLORS,
   FLOATING_TEXT_CONFIG
 } from '../constants';
@@ -40,7 +41,7 @@ const checkLineIntersection = (a: Vector, b: Vector, c: Vector, d: Vector): bool
   return (lambda > 0 && lambda < 1) && (gamma > 0 && gamma < 1);
 };
 
-export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) => void }) => {
+export const useGameEngine = ({ playSound, lang }: { playSound: (s: string, o?: any) => void, lang: Language }) => {
   const initPucks = useCallback((redFormation: FormationType, blueFormation: FormationType) => {
     const pucks: Puck[] = [];
     let idCounter = 1;
@@ -248,7 +249,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
           playSound('PULSAR_SHOT');
           nextFloatingTexts.push({
             id: Date.now(),
-            text: TRANSLATIONS.es.PORTAL_DISCHARGE,
+            text: TRANSLATIONS[lang].PORTAL_DISCHARGE,
             position: { ...puck.position },
             color: '#f1c40f',
             opacity: 1,
@@ -273,7 +274,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         pulsarPower: powerMult > 1 ? { ...prev.pulsarPower, [prev.currentTurn]: 0 } : prev.pulsarPower
       };
     });
-  }, [playSound]);
+  }, [playSound, lang]);
 
   const handleActivatePulsar = useCallback(() => {
     setGameState(prev => {
@@ -286,7 +287,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         if (currentKing) {
             nextFloatingTexts.push({
                 id: Date.now(),
-                text: TRANSLATIONS.es.PORTAL_OPEN,
+                text: TRANSLATIONS[lang].PORTAL_OPEN,
                 position: { ...currentKing.position },
                 color: '#f1c40f',
                 opacity: 1,
@@ -302,7 +303,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
             pulsarShotArmed: prev.currentTurn
         };
     });
-  }, [playSound]);
+  }, [playSound, lang]);
 
   const updatePhysics = useCallback(() => {
     setGameState(prev => {
