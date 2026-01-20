@@ -65,10 +65,10 @@ export const TRANSLATIONS = {
             SYNERGIES: 'Synergies'
         },
         RULES_CONTENT: [
-            { title: 'THE GOLDEN RULE', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Standard pucks will reset if they enter the goal.' },
-            { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines between your other pucks.' },
-            { title: 'EXTRA TURNS', desc: 'Successfully charging a puck grants an immediate extra turn.' },
-            { title: 'TURN LOSS', desc: 'Your turn ends if you miss, score an own goal, or score with an uncharged puck.' },
+            { title: 'THE GOLDEN RULE', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Once charged, a puck STAYS charged until a goal is scored.' },
+            { title: 'HOW TO CHARGE', desc: 'Aim your shot through the imaginary lines between your other pucks to charge a piece permanently.' },
+            { title: 'EXTRA TURNS', desc: 'Successfully crossing the required lines with your shot grants an immediate extra turn.' },
+            { title: 'TURN LOSS', desc: 'Your turn ends if you miss crossing lines, score an own goal, or attempt to score with an uncharged puck.' },
             { title: 'KING POWER', desc: 'The King (Eleven/Vecna) can execute Special Shots. Royal: when specialists are charged. Ultimate: when all are charged.' }
         ],
         PUCK_INFO: {
@@ -132,10 +132,10 @@ export const TRANSLATIONS = {
             SYNERGIES: 'Sinergias'
         },
         RULES_CONTENT: [
-            { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo).' },
-            { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas.' },
-            { title: 'TIROS EXTRA', desc: 'Cargar con éxito una ficha te otorga un tiro extra inmediato.' },
-            { title: 'PÉRDIDA DE TURNO', desc: 'Tu turno termina si fallas el tiro, marcas un autogol o marcas sin carga.' },
+            { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo). ¡Una vez cargada, la ficha NO se descarga hasta que haya un gol!' },
+            { title: 'CÓMO CARGAR', desc: 'Apunta tu disparo a través de las líneas imaginarias entre tus otras fichas para activar su carga permanente.' },
+            { title: 'TIROS EXTRA', desc: 'Cruzar con éxito las líneas requeridas en tu lanzamiento te otorga un tiro extra inmediato.' },
+            { title: 'PÉRDIDA DE TURNO', desc: 'Tu turno termina si no cruzas líneas, marcas un autogol o intentas marcar sin estar cargado.' },
             { title: 'EL PODER DEL REY', desc: 'El Rey puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }
         ],
         PUCK_INFO: {
@@ -194,16 +194,16 @@ export const PREVIEW_SHOT_POWER = 0.063;
 export const PREVIEW_SIMULATION_FRAMES = 120;
 
 export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
-  STANDARD: { mass: 1, friction: 0.985, linesToCrossForBonus: 2 },
-  HEAVY: { mass: 1.7, friction: 0.9877, linesToCrossForBonus: 3 },
-  FAST: { mass: 0.75, friction: 0.987, linesToCrossForBonus: 2 },
-  GHOST: { mass: 0.6, friction: 0.989, linesToCrossForBonus: 2 },
-  ANCHOR: { mass: 2.5, friction: 0.9831, linesToCrossForBonus: 3 },
+  STANDARD: { mass: 1, friction: 0.985, linesToCrossForBonus: 1 },
+  HEAVY: { mass: 1.7, friction: 0.9877, linesToCrossForBonus: 2 },
+  FAST: { mass: 0.75, friction: 0.987, linesToCrossForBonus: 1 },
+  GHOST: { mass: 0.6, friction: 0.989, linesToCrossForBonus: 1 },
+  ANCHOR: { mass: 2.5, friction: 0.9831, linesToCrossForBonus: 2 },
   KING: { mass: 4.5, friction: 0.980, linesToCrossForBonus: 1, powerFactor: 2.2 },
-  SWERVE: { mass: 0.8, friction: 0.986, swerveFactor: 0.03, linesToCrossForBonus: 2 },
-  BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.05, linesToCrossForBonus: 2 },
-  DAMPENER: { mass: 1.9, friction: 0.9862, elasticity: 0.4, linesToCrossForBonus: 3 },
-  PAWN: { mass: 0.5, friction: 0.980, elasticity: 0.9, linesToCrossForBonus: 2 },
+  SWERVE: { mass: 0.8, friction: 0.986, swerveFactor: 0.03, linesToCrossForBonus: 1 },
+  BOUNCER: { mass: 1, friction: 0.985, elasticity: 1.05, linesToCrossForBonus: 1 },
+  DAMPENER: { mass: 1.9, friction: 0.9862, elasticity: 0.4, linesToCrossForBonus: 2 },
+  PAWN: { mass: 0.5, friction: 0.980, elasticity: 0.9, linesToCrossForBonus: 1 },
 };
 
 export const PUCK_SVG_DATA: Record<PuckType, { path: string, designRadius: number, pathLength?: number }> = {
@@ -253,9 +253,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
     switch (formation) {
         case 'DEFENSIVE':
             return [
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 350 * direction } },
                 { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 320 * direction } },
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 350 * direction } },
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 120 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.25, y: yBase + 220 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 250 * direction } },
@@ -264,9 +262,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
             ];
         case 'OFFENSIVE':
             return [
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 550 * direction } },
                 { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 580 * direction } },
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.8, y: yBase + 550 * direction } },
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 350 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.3, y: yBase + 450 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.5, y: yBase + 480 * direction } },
@@ -276,9 +272,7 @@ export const getPuckConfig = (team: Team, formation: FormationType) => {
         case 'BALANCED':
         default:
             return [
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.15, y: yBase + 480 * direction } },
                 { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.50, y: yBase + 520 * direction } },
-                { type: 'PAWN' as PuckType, position: { x: BOARD_WIDTH * 0.85, y: yBase + 480 * direction } },
                 { type: 'KING' as PuckType, position: { x: BOARD_WIDTH / 2, y: yBase + 280 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.2, y: yBase + 180 * direction } },
                 { type: 'FAST' as PuckType, position: { x: BOARD_WIDTH * 0.50, y: yBase + 150 * direction } },

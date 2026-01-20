@@ -12,161 +12,8 @@ import PuckTypeIcon from './components/PuckTypeIcon';
 import HelpModal from './components/HelpModal';
 import GameMessageDisplay from './components/GameMessageDisplay';
 import BonusTurnIndicator from './components/BonusTurnIndicator';
-import useGemini from './hooks/useGemini';
 
 type Screen = 'MENU' | 'GAME';
-
-const FormationSelector: React.FC<{ team: Team; current: FormationType; onSelect: (f: FormationType) => void; lang: Language; playSound: (s: string) => void }> = ({ team, current, onSelect, lang, playSound }) => {
-    const formations: FormationType[] = ['BALANCED', 'DEFENSIVE', 'OFFENSIVE'];
-    const teamColor = TEAM_COLORS[team];
-    const currentIndex = formations.indexOf(current);
-
-    const handlePrev = () => {
-        playSound('UI_CLICK_1');
-        const nextIdx = (currentIndex - 1 + formations.length) % formations.length;
-        onSelect(formations[nextIdx]);
-    };
-
-    const handleNext = () => {
-        playSound('UI_CLICK_1');
-        const nextIdx = (currentIndex + 1) % formations.length;
-        onSelect(formations[nextIdx]);
-    };
-
-    return (
-        <div className="formation-carousel" style={{ '--team-color': teamColor } as any}>
-            <style>{`
-                .formation-carousel { 
-                    display: flex; 
-                    align-items: center; 
-                    gap: 4rem; 
-                    background: none;
-                    padding: 1rem;
-                }
-                .arrow-btn { 
-                    background: rgba(0,0,0,0.2); 
-                    border: 1px solid rgba(255,255,255,0.1); 
-                    color: var(--team-color); 
-                    font-size: 3rem; 
-                    width: 60px;
-                    height: 60px;
-                    cursor: pointer; 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    filter: drop-shadow(0 0 10px var(--team-color));
-                    border-radius: 50%;
-                    line-height: 0;
-                    padding-bottom: 8px; /* Offset visual center of ‹ and › */
-                }
-                .arrow-btn:hover { 
-                    transform: scale(1.1); 
-                    background: rgba(255,255,255,0.05);
-                    filter: drop-shadow(0 0 20px var(--team-color)); 
-                }
-                .arrow-btn:active { transform: scale(0.9); }
-            `}</style>
-            <button className="arrow-btn" onClick={handlePrev}>‹</button>
-            <button className="arrow-btn" onClick={handleNext}>›</button>
-        </div>
-    );
-};
-
-const PreGameOverlay: React.FC<{ gameState: any; setFormation: (t: Team, f: FormationType) => void; onReady: () => void; lang: Language; playSound: (s: string) => void }> = ({ gameState, setFormation, onReady, lang, playSound }) => {
-    return (
-        <div className="pre-game-overlay">
-            <style>{`
-                .pre-game-overlay { 
-                    position: absolute; 
-                    inset: 0; 
-                    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.7) 100%);
-                    display: flex; 
-                    flex-direction: column; 
-                    justify-content: space-between;
-                    align-items: center; 
-                    z-index: 200; 
-                    padding: 6rem 0;
-                    pointer-events: none;
-                }
-                .formation-control-top, .formation-control-bottom {
-                    pointer-events: auto;
-                }
-                .countdown-container {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    text-align: center;
-                    pointer-events: none;
-                }
-                .countdown-display { 
-                    font-family: var(--font-family-title); 
-                    font-size: 14rem; 
-                    color: white; 
-                    text-shadow: 0 0 50px rgba(255,255,255,0.2); 
-                    animation: pulse-countdown 1s infinite; 
-                    line-height: 1;
-                    margin: 0;
-                    opacity: 0.6;
-                }
-                @keyframes pulse-countdown { 
-                    0% { transform: scale(1); opacity: 0.4; } 
-                    50% { transform: scale(1.1); opacity: 0.7; } 
-                    100% { transform: scale(1); opacity: 0.4; }
-                }
-            `}</style>
-            
-            <div className="formation-control-top">
-                <FormationSelector team="RED" current={gameState.formations.RED} onSelect={(f) => setFormation('RED', f)} lang={lang} playSound={playSound} />
-            </div>
-
-            <div className="countdown-container">
-                <div className="countdown-display">{gameState.preGameCountdown}</div>
-            </div>
-
-            <div className="formation-control-bottom">
-                <FormationSelector team="BLUE" current={gameState.formations.BLUE} onSelect={(f) => setFormation('BLUE', f)} lang={lang} playSound={playSound} />
-            </div>
-        </div>
-    );
-};
-
-const WinnerModal: React.FC<{ winner: Team; score: { RED: number; BLUE: number }; onRestart: () => void; onGoMenu: () => void; playSound: (sound: string) => void; lang: Language }> = ({ winner, score, onRestart, onGoMenu, playSound, lang }) => {
-  const t = TRANSLATIONS[lang];
-  const teamName = winner === 'BLUE' ? (lang === 'es' ? 'Equipo Azul' : 'Blue Team') : (lang === 'es' ? 'Equipo Rojo' : 'Red Team');
-  const teamColor = TEAM_COLORS[winner];
-
-  return (
-    <div className="modal-overlay">
-      <div className="winner-modal-layout">
-        <style>{`
-            .winner-modal-layout { text-align: center; padding: 2rem; }
-            .winner-title { font-size: 5rem; color: #ff0000; text-shadow: 0 0 20px #ff0000; margin: 0; }
-            .winner-team { font-size: 2rem; color: var(--team-color); margin-bottom: 2rem; }
-            .final-score-box { font-size: 3rem; display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
-            .restart-button { padding: 1rem 2rem; font-family: var(--font-family-title); font-size: 1.5rem; background: #ff0000; color: black; border: none; cursor: pointer; border-radius: 4px; }
-        `}</style>
-        <div 
-            className="winner-info-panel"
-            style={{ '--team-color': teamColor } as React.CSSProperties}
-        >
-            <h1 className="winner-title">{t.VICTORY}</h1>
-            <h2 className="winner-team">{teamName}</h2>
-            <div className="final-score-box">
-                <span style={{ color: TEAM_COLORS.BLUE }}>{score.BLUE}</span>
-                <span>-</span>
-                <span style={{ color: TEAM_COLORS.RED }}>{score.RED}</span>
-            </div>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button onClick={() => { playSound('UI_CLICK_1'); onRestart(); }} className="restart-button">{t.RESTART}</button>
-            <button onClick={() => { playSound('UI_CLICK_2'); onGoMenu(); }} className="restart-button" style={{ background: '#333', color: 'white', boxShadow: 'none' }}>{t.MENU}</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number; scoringPuckType: PuckType; } | null; lang: Language }> = ({ info, lang }) => {
   if (!info) return null;
@@ -174,30 +21,147 @@ const GoalTransition: React.FC<{ info: { scoringTeam: Team; pointsScored: number
   const { scoringTeam, pointsScored, scoringPuckType } = info;
   const teamColor = TEAM_COLORS[scoringTeam];
   const goalText = pointsScored > 1 ? t.GOALAZO : t.GOAL;
-  const pieceName = (t.PUCK_INFO as any)[scoringPuckType]?.name || scoringPuckType;
-  const teamLabel = scoringTeam === 'RED' ? (lang === 'es' ? 'EQUIPO ROJO' : 'RED TEAM') : (lang === 'es' ? 'EQUIPO AZUL' : 'BLUE TEAM');
 
   return (
     <div key={Date.now()} className="goal-transition-overlay">
        <style>{`
-          @keyframes goal-flicker { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
-          .goal-transition-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; z-index: 2000; pointer-events: none; }
-          .goal-transition-content { text-align: center; position: relative; animation: goal-flicker 0.2s infinite; }
-          .goal-puck-icon { width: 120px; height: 120px; margin: 0 auto 1rem; filter: drop-shadow(0 0 15px var(--ray-color)); }
-          .goal-transition-text { font-family: var(--font-family-title); font-size: 6rem; color: #fff; margin: 0; text-shadow: 0 0 20px var(--text-color), 0 0 40px var(--text-color); }
-          .goal-info-banner { background: rgba(0,0,0,0.9); border-top: 2px solid var(--text-color); border-bottom: 2px solid var(--text-color); padding: 1rem 3rem; margin-top: 1rem; }
-          .goal-team-name { font-family: var(--font-family-title); font-size: 2rem; color: var(--text-color); margin: 0; }
-          .goal-points-badge { display: inline-block; background: var(--text-color); color: #000; padding: 0.2rem 1rem; font-weight: 900; margin-top: 1rem; font-size: 1.4rem; }
+          @keyframes glitch-shake {
+            0% { transform: translate(0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(-5px, -5px); }
+            60% { transform: translate(5px, 5px); }
+            80% { transform: translate(5px, -5px); }
+            100% { transform: translate(0); }
+          }
+          @keyframes text-zoom {
+            0% { transform: scale(0.5); opacity: 0; }
+            30% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .goal-transition-overlay { 
+            position: absolute; inset: 0; 
+            background: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(15px); 
+            display: flex; justify-content: center; align-items: center; 
+            z-index: 2000; overflow: hidden;
+          }
+          .goal-impact-bg {
+            position: absolute; width: 200%; height: 200%;
+            background: radial-gradient(circle, ${teamColor}33 0%, transparent 60%);
+            animation: glitch-shake 0.1s infinite;
+          }
+          .goal-transition-content { text-align: center; position: relative; animation: text-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+          .goal-puck-icon { width: 140px; height: 140px; margin: 0 auto 1.5rem; filter: drop-shadow(0 0 20px ${teamColor}); }
+          .goal-transition-text { 
+            font-family: var(--font-family-title); font-size: 8rem; color: #fff; margin: 0; 
+            text-shadow: 0 0 30px ${teamColor}, 0 0 60px ${teamColor};
+            letter-spacing: 10px;
+          }
+          .goal-info-banner { 
+            background: #000; border: 2px solid ${teamColor}; padding: 1rem 4rem; margin-top: 2rem;
+            box-shadow: 0 0 20px ${teamColor}66;
+          }
+          .goal-team-name { font-family: var(--font-family-title); font-size: 2.5rem; color: ${teamColor}; margin: 0; }
        `}</style>
+       <div className="goal-impact-bg" />
        <div className="goal-transition-content">
             <PuckTypeIcon puckType={scoringPuckType} team={scoringTeam} teamColor={teamColor} className="goal-puck-icon" />
-           <h1 className="goal-transition-text" style={{'--text-color': teamColor} as React.CSSProperties}>
+           <h1 className="goal-transition-text">
             {goalText}
            </h1>
-           <div className="goal-info-banner" style={{'--text-color': teamColor} as React.CSSProperties}>
-              <h2 className="goal-team-name">{teamLabel}</h2>
-              <div className="goal-points-badge">+{pointsScored} {t.POINTS}</div>
+           <div className="goal-info-banner">
+              <h2 className="goal-team-name">+{pointsScored} {t.POINTS}</h2>
            </div>
+       </div>
+    </div>
+  );
+};
+
+const WinnerModal: React.FC<{
+  winner: Team;
+  score: { RED: number; BLUE: number };
+  onRestart: () => void;
+  onGoMenu: () => void;
+  playSound: (s: string) => void;
+  lang: Language;
+}> = ({ winner, score, onRestart, onGoMenu, playSound, lang }) => {
+  const t = TRANSLATIONS[lang];
+  const teamColor = TEAM_COLORS[winner];
+  
+  return (
+    <div className="modal-overlay" style={{ zIndex: 3000 }}>
+       <style>{`
+          .winner-modal {
+            background: #000;
+            border: 4px solid ${teamColor};
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 0 50px ${teamColor}88;
+            max-width: 500px;
+            width: 90%;
+            animation: card-fade-in-up 0.5s ease-out;
+            position: relative;
+            z-index: 3001;
+          }
+          .winner-title {
+            font-family: var(--font-family-title);
+            font-size: 4rem;
+            color: ${teamColor};
+            text-shadow: 0 0 20px ${teamColor};
+            margin-bottom: 1rem;
+          }
+          .final-score {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            color: #fff;
+          }
+          .winner-actions {
+            display: flex;
+            gap: 1rem;
+            flex-direction: column;
+          }
+          .winner-btn {
+            background: transparent;
+            border: 2px solid ${teamColor};
+            color: #fff;
+            padding: 1rem;
+            font-family: var(--font-family-title);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+          }
+          .winner-btn:hover {
+            background: ${teamColor};
+            color: #000;
+          }
+          .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2500;
+          }
+       `}</style>
+       <div className="winner-modal">
+          <h1 className="winner-title">{t.VICTORY}</h1>
+          <h2 style={{ color: teamColor, marginBottom: '2rem' }}>
+            {winner === 'RED' ? (lang === 'es' ? 'EQUIPO ROJO' : 'RED TEAM') : (lang === 'es' ? 'EQUIPO AZUL' : 'BLUE TEAM')}
+          </h2>
+          <div className="final-score">
+            {score.RED} - {score.BLUE}
+          </div>
+          <div className="winner-actions">
+            <button className="winner-btn" onClick={() => { playSound('UI_CLICK_1'); onRestart(); }}>
+              {t.RESTART}
+            </button>
+            <button className="winner-btn" style={{ opacity: 0.7, fontSize: '1.1rem' }} onClick={() => { playSound('UI_CLICK_2'); onGoMenu(); }}>
+              {t.MENU}
+            </button>
+          </div>
        </div>
     </div>
   );
@@ -210,7 +174,7 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('MENU');
   const [lang, setLang] = useState<Language>('es'); 
   
-  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn, startGame, setFormation } = useGameEngine({ playSound });
+  const { gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, handleBoardMouseDown, handleActivatePulsar, clearTurnLossReason, clearBonusTurn } = useGameEngine({ playSound });
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [helpModalTeam, setHelpModalTeam] = useState<Team | null>(null);
@@ -219,49 +183,36 @@ function App() {
 
   useEffect(() => {
     if (currentScreen !== 'GAME' || gameState.status !== 'PLAYING') return;
-    
-    const isFirstTurn = prevTurnRef.current === null;
     const hasTurnChanged = prevTurnRef.current !== null && prevTurnRef.current !== gameState.currentTurn;
-
-    if ((isFirstTurn || hasTurnChanged) && !gameState.isSimulating && !gameState.goalScoredInfo) {
+    if ((prevTurnRef.current === null || hasTurnChanged) && !gameState.isSimulating && !gameState.goalScoredInfo) {
       if (hasTurnChanged) playSound('TURN_CHANGE');
-      
-      const currentReason = gameState.turnLossReason;
-      setTurnChangeInfo({ 
-        team: gameState.currentTurn, 
-        previousTeam: prevTurnRef.current, 
-        key: Date.now(), 
-        reason: currentReason 
-      });
-
-      const timer = setTimeout(() => {
-          setTurnChangeInfo(null);
-          if (currentReason) clearTurnLossReason();
-      }, 2500);
-
+      setTurnChangeInfo({ team: gameState.currentTurn, previousTeam: prevTurnRef.current, key: Date.now(), reason: gameState.turnLossReason });
+      const timer = setTimeout(() => { setTurnChangeInfo(null); if (gameState.turnLossReason) clearTurnLossReason(); }, 2500);
       prevTurnRef.current = gameState.currentTurn;
       return () => clearTimeout(timer);
     }
-    
-    if (gameState.isSimulating && turnChangeInfo) {
-      setTurnChangeInfo(null);
-    }
+  }, [gameState.currentTurn, gameState.isSimulating, gameState.goalScoredInfo, gameState.turnLossReason, playSound, clearTurnLossReason, currentScreen, gameState.status]);
 
-  }, [gameState.currentTurn, gameState.isSimulating, gameState.goalScoredInfo, gameState.turnLossReason, playSound, clearTurnLossReason, currentScreen, turnChangeInfo, gameState.status]);
+  useEffect(() => {
+    if (gameState.bonusTurnForTeam) {
+      const timer = setTimeout(() => {
+        clearBonusTurn();
+      }, 1600);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.bonusTurnForTeam, clearBonusTurn]);
 
   const getSVGCoordinates = useCallback((clientX: number, clientY: number): Vector | null => {
     const svg = svgRef.current;
     if (!svg) return null;
     const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
+    pt.x = clientX; pt.y = clientY;
     return pt.matrixTransform(svg.getScreenCTM()!.inverse());
   }, []);
 
   useEffect(() => {
     if (currentScreen === 'MENU') return;
     const handleGlobalMove = (e: MouseEvent | TouchEvent) => {
-      if (e instanceof TouchEvent && gameState.selectedPuckId !== null) e.preventDefault();
       const touch = e instanceof TouchEvent ? e.touches[0] : e;
       if (!touch) return;
       const coords = getSVGCoordinates(touch.clientX, touch.clientY);
@@ -271,61 +222,40 @@ function App() {
       const touch = e instanceof TouchEvent ? e.changedTouches[0] : e;
       handleMouseUp(touch ? getSVGCoordinates(touch.clientX, touch.clientY) : null);
     };
-    
     window.addEventListener('mousemove', handleGlobalMove);
     window.addEventListener('mouseup', handleGlobalUp);
     window.addEventListener('touchmove', handleGlobalMove, { passive: false });
     window.addEventListener('touchend', handleGlobalUp);
-    window.addEventListener('touchcancel', handleGlobalUp);
-
     return () => {
       window.removeEventListener('mousemove', handleGlobalMove);
       window.removeEventListener('mouseup', handleGlobalUp);
       window.removeEventListener('touchmove', handleGlobalMove);
       window.removeEventListener('touchend', handleGlobalUp);
-      window.removeEventListener('touchcancel', handleGlobalUp);
     };
-  }, [handleMouseMove, handleMouseUp, getSVGCoordinates, gameState.selectedPuckId, currentScreen]);
+  }, [handleMouseMove, handleMouseUp, getSVGCoordinates, currentScreen]);
 
   if (currentScreen === 'MENU') {
-      return (
-          <MainMenu 
-            onStartGame={() => {
-                resetGame();
-                prevTurnRef.current = null;
-                setCurrentScreen('GAME');
-            }} 
-            onLanguageChange={setLang}
-            currentLanguage={lang}
-            playSound={playSound}
-          />
-      );
+      return <MainMenu onStartGame={() => { resetGame(); prevTurnRef.current = null; setCurrentScreen('GAME'); }} onLanguageChange={setLang} currentLanguage={lang} playSound={playSound} />;
   }
 
   return (
-    <div className={`app-container ${gameState.screenShake > 0 ? 'screen-shake' : ''}`}>
+    <div className={`app-container ${gameState.goalScoredInfo ? 'goal-flash-active' : ''}`}>
         <style>{`
             .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; position: relative; background: #000; }
-            .main-content-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 0.5rem; position: relative; }
-            .game-board-wrapper { height: 100%; aspect-ratio: ${BOARD_WIDTH} / ${BOARD_HEIGHT}; position: relative; }
+            .main-content-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 1rem; position: relative; }
+            .game-board-wrapper { height: 100%; aspect-ratio: ${BOARD_WIDTH} / ${BOARD_HEIGHT}; position: relative; box-shadow: 0 0 100px rgba(255,0,0,0.1); }
         `}</style>
-
         <PlayerUI team="RED" gameState={gameState} onHelpClick={() => setHelpModalTeam('RED')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={false} lang={lang} />
-        
         <main className="main-content-area">
           <div className="game-board-wrapper">
             <GameBoard ref={svgRef} gameState={gameState} onMouseDown={handleMouseDown} onBoardMouseDown={handleBoardMouseDown} lang={lang} />
-            
-            {gameState.status === 'PRE_GAME' && <PreGameOverlay gameState={gameState} setFormation={setFormation} onReady={startGame} lang={lang} playSound={playSound} />}
             {gameState.goalScoredInfo && <GoalTransition info={gameState.goalScoredInfo} lang={lang} />}
             {turnChangeInfo && <TurnChangeIndicator key={turnChangeInfo.key} team={turnChangeInfo.team} previousTeam={turnChangeInfo.previousTeam} reason={turnChangeInfo.reason} lang={lang} />}
             <GameMessageDisplay message={gameState.gameMessage} lang={lang} />
             <BonusTurnIndicator team={gameState.bonusTurnForTeam} lang={lang} />
           </div>
         </main>
-
         <PlayerUI team="BLUE" gameState={gameState} onHelpClick={() => setHelpModalTeam('BLUE')} onActivatePulsar={handleActivatePulsar} scoreShouldPop={false} lang={lang} />
-        
         {gameState.winner && <WinnerModal winner={gameState.winner} score={gameState.score} onRestart={resetGame} onGoMenu={() => setCurrentScreen('MENU')} playSound={playSound} lang={lang} />}
         <HelpModal isOpen={helpModalTeam !== null} onClose={() => setHelpModalTeam(null)} team={helpModalTeam} playSound={playSound} lang={lang} />
     </div>

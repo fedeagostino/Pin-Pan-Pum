@@ -111,13 +111,12 @@ export type PreviewState = {
   linesToCrossForBonus: number;
 } | null;
 
-export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL';
+export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_CHARGE';
 
 export type GameStatus = 'PRE_GAME' | 'PLAYING' | 'GOAL' | 'GAME_OVER';
 
 export type GameState = {
   status: GameStatus;
-  preGameCountdown: number;
   pucks: Puck[];
   particles: Particle[];
   orbitingParticles: Particle[];

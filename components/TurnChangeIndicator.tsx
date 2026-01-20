@@ -20,6 +20,7 @@ const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, previou
         case 'UNCHARGED_GOAL': return { title: t.TURN_LOST, subtitle: t.UNCHARGED };
         case 'PHASED_GOAL': return { title: t.TURN_LOST, subtitle: t.INTANGIBLE };
         case 'SPECIAL_NO_GOAL': return { title: t.TURN_LOST, subtitle: lang === 'es' ? 'TIRO ESPECIAL SIN GOL' : 'SPECIAL SHOT MISS' };
+        case 'NO_CHARGE': return { title: t.TURN_LOST, subtitle: lang === 'es' ? '¡NO ATRAVESÓ LÍNEAS!' : 'FAILED TO CHARGE!' };
         default: return null;
     }
   };
@@ -69,7 +70,7 @@ const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, previou
                       <div className="flipper-sub-text">{reasonInfo.subtitle}</div>
                   </>
               ) : ( 
-                  <div className="flipper-main-text">{lang === 'es' ? 'FIN DEL TURNO' : 'END OF TURN'}</div> 
+                  <div className="flipper-main-text">{lang === 'es' ? 'TURNO COMPLETADO' : 'TURN COMPLETED'}</div> 
               )}
           </div>
           <div className="flipper-face flipper-back">

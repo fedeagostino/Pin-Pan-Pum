@@ -29,16 +29,45 @@ const subtractVectors = (v1: Vector, v2: Vector) => ({ x: v1.x - v2.x, y: v1.y -
 
 const checkLineIntersection = (a: Vector, b: Vector, c: Vector, d: Vector): boolean => {
   const det = (b.x - a.x) * (d.y - c.y) - (d.x - c.x) * (b.y - a.y);
-  if (det === 0) return false;
+  if (Math.abs(det) < 0.0001) return false;
   const lambda = ((d.y - c.y) * (d.x - a.x) + (c.x - d.x) * (d.y - a.y)) / det;
   const gamma = ((a.y - b.y) * (d.x - a.x) + (b.x - a.x) * (d.y - a.y)) / det;
-  return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+  return (lambda > 0 && lambda < 1) && (gamma > 0 && gamma < 1);
 };
 
 export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) => void }) => {
+  const initPucks = useCallback((redFormation: FormationType, blueFormation: FormationType) => {
+    const pucks: Puck[] = [];
+    let idCounter = 1;
+    const configs = [{ team: 'RED' as Team, formation: redFormation }, { team: 'BLUE' as Team, formation: blueFormation }];
+    configs.forEach(config => {
+      const pConfig = getPuckConfig(config.team, config.formation);
+      pConfig.forEach(p => {
+        const props = PUCK_TYPE_PROPERTIES[p.type];
+        pucks.push({
+          id: idCounter++,
+          puckType: p.type as PuckType,
+          team: config.team,
+          position: { ...p.position },
+          initialPosition: { ...p.position },
+          velocity: { x: 0, y: 0 },
+          rotation: config.team === 'BLUE' ? 180 : 0,
+          mass: props.mass,
+          friction: props.friction,
+          radius: p.type === 'KING' ? KING_PUCK_RADIUS : (p.type === 'PAWN' ? PAWN_PUCK_RADIUS : PUCK_RADIUS),
+          isCharged: false,
+          elasticity: props.elasticity,
+          swerveFactor: props.swerveFactor,
+          durability: p.type === 'PAWN' ? PAWN_DURABILITY : undefined,
+          temporaryEffects: [],
+        });
+      });
+    });
+    return pucks;
+  }, []);
+
   const [gameState, setGameState] = useState<GameState>({
-    status: 'PRE_GAME',
-    preGameCountdown: 10,
+    status: 'PLAYING',
     pucks: [],
     particles: [],
     orbitingParticles: [],
@@ -47,7 +76,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     winner: null,
     score: { RED: 0, BLUE: 0 },
     isSimulating: false,
-    canShoot: false,
+    canShoot: true,
     selectedPuckId: null,
     infoCardPuckId: null,
     shotPreview: null,
@@ -74,52 +103,16 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
 
   const requestRef = useRef<number>(null);
 
-  const initPucks = useCallback((redFormation: FormationType, blueFormation: FormationType) => {
-    const pucks: Puck[] = [];
-    let idCounter = 1;
-
-    const configs = [
-        { team: 'RED' as Team, formation: redFormation },
-        { team: 'BLUE' as Team, formation: blueFormation }
-    ];
-
-    configs.forEach(config => {
-      const pConfig = getPuckConfig(config.team, config.formation);
-      pConfig.forEach(p => {
-        const props = PUCK_TYPE_PROPERTIES[p.type];
-        pucks.push({
-          id: idCounter++,
-          puckType: p.type as PuckType, // Fixed Type casting from string to PuckType
-          team: config.team,
-          position: { ...p.position },
-          initialPosition: { ...p.position },
-          velocity: { x: 0, y: 0 },
-          rotation: config.team === 'BLUE' ? 180 : 0,
-          mass: props.mass,
-          friction: props.friction,
-          radius: p.type === 'KING' ? KING_PUCK_RADIUS : (p.type === 'PAWN' ? PAWN_PUCK_RADIUS : PUCK_RADIUS),
-          isCharged: false,
-          elasticity: props.elasticity,
-          swerveFactor: props.swerveFactor,
-          durability: p.type === 'PAWN' ? PAWN_DURABILITY : undefined,
-          temporaryEffects: [],
-        });
-      });
-    });
-    return pucks;
-  }, []);
-
   const resetGame = useCallback(() => {
     setGameState(prev => ({
       ...prev,
-      status: 'PRE_GAME',
-      preGameCountdown: 10,
+      status: 'PLAYING',
       pucks: initPucks('BALANCED', 'BALANCED'),
       score: { RED: 0, BLUE: 0 },
       winner: null,
       currentTurn: 'RED',
       isSimulating: false,
-      canShoot: false,
+      canShoot: true,
       pucksShotThisTurn: [],
       pulsarPower: { RED: 0, BLUE: 0 },
       specialShotStatus: { RED: 'NONE', BLUE: 'NONE' },
@@ -127,42 +120,14 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       turnCount: 0,
       imaginaryLine: null,
       goalScoredInfo: null,
-      formations: { RED: 'BALANCED', BLUE: 'BALANCED' }
+      formations: { RED: 'BALANCED', BLUE: 'BALANCED' },
     }));
-  }, [initPucks]);
-
-  const setFormation = useCallback((team: Team, formation: FormationType) => {
-    setGameState(prev => {
-        const newFormations = { ...prev.formations, [team]: formation };
-        return {
-            ...prev,
-            formations: newFormations,
-            pucks: initPucks(newFormations.RED, newFormations.BLUE)
-        };
-    });
   }, [initPucks]);
 
   const startGame = useCallback(() => {
     setGameState(prev => ({ ...prev, status: 'PLAYING', canShoot: true }));
   }, []);
 
-  // Countdown Logic
-  useEffect(() => {
-    if (gameState.status === 'PRE_GAME') {
-        const timer = setInterval(() => {
-            setGameState(prev => {
-                if (prev.preGameCountdown <= 1) {
-                    clearInterval(timer);
-                    return { ...prev, preGameCountdown: 0, status: 'PLAYING', canShoot: true };
-                }
-                return { ...prev, preGameCountdown: prev.preGameCountdown - 1 };
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }
-  }, [gameState.status]);
-
-  // Goal logic cleanup
   useEffect(() => {
     if (gameState.goalScoredInfo) {
       const timer = setTimeout(() => {
@@ -190,7 +155,6 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
     const lines: ImaginaryLine[] = [];
     const shotPuck = pucks.find(p => p.id === puckId);
     if (!shotPuck) return lines;
-
     const teamPucks = pucks.filter(p => p.team === shotPuck.team && p.id !== puckId);
     for (let i = 0; i < teamPucks.length; i++) {
       for (let j = i + 1; j < teamPucks.length; j++) {
@@ -211,10 +175,8 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       if (prev.winner || !prev.canShoot || prev.goalScoredInfo || prev.status !== 'PLAYING') return prev;
       const puck = prev.pucks.find(p => p.id === puckId);
       if (!puck || puck.team !== prev.currentTurn || prev.pucksShotThisTurn.includes(puckId)) return prev;
-
       const lines = calculateLinesForPuck(puckId, prev.pucks);
       playSound('PUCK_SELECT');
-      
       return { 
         ...prev, 
         selectedPuckId: puckId,
@@ -237,12 +199,10 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       if (prev.selectedPuckId === null) return prev;
       const puck = prev.pucks.find(p => p.id === prev.selectedPuckId);
       if (!puck) return prev;
-
       const dragVector = subtractVectors(puck.position, pos);
       const distance = getVectorMagnitude(dragVector);
       const isCancelZone = distance < CANCEL_SHOT_THRESHOLD;
       const power = Math.min(distance / MAX_DRAG_FOR_POWER, 1);
-
       return {
         ...prev,
         shotPreview: {
@@ -262,26 +222,20 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       if (prev.selectedPuckId === null || !prev.shotPreview || prev.shotPreview.isCancelZone) {
         return { ...prev, selectedPuckId: null, shotPreview: null, imaginaryLine: null };
       }
-
       const puck = prev.pucks.find(p => p.id === prev.selectedPuckId);
       if (!puck) return { ...prev, selectedPuckId: null, shotPreview: null, imaginaryLine: null };
-
       const shotVector = subtractVectors(puck.position, prev.shotPreview.end);
-      const velocity = {
-        x: shotVector.x * LAUNCH_POWER_MULTIPLIER,
-        y: shotVector.y * LAUNCH_POWER_MULTIPLIER
-      };
-
+      const velocity = { x: shotVector.x * LAUNCH_POWER_MULTIPLIER, y: shotVector.y * LAUNCH_POWER_MULTIPLIER };
       playSound('SHOT');
-
       return {
         ...prev,
-        pucks: prev.pucks.map(p => p.id === prev.selectedPuckId ? { ...p, velocity, isCharged: false } : p),
+        // RULE UPDATE: Removed resetting isCharged: false. Charge now persists.
+        pucks: prev.pucks.map(p => p.id === prev.selectedPuckId ? { ...p, velocity } : p),
         selectedPuckId: null,
         shotPreview: null,
         isSimulating: true,
         pucksShotThisTurn: [...prev.pucksShotThisTurn, puck.id],
-        imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, isConfirmed: true } : null
+        imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, isConfirmed: true, crossedLineIndices: new Set() } : null
       };
     });
   }, [playSound]);
@@ -289,21 +243,45 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
   const updatePhysics = useCallback(() => {
     setGameState(prev => {
       if (prev.status !== 'PLAYING' || prev.goalScoredInfo) return prev;
-
       const movingPucks = prev.pucks.filter(p => getVectorMagnitude(p.velocity) > MIN_VELOCITY_TO_STOP);
       
       if (!prev.isSimulating && movingPucks.length === 0) {
           if (prev.pucksShotThisTurn.length > 0) {
-              const nextTurn = prev.currentTurn === 'RED' ? 'BLUE' : 'RED';
-              return { 
-                  ...prev, 
-                  currentTurn: nextTurn, 
-                  pucksShotThisTurn: [],
-                  isSimulating: false,
-                  canShoot: true,
-                  imaginaryLine: null,
-                  goalScoredInfo: null
-              };
+              const shotPuck = prev.pucks.find(p => p.id === prev.imaginaryLine?.shotPuckId);
+              
+              // RULE UPDATE: Extra turn is granted if lines were crossed IN THIS TURN, 
+              // regardless of if it was already charged from previous turns.
+              const teamPucksCount = prev.pucks.filter(tp => tp.team === (shotPuck?.team || 'RED')).length;
+              const availableLinesCount = ((teamPucksCount - 1) * (teamPucksCount - 2)) / 2;
+              let required = shotPuck ? PUCK_TYPE_PROPERTIES[shotPuck.puckType].linesToCrossForBonus : 1;
+              required = Math.min(required, Math.max(1, availableLinesCount));
+              
+              const crossedThisTurn = (prev.imaginaryLine?.crossedLineIndices.size || 0) >= required;
+              const isPuckCurrentlyCharged = shotPuck?.isCharged;
+              
+              if (crossedThisTurn) {
+                  playSound('BONUS_TURN');
+                  return {
+                      ...prev,
+                      pucksShotThisTurn: [],
+                      isSimulating: false,
+                      canShoot: true,
+                      bonusTurnForTeam: prev.currentTurn,
+                      imaginaryLine: null,
+                      turnLossReason: null
+                  };
+              } else {
+                  const nextTurn = prev.currentTurn === 'RED' ? 'BLUE' : 'RED';
+                  return { 
+                      ...prev, 
+                      currentTurn: nextTurn, 
+                      pucksShotThisTurn: [],
+                      isSimulating: false,
+                      canShoot: true,
+                      imaginaryLine: null,
+                      turnLossReason: 'NO_CHARGE'
+                  };
+              }
           }
           return { ...prev, isSimulating: false, canShoot: true };
       }
@@ -315,73 +293,66 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
 
       nextPucks = nextPucks.map(p => {
         const prevPos = { ...p.position };
-        const nextPos = {
-          x: p.position.x + p.velocity.x,
-          y: p.position.y + p.velocity.y
-        };
+        const nextPos = { x: p.position.x + p.velocity.x, y: p.position.y + p.velocity.y };
 
-        if (nextImaginaryLine && p.id === nextImaginaryLine.shotPuckId && !p.isCharged) {
+        if (nextImaginaryLine && p.id === nextImaginaryLine.shotPuckId) {
           nextImaginaryLine.lines.forEach((line, idx) => {
             if (!nextImaginaryLine!.crossedLineIndices.has(idx)) {
               if (checkLineIntersection(prevPos, nextPos, line.start, line.end)) {
                 nextImaginaryLine!.crossedLineIndices.add(idx);
                 playSound('LINE_CROSS');
                 
-                const required = PUCK_TYPE_PROPERTIES[p.puckType].linesToCrossForBonus;
+                const teamPucksCount = nextPucks.filter(tp => tp.team === p.team).length;
+                const availableLinesCount = ((teamPucksCount - 1) * (teamPucksCount - 2)) / 2;
+                let required = PUCK_TYPE_PROPERTIES[p.puckType].linesToCrossForBonus;
+                required = Math.min(required, Math.max(1, availableLinesCount));
+                
                 if (nextImaginaryLine!.crossedLineIndices.size >= required) {
-                  p.isCharged = true;
-                  playSound('MAX_POWER_LOCK');
+                  if (!p.isCharged) {
+                      p.isCharged = true;
+                      playSound('MAX_POWER_LOCK');
+                  }
                 }
               }
             }
           });
         }
 
-        let nextVel = {
-          x: p.velocity.x * p.friction,
-          y: p.velocity.y * p.friction
-        };
-
+        let nextVel = { x: p.velocity.x * p.friction, y: p.velocity.y * p.friction };
         const inGoalX = nextPos.x > GOAL_X_MIN && nextPos.x < GOAL_X_MAX;
-        
-        if (nextPos.x < p.radius || nextPos.x > BOARD_WIDTH - p.radius) {
-          nextPos.x = nextPos.x < p.radius ? p.radius : BOARD_WIDTH - p.radius;
-          nextVel.x *= -1;
-          playSound('WALL_IMPACT', { throttleMs: 50 });
-        }
-
-        const crossingTop = nextPos.y < p.radius;
-        const crossingBottom = nextPos.y > BOARD_HEIGHT - p.radius;
+        const crossingTop = nextPos.y < 0;
+        const crossingBottom = nextPos.y > BOARD_HEIGHT;
 
         if (inGoalX && (crossingTop || crossingBottom)) {
            if (p.isCharged) {
-              const passedTopLine = nextPos.y < 0;
-              const passedBottomLine = nextPos.y > BOARD_HEIGHT;
-
-              if ((passedTopLine || passedBottomLine) && !nextGoalInfo) {
-                  // Red is top, scores in bottom goal (passedBottomLine)
-                  // Blue is bottom, scores in top goal (passedTopLine)
-                  const pointReceiver = passedTopLine ? 'BLUE' : 'RED';
+              if (!nextGoalInfo) {
+                  const pointReceiver = crossingTop ? 'BLUE' : 'RED';
                   const points = PUCK_GOAL_POINTS[p.puckType];
-                  
                   nextScore[pointReceiver] += points;
                   nextGoalInfo = { scoringTeam: pointReceiver, pointsScored: points, scoringPuckType: p.puckType };
                   playSound('GOAL_SCORE');
                   nextVel = { x: 0, y: 0 };
               }
            } else {
-              if (nextPos.y < p.radius || nextPos.y > BOARD_HEIGHT - p.radius) {
-                 nextPos.y = nextPos.y < p.radius ? p.radius : BOARD_HEIGHT - p.radius;
-                 nextVel.y *= -1.1;
-                 playSound('WALL_IMPACT');
-              }
+              if (crossingTop) { nextPos.y = 1; nextVel.y *= -1.2; playSound('WALL_IMPACT'); }
+              else if (crossingBottom) { nextPos.y = BOARD_HEIGHT - 1; nextVel.y *= -1.2; playSound('WALL_IMPACT'); }
            }
-        } else if (crossingTop || crossingBottom) {
-           nextPos.y = crossingTop ? p.radius : BOARD_HEIGHT - p.radius;
-           nextVel.y *= -1;
-           playSound('WALL_IMPACT', { throttleMs: 50 });
+        } else {
+            const touchingTopWall = nextPos.y < p.radius;
+            const touchingBottomWall = nextPos.y > BOARD_HEIGHT - p.radius;
+            const touchingLeftWall = nextPos.x < p.radius;
+            const touchingRightWall = nextPos.x > BOARD_WIDTH - p.radius;
+            if (touchingLeftWall || touchingRightWall) {
+                nextPos.x = touchingLeftWall ? p.radius : BOARD_WIDTH - p.radius;
+                nextVel.x *= -1;
+                playSound('WALL_IMPACT', { throttleMs: 50 });
+            }
+            if (!inGoalX && (touchingTopWall || touchingBottomWall)) {
+                nextPos.y = touchingTopWall ? p.radius : BOARD_HEIGHT - p.radius;
+                nextVel.y *= -1;
+                playSound('WALL_IMPACT', { throttleMs: 50 });
+            }
         }
-
         return { ...p, position: nextPos, velocity: nextVel };
       });
 
@@ -393,18 +364,15 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
           const dy = p2.position.y - p1.position.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           const minDist = p1.radius + p2.radius;
-
           if (dist < minDist) {
             playSound('COLLISION', { throttleMs: 30 });
-            const normalX = dx / dist;
-            const normalY = dy / dist;
+            const normalX = dx / (dist || 1);
+            const normalY = dy / (dist || 1);
             const pVal = 2 * (p1.velocity.x * normalX + p1.velocity.y * normalY - p2.velocity.x * normalX - p2.velocity.y * normalY) / (p1.mass + p2.mass);
-            
             nextPucks[i].velocity.x -= pVal * p2.mass * normalX;
             nextPucks[i].velocity.y -= pVal * p2.mass * normalY;
             nextPucks[j].velocity.x += pVal * p1.mass * normalX;
             nextPucks[j].velocity.y += pVal * p1.mass * normalY;
-            
             const overlap = minDist - dist;
             nextPucks[i].position.x -= normalX * overlap / 2;
             nextPucks[i].position.y -= normalY * overlap / 2;
@@ -428,7 +396,6 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         imaginaryLine: nextImaginaryLine
       };
     });
-
     requestRef.current = requestAnimationFrame(updatePhysics);
   }, [playSound]);
 
@@ -438,13 +405,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
   }, [updatePhysics]);
 
   return { 
-    gameState, 
-    handleMouseDown, 
-    handleMouseMove, 
-    handleMouseUp, 
-    resetGame, 
-    startGame,
-    setFormation,
+    gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, startGame,
     handleBoardMouseDown: () => setGameState(prev => ({ ...prev, infoCardPuckId: null })),
     handleActivatePulsar: () => {},
     clearTurnLossReason: () => setGameState(prev => ({ ...prev, turnLossReason: null })),
