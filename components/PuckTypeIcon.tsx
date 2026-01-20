@@ -21,14 +21,12 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
 
     const renderSteveHair = (scale: number = 1) => (
         <g transform={`scale(${scale}) translate(0, -5)`}>
-            {/* The legendary Steve Harrington Pompadour */}
             <path 
                 d="M -15 0 C -15 -15, -10 -22, 0 -22 C 10 -22, 15 -15, 15 0 C 15 5, 10 8, 0 8 C -10 8, -15 5, -15 0" 
                 fill="#5d4037" 
                 stroke="#3e2723" 
                 strokeWidth="1"
             />
-            {/* Highlights */}
             <path 
                 d="M -8 -15 Q 0 -18 8 -15" 
                 fill="none" 
@@ -40,22 +38,32 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
         </g>
     );
 
+    const renderMaxine = (scale: number = 1) => (
+        <g transform={`scale(${scale})`}>
+            <path 
+                d="M -16 5 C -16 -15, -12 -22, 0 -22 C 12 -22, 16 -15, 16 5 C 16 12, 10 15, 0 15 C -10 15, -16 12, -16 5" 
+                fill="#e67e22" 
+                stroke="#d35400" 
+                strokeWidth="1"
+            />
+            <path d="M -14 -5 A 14 14 0 0 1 14 -5" fill="none" stroke="#2c3e50" strokeWidth="3" />
+            <rect x="-18" y="-8" width="6" height="12" rx="2" fill="#2c3e50" />
+            <rect x="12" y="-8" width="6" height="12" rx="2" fill="#2c3e50" />
+            <circle cx="0" cy="0" r="10" fill="#fcd9cc" opacity="0.4" />
+        </g>
+    );
+
     const renderWalkieTalkie = (scale: number = 1) => (
         <g transform={`scale(${scale})`}>
-            {/* Walkie Talkie Body */}
             <rect x="-10" y="-14" width="20" height="28" rx="2" fill="#2d3748" stroke="#1a202c" strokeWidth="1.5" />
-            {/* Antenna */}
             <rect x="-7" y="-24" width="3" height="11" fill="#1a202c" rx="1" />
-            {/* Speaker Grill */}
             <g transform="translate(0, 2)">
                 <line x1="-6" y1="-6" x2="6" y2="-6" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
                 <line x1="-6" y1="-3" x2="6" y2="-3" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
                 <line x1="-6" y1="0" x2="6" y2="0" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
                 <line x1="-6" y1="3" x2="6" y2="3" stroke="#1a202c" strokeWidth="1.5" strokeLinecap="round" />
             </g>
-            {/* Dial/Button */}
             <circle cx="6" cy="-14" r="2.5" fill="#111" />
-            {/* Small LED (Active) */}
             <circle cx="6" cy="-8" r="1" fill="#ff0000" opacity="0.8" />
         </g>
     );
@@ -68,20 +76,29 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
                 if (effectiveTeam === 'BLUE') {
                     return (
                         <g>
-                            <circle r="20" fill="#fcd9cc" stroke="#d9b8ad" strokeWidth="2" />
-                            <circle r="18" fill="#e0c2b8" opacity="0.3" />
+                            <circle r="20" fill="#fff5ee" stroke="#d9b8ad" strokeWidth="2" />
+                            {/* Shaved Hair effect */}
+                            <path d="M -18 -5 A 18 18 0 0 1 18 -5 Q 0 -22 -18 -5 Z" fill="#5d4037" opacity="0.3" />
+                            {/* Eyes */}
                             <circle cx="-6" cy="-4" r="1.5" fill="#333" />
                             <circle cx="6" cy="-4" r="1.5" fill="#333" />
+                            {/* Nosebleed */}
                             <path d="M 0 3 L 0 10" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" />
                             <circle cx="0" cy="11" r="1.5" fill="#ff0000" />
+                            {/* Head Glow */}
+                            <circle r="18" fill="#e0c2b8" opacity="0.1" />
                         </g>
                     );
                 } else {
                     return (
                         <g>
-                            <path d="M 0 -20 L 14.1 -14.1 L 20 0 L 14.1 14.1 L 0 20 L -14.1 14.1 L -20 0 L -14.1 -14.1 Z" fill="#4a0000" stroke="#000" {...pathProps} />
-                            <rect x="-8" y="-5" width="4" height="4" fill="#ff0000" />
-                            <rect x="4" y="-5" width="4" height="4" fill="#ff0000" />
+                            <path d="M 0 -20 L 14.1 -14.1 L 20 0 L 14.1 14.1 L 0 20 L -14.1 14.1 L -20 0 L -14.1 -14.1 Z" fill="#2a0505" stroke="#000" {...pathProps} />
+                            {/* Vines */}
+                            <path d="M -10 -10 L 10 10 M 10 -10 L -10 10" stroke="#4a0000" strokeWidth="1.5" opacity="0.5" />
+                            {/* White Eyes */}
+                            <circle cx="-7" cy="-5" r="3" fill="#ffffff" />
+                            <circle cx="7" cy="-5" r="3" fill="#ffffff" />
+                            {/* Evil Smile */}
                             <path d="M -5 10 Q 0 15 5 10" fill="none" stroke="#000" strokeWidth="2" />
                         </g>
                     );
@@ -118,6 +135,9 @@ const PuckTypeIcon: React.FC<PuckTypeIconProps> = ({ puckType, teamColor, team, 
                     );
                 }
             case 'GHOST':
+                if (effectiveTeam === 'BLUE') {
+                    return renderMaxine(1.1);
+                }
                 return <path d="M 0 -20 C 14.4 -24.8, 24.8 0, 10 18 S -20 24.8, -15 -10 S 10 10, 0 -20 Z" fill="#dbeafe" stroke="#93c5fd" {...pathProps} />;
             case 'SWERVE':
                 return <path d="M 0 -18 A 9 9 0 0 1 0 0 A 9 9 0 0 0 0 18 A 18 18 0 0 1 0 -18 Z" fill="#c084fc" stroke="#a855f7" {...pathProps} />;

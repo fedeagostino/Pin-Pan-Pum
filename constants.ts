@@ -14,6 +14,10 @@ export const CANCEL_SHOT_THRESHOLD = PUCK_RADIUS * 1.5;
 export const SCORE_TO_WIN = 3;
 export const PAWN_DURABILITY = 5;
 
+// Pulsar Config
+export const MAX_PULSAR_POWER = 1000;
+export const PULSAR_POWER_PER_LINE = 150; 
+
 export const PUCK_GOAL_POINTS: Record<PuckType, number> = {
   STANDARD: 1,
   HEAVY: 1,
@@ -77,7 +81,7 @@ export const TRANSLATIONS = {
             STANDARD: { name: 'Steve / The Hair', desc: 'The Babysitter with the perfect hair.' },
             HEAVY: { name: 'Steve / Nail Bat', desc: 'Strong defense and heavy hits.' },
             FAST: { name: 'Steve / The Hero', desc: 'Quick strikes with legendary style.' },
-            GHOST: { name: 'Mind Flayer', desc: 'Ancient ethereal entity.' },
+            GHOST: { name: 'Max / Headsets', desc: 'Ethereal entity with a special bond.' },
             ANCHOR: { name: 'Mind Block', desc: 'Immovable and massive.' },
             SWERVE: { name: 'Mind Curve', desc: 'Alters path mid-flight.' },
             BOUNCER: { name: 'Elastic Bounce', desc: 'Gains energy on every bounce.' },
@@ -144,7 +148,7 @@ export const TRANSLATIONS = {
             STANDARD: { name: 'Steve / Pelazo', desc: 'La niñera con el peinado perfecto.' },
             HEAVY: { name: 'Steve / Bate', desc: 'Defensa sólida y golpes pesados.' },
             FAST: { name: 'Steve / Héroe', desc: 'Ataques rápidos con estilo legendario.' },
-            GHOST: { name: 'Deshuellamentes', desc: 'Entidad etérea ancestral.' },
+            GHOST: { name: 'Max / Cascos', desc: 'Entidad etérea con un vínculo especial.' },
             ANCHOR: { name: 'Bloqueo Mental', desc: 'Inamovible y masiva.' },
             SWERVE: { name: 'Curva Mental', desc: 'Altera su trayectoria en pleno vuelo.' },
             BOUNCER: { name: 'Rebote Elástico', desc: 'Gana energía en cada rebote.' },
@@ -297,7 +301,7 @@ export const ULTIMATE_SHOT_POWER_MULTIPLIER = 3.5;
 export const SYNERGY_GOAL_PULSAR_BONUS = 250;
 export const TURNS_PER_ORB_SPAWN = 2;
 export const ORBS_FOR_OVERCHARGE = 3;
-export const MAX_PULSAR_POWER = 1000;
+// Fix: Removed duplicate MAX_PULSAR_POWER declaration. It is already declared on line 18.
 export const PULSAR_BAR_HEIGHT = 80;
 export const PULSAR_ORB_HIT_SCORE = 150;
 export const FLOATING_TEXT_CONFIG = { LIFE: 90 };

@@ -18,7 +18,9 @@ import {
   PUCK_GOAL_POINTS,
   PAWN_DURABILITY,
   MAX_DRAG_FOR_POWER,
-  getPuckConfig
+  getPuckConfig,
+  MAX_PULSAR_POWER,
+  PULSAR_POWER_PER_LINE
 } from '../constants';
 
 const GOAL_X_MIN = (BOARD_WIDTH - GOAL_WIDTH) / 2;
@@ -116,6 +118,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       pucksShotThisTurn: [],
       pulsarPower: { RED: 0, BLUE: 0 },
       specialShotStatus: { RED: 'NONE', BLUE: 'NONE' },
+      pulsarShotArmed: null,
       orbCollection: { RED: 0, BLUE: 0 },
       turnCount: 0,
       imaginaryLine: null,
@@ -225,18 +228,43 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       const puck = prev.pucks.find(p => p.id === prev.selectedPuckId);
       if (!puck) return { ...prev, selectedPuckId: null, shotPreview: null, imaginaryLine: null };
       const shotVector = subtractVectors(puck.position, prev.shotPreview.end);
-      const velocity = { x: shotVector.x * LAUNCH_POWER_MULTIPLIER, y: shotVector.y * LAUNCH_POWER_MULTIPLIER };
-      playSound('SHOT');
+      
+      // Aplicar multiplicador si el Pulsar está activado
+      const powerMult = prev.pulsarShotArmed === prev.currentTurn ? 2.0 : 1.0;
+      
+      const velocity = { 
+        x: shotVector.x * LAUNCH_POWER_MULTIPLIER * powerMult, 
+        y: shotVector.y * LAUNCH_POWER_MULTIPLIER * powerMult 
+      };
+      
+      if (powerMult > 1) {
+          playSound('PULSAR_SHOT');
+      } else {
+          playSound('SHOT');
+      }
+      
       return {
         ...prev,
-        // RULE UPDATE: Removed resetting isCharged: false. Charge now persists.
         pucks: prev.pucks.map(p => p.id === prev.selectedPuckId ? { ...p, velocity } : p),
         selectedPuckId: null,
         shotPreview: null,
         isSimulating: true,
         pucksShotThisTurn: [...prev.pucksShotThisTurn, puck.id],
-        imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, isConfirmed: true, crossedLineIndices: new Set() } : null
+        imaginaryLine: prev.imaginaryLine ? { ...prev.imaginaryLine, isConfirmed: true, crossedLineIndices: new Set() } : null,
+        pulsarShotArmed: null, // Consumir disparo tras soltar
+        pulsarPower: powerMult > 1 ? { ...prev.pulsarPower, [prev.currentTurn]: 0 } : prev.pulsarPower
       };
+    });
+  }, [playSound]);
+
+  const handleActivatePulsar = useCallback(() => {
+    setGameState(prev => {
+        if (prev.pulsarPower[prev.currentTurn] < MAX_PULSAR_POWER) return prev;
+        playSound('PULSAR_ACTIVATE');
+        return {
+            ...prev,
+            pulsarShotArmed: prev.currentTurn
+        };
     });
   }, [playSound]);
 
@@ -248,16 +276,12 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       if (!prev.isSimulating && movingPucks.length === 0) {
           if (prev.pucksShotThisTurn.length > 0) {
               const shotPuck = prev.pucks.find(p => p.id === prev.imaginaryLine?.shotPuckId);
-              
-              // RULE UPDATE: Extra turn is granted if lines were crossed IN THIS TURN, 
-              // regardless of if it was already charged from previous turns.
               const teamPucksCount = prev.pucks.filter(tp => tp.team === (shotPuck?.team || 'RED')).length;
               const availableLinesCount = ((teamPucksCount - 1) * (teamPucksCount - 2)) / 2;
               let required = shotPuck ? PUCK_TYPE_PROPERTIES[shotPuck.puckType].linesToCrossForBonus : 1;
               required = Math.min(required, Math.max(1, availableLinesCount));
               
               const crossedThisTurn = (prev.imaginaryLine?.crossedLineIndices.size || 0) >= required;
-              const isPuckCurrentlyCharged = shotPuck?.isCharged;
               
               if (crossedThisTurn) {
                   playSound('BONUS_TURN');
@@ -290,6 +314,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
       let nextImaginaryLine = prev.imaginaryLine ? { ...prev.imaginaryLine } : null;
       let nextScore = { ...prev.score };
       let nextGoalInfo = prev.goalScoredInfo;
+      let nextPulsarPower = { ...prev.pulsarPower };
 
       nextPucks = nextPucks.map(p => {
         const prevPos = { ...p.position };
@@ -301,6 +326,9 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
               if (checkLineIntersection(prevPos, nextPos, line.start, line.end)) {
                 nextImaginaryLine!.crossedLineIndices.add(idx);
                 playSound('LINE_CROSS');
+                
+                // Cargar energía Pulsar por cada línea cruzada
+                nextPulsarPower[p.team] = Math.min(MAX_PULSAR_POWER, nextPulsarPower[p.team] + PULSAR_POWER_PER_LINE);
                 
                 const teamPucksCount = nextPucks.filter(tp => tp.team === p.team).length;
                 const availableLinesCount = ((teamPucksCount - 1) * (teamPucksCount - 2)) / 2;
@@ -393,7 +421,8 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
         goalScoredInfo: nextGoalInfo,
         isSimulating: anyMoving,
         canShoot: !winner && !anyMoving && !nextGoalInfo && prev.status === 'PLAYING',
-        imaginaryLine: nextImaginaryLine
+        imaginaryLine: nextImaginaryLine,
+        pulsarPower: nextPulsarPower
       };
     });
     requestRef.current = requestAnimationFrame(updatePhysics);
@@ -407,7 +436,7 @@ export const useGameEngine = ({ playSound }: { playSound: (s: string, o?: any) =
   return { 
     gameState, handleMouseDown, handleMouseMove, handleMouseUp, resetGame, startGame,
     handleBoardMouseDown: () => setGameState(prev => ({ ...prev, infoCardPuckId: null })),
-    handleActivatePulsar: () => {},
+    handleActivatePulsar,
     clearTurnLossReason: () => setGameState(prev => ({ ...prev, turnLossReason: null })),
     clearBonusTurn: () => setGameState(prev => ({ ...prev, bonusTurnForTeam: null })),
   };

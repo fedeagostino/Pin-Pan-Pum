@@ -15,13 +15,14 @@ const getFillColorForPuck = (puck: Puck): string => {
     const baseTeamColor = TEAM_COLORS[team];
     
     if (team === 'RED') {
-        if (puckType === 'KING') return '#3a0101'; // Deep Vecna
+        if (puckType === 'KING') return '#2a0505'; // Vecna Body Dark Red
         if (puckType === 'FAST') return '#5c0000'; // Demogorgon
         if (puckType === 'GHOST') return '#110022'; // Mind Flayer shadow
         if (puckType === 'PAWN') return '#1a1a1a'; // Demobat
     } else {
-        if (puckType === 'KING') return '#ffe5db'; // Eleven Skin Tone
+        if (puckType === 'KING') return '#fff5ee'; // Eleven Pale Skin Tone
         if (puckType === 'PAWN') return '#1e293b'; // Walkie Talkie Body
+        if (puckType === 'GHOST') return '#fcd9cc'; // Maxine Skin Base
     }
     
     const rgb = hexToRgb(baseTeamColor);
@@ -60,6 +61,21 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
         </g>
     );
 
+    const renderMaxine = (scale: number = 1) => (
+        <g transform={`scale(${scale})`}>
+            <path 
+                d="M -16 5 C -16 -15, -12 -22, 0 -22 C 12 -22, 16 -15, 16 5 C 16 12, 10 15, 0 15 C -10 15, -16 12, -16 5" 
+                fill="#e67e22" 
+                stroke="#d35400" 
+                strokeWidth="1.5"
+            />
+            <path d="M -14 -6 A 14 14 0 0 1 14 -6" fill="none" stroke="#2c3e50" strokeWidth="4" />
+            <rect x="-19" y="-9" width="7" height="14" rx="2" fill="#2c3e50" stroke="#1a202c" />
+            <rect x="12" y="-9" width="7" height="14" rx="2" fill="#2c3e50" stroke="#1a202c" />
+            <circle cx="0" cy="0" r="10" fill="#fcd9cc" opacity="0.6" />
+        </g>
+    );
+
     const renderUniqueFeatures = () => {
         const scale = radius / (svgData?.designRadius || 20);
 
@@ -68,10 +84,17 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
                 case 'KING':
                     return (
                         <g transform={`scale(${scale})`}>
-                            <path d="M -10 -10 L -18 -18 M 10 -10 L 18 -18 M -12 12 L -20 20 M 12 12 L 20 20" stroke="#ff0000" strokeWidth="1" opacity="0.6" />
-                            <circle cx="-6" cy="-4" r="2.5" fill="#ff0000" className="demo-mouth-core" />
-                            <circle cx="6" cy="-4" r="2.5" fill="#ff0000" className="demo-mouth-core" />
-                            <path d="M -4 8 Q 0 12 4 8" fill="none" stroke="#000" strokeWidth="2" />
+                            <circle r="18" fill="none" stroke="rgba(255,0,0,0.1)" strokeWidth="0.5" strokeDasharray="1 4" />
+                            <path d="M 0 0 L -12 -15 M 0 0 L 12 -15 M 0 0 L -15 12 M 0 0 L 15 12 M 0 0 L 0 -18 M 0 0 L 0 18" stroke="#450a0a" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
+                            <path d="M -8 -8 Q -15 -15 -18 -10" fill="none" stroke="#5a1010" strokeWidth="1.5" strokeLinecap="round" />
+                            <path d="M 8 -8 Q 15 -15 18 -10" fill="none" stroke="#5a1010" strokeWidth="1.5" strokeLinecap="round" />
+                            <circle cx="-7" cy="-5" r="3" fill="#ffffff" filter="url(#soft-glow)">
+                                <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="7" cy="-5" r="3" fill="#ffffff" filter="url(#soft-glow)">
+                                <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite" />
+                            </circle>
+                            <path d="M -5 10 Q 0 14 5 10" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" />
                         </g>
                     );
                 case 'FAST':
@@ -99,11 +122,29 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
             if (puckType === 'KING') {
                 return (
                     <g transform={`scale(${scale})`}>
+                        {/* Shaved Hair Texture (Buzzed Cut) */}
+                        <path d="M -18 -5 A 18 18 0 0 1 18 -5 L 18 -8 Q 0 -22 -18 -8 Z" fill="#5d4037" opacity="0.4" />
+                        <circle r="19" fill="none" stroke="#5d4037" strokeWidth="1.5" strokeDasharray="1 3" opacity="0.3" />
+                        
+                        {/* Psychic Aura */}
+                        <circle r="22" fill="none" stroke="#00d4ff" strokeWidth="1" opacity="0.2">
+                             <animate attributeName="r" values="22;25;22" dur="3s" repeatCount="indefinite" />
+                             <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" />
+                        </circle>
+                        {/* Eyes */}
                         <circle cx="-6" cy="-4" r="1.5" fill="#333" />
                         <circle cx="6" cy="-4" r="1.5" fill="#333" />
-                        <path d="M 0 4 L 0 10" stroke="#ff0000" strokeWidth="3" strokeLinecap="round" className="demo-mouth-core" />
+                        {/* Iconic Nosebleed */}
+                        <path d="M 0 3 L 0 11" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" opacity="0.9">
+                            <animate attributeName="stroke-dasharray" values="0,20;20,0" dur="2s" repeatCount="indefinite" />
+                        </path>
+                        <circle cx="0" cy="11.5" r="1.5" fill="#ff0000" />
+                        {/* Mouth - neutral/focused */}
+                        <path d="M -4 6 L 4 6" stroke="#d9b8ad" strokeWidth="1.5" strokeLinecap="round" />
                     </g>
                 );
+            } else if (puckType === 'GHOST') {
+                return renderMaxine(scale);
             } else if (['STANDARD', 'HEAVY', 'FAST'].includes(puckType)) {
                 return renderSteveHair(scale);
             }
@@ -111,7 +152,7 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
         return null;
     };
 
-    const isUniqueSkin = (team === 'RED' && ['KING', 'GHOST', 'PAWN', 'FAST'].includes(puckType)) || (team === 'BLUE' && ['KING', 'STANDARD', 'HEAVY', 'FAST', 'PAWN'].includes(puckType));
+    const isUniqueSkin = (team === 'RED' && ['KING', 'GHOST', 'PAWN', 'FAST'].includes(puckType)) || (team === 'BLUE' && ['KING', 'GHOST', 'STANDARD', 'HEAVY', 'FAST', 'PAWN'].includes(puckType));
 
     return (
         <g className={isCharged ? 'charged-puck-group' : ''}>
@@ -140,7 +181,7 @@ const PuckShape: React.FC<{ puck: Puck }> = React.memo(({ puck }) => {
             <circle r={radius - 2} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
 
             <g className={isUniqueSkin ? 'demo-puck-body' : ''} filter="url(#soft-glow)">
-                {svgData && svgData.path ? (
+                {svgData && svgData.path && puckType !== 'GHOST' ? (
                     <path 
                         transform={`scale(${radius / svgData.designRadius})`} 
                         d={svgData.path} 
