@@ -188,9 +188,9 @@ export const UI_COLORS = {
 // Physics
 export const MIN_VELOCITY_TO_STOP = 0.1;
 export const MAX_VELOCITY_FOR_TURN_END = 0.4;
-export const LAUNCH_POWER_MULTIPLIER = 0.063;
+export const LAUNCH_POWER_MULTIPLIER = 0.0441; // Reduced to 70% of 0.063
 
-export const PREVIEW_SHOT_POWER = 0.09;
+export const PREVIEW_SHOT_POWER = 0.063; // Reduced to 70% of 0.09
 export const PREVIEW_SIMULATION_FRAMES = 120;
 
 export const PUCK_TYPE_PROPERTIES: Record<PuckType, any> = {
