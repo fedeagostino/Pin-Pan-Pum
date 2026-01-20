@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Puck, Team, Vector, GameState, ImaginaryLineState, PuckType, Particle, ImaginaryLine, SynergyType, TurnLossReason, FormationType, GameStatus, FloatingText } from '../types';
 import {
@@ -17,7 +18,6 @@ import {
   PUCK_GOAL_POINTS,
   PAWN_DURABILITY,
   MAX_DRAG_FOR_POWER,
-  // Fixed: Corrected casing to match export in constants.ts
   getPuckConfig,
   MAX_PULSAR_POWER,
   PULSAR_POWER_PER_LINE,
@@ -65,7 +65,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
     let idCounter = 1;
     const configs = [{ team: 'RED' as Team, formation: redFormation }, { team: 'BLUE' as Team, formation: blueFormation }];
     configs.forEach(config => {
-      // Fixed: Corrected function name usage to getPuckConfig
       const pConfig = getPuckConfig(config.team, config.formation);
       pConfig.forEach(p => {
         const props = PUCK_TYPE_PROPERTIES[p.type];
@@ -232,9 +231,23 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
       if (nextPulsarOrb) {
           nextPulsarOrb.angle += PULSAR_ORB_SPEED;
           nextPulsarOrb.position = getOrbPositionFromDistance(nextPulsarOrb.angle);
+
+          // Add constant line/trail particle for the orb
+          const trailId = Date.now() + Math.random();
+          nextParticles.push({
+            id: trailId,
+            position: { ...nextPulsarOrb.position },
+            velocity: { x: (Math.random() - 0.5) * 0.5, y: (Math.random() - 0.5) * 0.5 },
+            radius: nextPulsarOrb.radius * 0.7,
+            color: '#f1c40f',
+            opacity: 0.8,
+            life: 25,
+            lifeSpan: 25,
+            decay: 0.04,
+            renderType: 'orbiting'
+          });
       }
 
-      // Physics logic for stopping simulation
       if (!prev.isSimulating && movingPucks.length === 0) {
           if (prev.pucksShotThisTurn.length > 0) {
               const crossedThisTurn = (prev.imaginaryLine?.crossedLineIndices.size || 0) > 0;
@@ -255,7 +268,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
       let nextGoalInfo = prev.goalScoredInfo;
       let nextPulsarPower = { ...prev.pulsarPower };
 
-      // Sub-stepping implementation for stability
       for (let step = 0; step < SUB_STEPS; step++) {
           nextPucks = nextPucks.map(p => {
               const prevPos = { ...p.position };
@@ -277,12 +289,29 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
               let nextVel = { x: p.velocity.x, y: p.velocity.y };
               const inGoalX = nextPos.x > GOAL_X_MIN && nextPos.x < GOAL_X_MAX;
 
-              // Check Orb Sync on Perimeter Hit
               const checkOrbSync = (impactPos: Vector) => {
                   if (!nextPulsarOrb) return;
                   const dist = Math.sqrt(Math.pow(impactPos.x - nextPulsarOrb.position.x, 2) + Math.pow(impactPos.y - nextPulsarOrb.position.y, 2));
                   if (dist < PULSAR_ORB_SYNC_THRESHOLD) {
                       playSound('ORBITING_HIT');
+                      
+                      // Explosive particle effect for hitting the sync orb
+                      for (let i = 0; i < 12; i++) {
+                        const angle = (Math.PI * 2 * i) / 12;
+                        nextParticles.push({
+                          id: Date.now() + Math.random(),
+                          position: { ...impactPos },
+                          velocity: { x: Math.cos(angle) * 3, y: Math.sin(angle) * 3 },
+                          radius: 5,
+                          color: i % 2 === 0 ? '#f1c40f' : '#ffffff',
+                          opacity: 1,
+                          life: 30,
+                          lifeSpan: 30,
+                          decay: 0.04,
+                          renderType: 'emp_burst'
+                        });
+                      }
+
                       nextPulsarPower[p.team] = Math.min(MAX_PULSAR_POWER, nextPulsarPower[p.team] + PULSAR_ORB_CHARGE_AMOUNT);
                       nextFloatingTexts.push({
                           id: Date.now() + Math.random(), text: "+25% PULSAR", position: { ...impactPos },
@@ -291,7 +320,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
                   }
               };
 
-              // Boundary & Goal Logic
               if (inGoalX && (nextPos.y < 0 || nextPos.y > BOARD_HEIGHT)) {
                   if (p.isCharged && !nextGoalInfo) {
                       const pointReceiver = nextPos.y < 0 ? 'BLUE' : 'RED';
@@ -313,7 +341,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
               return { ...p, position: nextPos, velocity: nextVel };
           });
 
-          // Accurate Collision Resolution
           for (let i = 0; i < nextPucks.length; i++) {
               for (let j = i + 1; j < nextPucks.length; j++) {
                   const p1 = nextPucks[i]; const p2 = nextPucks[j];
@@ -337,7 +364,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
                           nextPucks[j].velocity.x -= impulseX / p2.mass;
                           nextPucks[j].velocity.y -= impulseY / p2.mass;
                       }
-                      // Static resolution weighted by mass to prevent overlaps
                       const overlap = minDist - dist;
                       const totalMass = p1.mass + p2.mass;
                       nextPucks[i].position.x -= normalX * overlap * (p2.mass / totalMass);
@@ -349,7 +375,6 @@ export const useGameEngine = ({ playSound, lang, onGameEvent }: GameEngineProps)
           }
       }
 
-      // Apply friction once per frame
       nextPucks = nextPucks.map(p => {
           let nv = { x: p.velocity.x * p.friction, y: p.velocity.y * p.friction };
           if (getVectorMagnitude(nv) < MIN_VELOCITY_TO_STOP) nv = { x: 0, y: 0 };

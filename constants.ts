@@ -21,8 +21,8 @@ export const SUB_STEPS = 4; // Number of physics updates per frame for stability
 export const MAX_PULSAR_POWER = 1000;
 export const PULSAR_POWER_PER_LINE = 120; 
 export const PULSAR_ORB_CHARGE_AMOUNT = 250; 
-export const PULSAR_ORB_RADIUS = 22;
-export const PULSAR_ORB_SPEED = 12; 
+export const PULSAR_ORB_RADIUS = 13.2; // Reduced by 40% (22 * 0.6)
+export const PULSAR_ORB_SPEED = 7.2;   // Reduced by 40% (12 * 0.6)
 export const PULSAR_ORB_LINE_LENGTH = 140; 
 export const PULSAR_ORB_SYNC_THRESHOLD = 80; 
 
