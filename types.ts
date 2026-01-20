@@ -141,4 +141,4 @@ export type GameState = {
   } | null;
 };
 
-export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_CHARGE';
+export type TurnLossReason = 'OWN_GOAL' | 'UNCHARGED_GOAL' | 'PHASED_GOAL' | 'SPECIAL_NO_GOAL' | 'NO_CHARGE' | 'ALL_CHARGED';

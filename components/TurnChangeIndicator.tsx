@@ -21,6 +21,7 @@ const TurnChangeIndicator: React.FC<TurnChangeIndicatorProps> = ({ team, previou
         case 'PHASED_GOAL': return { title: t.TURN_LOST, subtitle: t.INTANGIBLE };
         case 'SPECIAL_NO_GOAL': return { title: t.TURN_LOST, subtitle: lang === 'es' ? 'TIRO ESPECIAL SIN GOL' : 'SPECIAL SHOT MISS' };
         case 'NO_CHARGE': return { title: t.TURN_LOST, subtitle: lang === 'es' ? '¡NO ATRAVESÓ LÍNEAS!' : 'FAILED TO CHARGE!' };
+        case 'ALL_CHARGED': return { title: t.TURN_LOST, subtitle: lang === 'es' ? '¡PIEZAS CARGADAS AL MÁXIMO!' : 'ALL PIECES CHARGED!' };
         default: return null;
     }
   };

@@ -43,7 +43,7 @@ export type Language = 'en' | 'es';
 
 export const TRANSLATIONS = {
     en: {
-        TITLE: 'STRANGER ARENA',
+        TITLE: 'BOOM, BAM, BOOM',
         PLAY_FRIEND: 'Play vs Friend',
         PLAY_AI: 'Play vs AI',
         SETTINGS: 'Settings',
@@ -80,7 +80,7 @@ export const TRANSLATIONS = {
         },
         RULES_CONTENT: [
             { title: 'THE FLOW RULE', desc: 'If your shot successfully CROSSES imaginary lines, you KEEP your turn. You can shoot again and again as long as you keep charging!' },
-            { title: 'LOSING THE TURN', desc: 'You lose your turn if your shot fails to cross the required number of lines or if the piece cannot be charged further.' },
+            { title: 'LOSING THE TURN', desc: 'You lose your turn if your shot fails to cross the required number of lines or if ALL your pieces are already charged.' },
             { title: 'THE GOLDEN GOAL', desc: 'You can ONLY score with a CHARGED puck (yellow glow). Once charged, it stays charged until a goal is scored.' },
             { title: 'THE PORTAL', desc: 'Crossing lines also charges the Portal bar. Activate it for x2 Shot Power on your King.' },
             { title: 'KING POWER', desc: 'The King (Eleven/Vecna) is worth 2 points and has access to devastating special shots.' }
@@ -112,7 +112,7 @@ export const TRANSLATIONS = {
         }
     },
     es: {
-        TITLE: 'STRANGER ARENA',
+        TITLE: 'PIN PAN PUM',
         PLAY_FRIEND: 'Jugar vs Amigo',
         PLAY_AI: 'Jugar vs IA',
         SETTINGS: 'Configuración',
@@ -149,7 +149,7 @@ export const TRANSLATIONS = {
         },
         RULES_CONTENT: [
             { title: 'LA REGLA DEL FLUJO', desc: 'Si tu ficha se CARGA al cruzar líneas imaginarias, ¡SIGUES TIRANDO sin perder el turno! Puedes disparar infinitamente mientras sigas cargando piezas.' },
-            { title: 'PERDER EL TURNO', desc: 'El turno se pierde si la pieza lanzada NO cruza una línea imaginaria o si ya no puede ser cargada en ese tiro.' },
+            { title: 'PERDER EL TURNO', desc: 'El turno se pierde si la pieza lanzada NO cruza una línea imaginaria o si YA HAS CARGADO todas tus piezas en el tablero.' },
             { title: 'LA REGLA DE ORO', desc: 'SOLO puedes marcar gol con una ficha CARGADA (brillo amarillo). ¡Una vez cargada, la ficha NO se descarga hasta que haya un gol!' },
             { title: 'EL PORTAL', desc: 'Cruzar líneas carga la barra de Portal. Actívala para potenciar a tu Rey con x2 de Fuerza de Disparo.' },
             { title: 'EL PODER DEL REY', desc: 'El Rey vale 2 PUNTOS y puede ejecutar Tiros Reales y Definitivos si sus súbditos están cargados.' }

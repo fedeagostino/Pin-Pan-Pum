@@ -9,7 +9,6 @@ const useGemini = () => {
     const initialize = useCallback(() => {
         if (!ai) {
              try {
-                // Fix: Correct initialization using named parameter as per @google/genai guidelines.
                 const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 setAi(genAI);
                 return genAI;
@@ -26,12 +25,11 @@ const useGemini = () => {
         if (!genAI) return null;
 
         const langName = lang === 'es' ? 'Spanish' : 'English';
-        const gameName = lang === 'es' ? 'Pin Pan Pum' : 'Wham Bam Boom';
+        const gameName = lang === 'es' ? 'Pin pan pum' : 'Boom, bam, boom';
 
         const systemInstruction = `You are an excited, over-the-top esports commentator for a futuristic puck game called ${gameName}. Your comments must be extremely short, punchy, and full of energy. Use exclamations and impactful words. Focus on the single key event described. Maximum 15 words. Never mention you are an AI. Respond in ${langName}.`;
 
         try {
-            // Fix: Use gemini-3-flash-preview for text-based tasks as per the recommended model mapping.
             const responseStream = await genAI.models.generateContentStream({
                 model: "gemini-3-flash-preview",
                 contents: eventDescription,
